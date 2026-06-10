@@ -186,8 +186,8 @@
     .column.col-done .card { padding: 8px 10px; }
     .column.col-done .card-name { font-size: .78rem; margin-bottom: 2px; }
     .column.col-done .phase-btns,
-    .column.col-done .card-hint,
-    .column.col-done .card-actions { display: none; }
+    .column.col-done .card-actions,
+    .column.col-done .card-path { display: none; }
     .column.drag-over { border-color: var(--red); background: var(--red-glow); }
     .column-header {
       padding: 14px 16px;
@@ -235,7 +235,14 @@
     .card:hover { border-color: #c9bfb0; box-shadow: 0 2px 12px rgba(58,53,48,.08); }
     .card[draggable="true"]:active { cursor: grabbing; }
     .card.dragging { opacity: .4; }
-    .card-name { font-weight: 600; font-size: .88rem; margin-bottom: 4px; }
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .card-name { font-weight: 600; font-size: .88rem; flex: 1; min-width: 0; line-height: 1.35; }
     .card-meta { font-size: .72rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
     .card-tag {
       display: inline-block;
@@ -252,19 +259,14 @@
       border-color: var(--border);
     }
     .card.sns-card { border-left: 2px solid var(--red); }
-    .card-link {
-      font-size: .7rem;
-      color: var(--red);
-      background: none;
-      border: none;
-      padding: 0;
+    .card-path {
+      font-size: .65rem;
+      color: var(--muted);
       margin-top: 6px;
-      display: inline-block;
-      cursor: pointer;
-      font-family: var(--font);
+      font-family: ui-monospace, monospace;
+      word-break: break-all;
+      line-height: 1.4;
     }
-    .card-link:hover { text-decoration: underline; }
-    .card-hint { font-size: .65rem; color: var(--muted); margin-top: 4px; }
 
     .phase-btns {
       display: flex;
@@ -336,12 +338,10 @@
     .section-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .card-actions {
       display: flex;
-      gap: 6px;
-      margin-top: 8px;
-      opacity: 0;
-      transition: opacity .15s;
+      gap: 2px;
+      flex-shrink: 0;
     }
-    .card:hover .card-actions { opacity: 1; }
+    .card-actions .btn-ghost { padding: 2px 6px; font-size: .68rem; }
 
     /* ── Tasks ── */
     .tasks-panel {
@@ -453,13 +453,8 @@
     .form-group input, .form-group select { width: 100%; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 
-    /* ── Layout grid ── */
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      gap: 24px;
-      align-items: start;
-    }
+    .tasks-section { margin-bottom: 28px; }
+    .tasks-section .tasks-panel { margin-top: 0; }
 
     /* ── Toast ── */
     .toast {
@@ -514,7 +509,6 @@
     }
 
     @media (max-width: 1024px) {
-      .main-grid { grid-template-columns: 1fr; }
       .kanban { grid-template-columns: 1fr; }
       .stats { grid-template-columns: repeat(2, 1fr); }
     }
@@ -530,7 +524,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v5</div>
+        <div class="logo-sub">Business Dashboard · v6</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -540,8 +534,17 @@
 
     <div class="stats" id="stats"></div>
 
-    <div class="main-grid">
-      <section class="section">
+    <section class="section tasks-section">
+      <div class="section-header">
+        <div class="section-title">今日のタスク</div>
+        <button class="btn btn-ghost" onclick="showAllTasks()">すべて表示</button>
+      </div>
+      <div class="tasks-panel">
+        <div class="task-list" id="taskList"></div>
+      </div>
+    </section>
+
+    <section class="section">
         <div class="section-header">
           <div class="section-title">案件管理</div>
           <div class="section-actions">
@@ -559,18 +562,7 @@
           <div class="section-title">フォルダ</div>
         </div>
         <div class="shortcuts" id="shortcuts"></div>
-      </section>
-
-      <section class="section">
-        <div class="section-header">
-          <div class="section-title">今日のタスク</div>
-          <button class="btn btn-ghost" onclick="showAllTasks()">すべて表示</button>
-        </div>
-        <div class="tasks-panel">
-          <div class="task-list" id="taskList"></div>
-        </div>
-      </section>
-    </div>
+    </section>
   </div>
 
   <!-- Project Modal -->
@@ -959,24 +951,25 @@
         : `${p.client ? `<span>${esc(p.client)}</span>` : ''}
            <span class="card-tag">${esc(typeLabel(p.type))}</span>
            ${p.created ? `<span>${p.created}</span>` : ''}`;
-      const link = p.folder
-        ? `<button class="card-link" data-path="${attr(p.folder)}" onclick="event.stopPropagation();openPath(this.dataset.path)">ファイルを開く →</button>` : '';
+      const path = p.folder ? `<div class="card-path">${esc(p.folder)}</div>` : '';
       const phaseLabel = p.phase && p.status !== 'done'
         ? `<div class="phase-current">▸ ${esc(p.phase)}</div>` : '';
-      return `
-        <div class="card${isSns ? ' sns-card' : ''}" draggable="true" data-id="${p.id}"
-             onclick="onCardClick(event,'${p.id}')"
-             ondragstart="onDragStart(event,'${p.id}')" ondragend="onDragEnd(event)">
-          <div class="card-name">${esc(p.name)}</div>
-          <div class="card-meta">${meta}</div>
-          ${phaseLabel}
-          ${renderPhaseButtons(p)}
-          ${link}
-          ${p.status !== 'done' ? '<div class="card-hint">クリックで編集</div>' : ''}
+      const actions = p.status !== 'done' ? `
           <div class="card-actions">
             <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
             <button class="btn btn-ghost btn-danger" onclick="event.stopPropagation();deleteProject('${p.id}')">削除</button>
+          </div>` : '';
+      return `
+        <div class="card${isSns ? ' sns-card' : ''}" draggable="true" data-id="${p.id}"
+             ondragstart="onDragStart(event,'${p.id}')" ondragend="onDragEnd(event)">
+          <div class="card-header">
+            <div class="card-name">${esc(p.name)}</div>
+            ${actions}
           </div>
+          <div class="card-meta">${meta}</div>
+          ${phaseLabel}
+          ${renderPhaseButtons(p)}
+          ${path}
         </div>
       `;
     }
@@ -1021,12 +1014,6 @@
       }
       saveState();
       toast(`「${p.name}」→ ${phase}`);
-    }
-
-    function onCardClick(e, id) {
-      if (justDragged) return;
-      if (e.target.closest('.card-actions') || e.target.closest('.card-link') || e.target.closest('.phase-btn')) return;
-      editProject(id);
     }
 
     function renderTasks() {
