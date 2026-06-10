@@ -72,7 +72,7 @@
     /* ── Stats ── */
     .stats {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 12px;
       margin-bottom: 32px;
     }
@@ -502,7 +502,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v7</div>
+        <div class="logo-sub">Business Dashboard · v8</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -764,7 +764,6 @@
       const todo    = projects.filter(p => p.status === 'todo').length;
       const doing   = projects.filter(p => p.status === 'doing').length;
       const billing = projects.filter(p => p.status === 'billing').length;
-      const done    = projects.filter(p => p.status === 'done').length;
       const today = todayStr();
       const todayTasks = state.tasks.filter(t => !t.done && t.date === today).length;
 
@@ -772,7 +771,6 @@
         { label: '未着手', value: todo, red: false },
         { label: '進行中', value: doing, red: true },
         { label: '請求中', value: billing, red: false },
-        { label: '完了', value: done, red: false },
       ].map(s => `
         <div class="stat">
           <div class="stat-label">${s.label}</div>
