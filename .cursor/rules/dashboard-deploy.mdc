@@ -1,0 +1,31 @@
+---
+description: dashboard.html 変更後は GitHub Pages へ push する
+globs: dashboard.html
+alwaysApply: false
+---
+
+# nARK Dashboard — GitHub Pages デプロイ
+
+## 公開 URL
+https://k273ogakita.github.io/11111/dashboard.html
+
+## リポジトリ
+- remote: `https://github.com/k273ogakita/11111.git`
+- branch: `main`
+- デプロイ対象: `dashboard.html` のみ（GitHub Pages）
+
+## 必須ワークフロー
+`dashboard.html` を編集したら、**作業完了時に必ず**以下を実行する：
+
+1. `git add dashboard.html`
+2. `git commit`（変更内容を簡潔に）
+3. `git push origin main`
+
+ユーザーが明示的に「push しないで」と言った場合のみ省略する。
+
+## バージョン表示
+ヘッダーの `Business Dashboard · vN` を機能変更のたびにインクリメントし、反映確認に使う。
+
+## 注意
+- ローカルファイルの変更だけでは GitHub Pages は更新されない
+- push 後、反映まで 1〜2 分かかることがある
