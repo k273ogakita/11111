@@ -88,20 +88,21 @@
     .stat-value { font-size: 1.8rem; font-weight: 700; margin-top: 4px; }
     .stat-value.red { color: var(--red); }
     .stat-tasks { display: flex; flex-direction: column; }
-    .stat-task-row {
+    .task-add-row {
       display: flex;
-      gap: 6px;
-      margin-top: 10px;
+      gap: 8px;
+      margin-bottom: 10px;
+      padding: 0 2px;
     }
-    .stat-task-row input {
+    .task-add-row input {
       flex: 1;
       min-width: 0;
-      padding: 6px 10px;
-      font-size: .78rem;
+      padding: 9px 12px;
+      font-size: .88rem;
     }
-    .stat-task-btn {
-      padding: 6px 10px;
-      font-size: .72rem;
+    .task-add-btn {
+      padding: 9px 16px;
+      font-size: .82rem;
       flex-shrink: 0;
     }
 
@@ -312,29 +313,6 @@
       font-weight: 600;
     }
 
-    /* ── Filter tabs ── */
-    .filter-tabs {
-      display: flex;
-      gap: 6px;
-    }
-    .filter-tab {
-      padding: 5px 12px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--muted);
-      font-size: .75rem;
-      font-weight: 600;
-      cursor: pointer;
-      font-family: var(--font);
-      transition: all .15s;
-    }
-    .filter-tab:hover { border-color: #c9bfb0; color: var(--text); }
-    .filter-tab.active {
-      background: var(--red);
-      border-color: var(--red);
-      color: #fff;
-    }
     .section-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .card-actions {
       display: flex;
@@ -524,7 +502,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v6</div>
+        <div class="logo-sub">Business Dashboard · v7</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -539,6 +517,10 @@
         <div class="section-title">今日のタスク</div>
         <button class="btn btn-ghost" onclick="showAllTasks()">すべて表示</button>
       </div>
+      <div class="task-add-row">
+        <button class="btn btn-primary task-add-btn" type="button" onclick="addTask()">追加</button>
+        <input type="text" id="taskInputTop" placeholder="タスクを入力してから「追加」を押す" autocomplete="off">
+      </div>
       <div class="tasks-panel">
         <div class="task-list" id="taskList"></div>
       </div>
@@ -548,11 +530,6 @@
         <div class="section-header">
           <div class="section-title">案件管理</div>
           <div class="section-actions">
-            <div class="filter-tabs" id="filterTabs">
-              <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">すべて</button>
-              <button class="filter-tab" data-filter="client" onclick="setFilter('client')">クライアント</button>
-              <button class="filter-tab" data-filter="sns" onclick="setFilter('sns')">SNS</button>
-            </div>
             <button class="btn btn-primary" onclick="openProjectModal()">+ 追加</button>
           </div>
         </div>
@@ -700,7 +677,6 @@
     let showAllTasksMode = false;
     let draggedId = null;
     let justDragged = false;
-    let projectFilter = 'all';
     let currentPath = '';
 
     function defaultState() {
@@ -780,17 +756,7 @@
     }
 
     function filteredProjects() {
-      if (projectFilter === 'all') return state.projects;
-      return state.projects.filter(p => p.category === projectFilter);
-    }
-
-    function setFilter(f) {
-      projectFilter = f;
-      document.querySelectorAll('.filter-tab').forEach(el => {
-        el.classList.toggle('active', el.dataset.filter === f);
-      });
-      renderKanban();
-      renderStats();
+      return state.projects;
     }
 
     function renderStats() {
@@ -802,15 +768,11 @@
       const today = todayStr();
       const todayTasks = state.tasks.filter(t => !t.done && t.date === today).length;
 
-      const savedInput = document.getElementById('taskInputTop')?.value || '';
-      const wasFocused = document.activeElement?.id === 'taskInputTop';
-
-      const filterLabel = projectFilter === 'all' ? '' : projectFilter === 'sns' ? '（SNS）' : '（クライアント）';
       const cards = [
-        { label: `未着手${filterLabel}`, value: todo, red: false },
-        { label: `進行中${filterLabel}`, value: doing, red: true },
-        { label: `請求中${filterLabel}`, value: billing, red: false },
-        { label: `完了${filterLabel}`, value: done, red: false },
+        { label: '未着手', value: todo, red: false },
+        { label: '進行中', value: doing, red: true },
+        { label: '請求中', value: billing, red: false },
+        { label: '完了', value: done, red: false },
       ].map(s => `
         <div class="stat">
           <div class="stat-label">${s.label}</div>
@@ -821,19 +783,8 @@
       document.getElementById('stats').innerHTML = cards + `
         <div class="stat stat-tasks">
           <div class="stat-label">今日のタスク</div>
-          <div class="stat-value red">${todayTasks}</div>
-          <div class="stat-task-row">
-            <input type="text" id="taskInputTop" placeholder="タスクを追加…" value="${attr(savedInput)}"
-                   onkeydown="if(event.key==='Enter')addTask()">
-            <button class="btn btn-primary stat-task-btn" type="button" onclick="addTask()">追加</button>
-          </div>
+          <div class="stat-value red" id="todayTaskCount">${todayTasks}</div>
         </div>`;
-
-      if (wasFocused) {
-        const el = document.getElementById('taskInputTop');
-        el.focus();
-        el.setSelectionRange(el.value.length, el.value.length);
-      }
     }
 
     function renderShortcuts() {
@@ -1090,14 +1041,13 @@
         }
         document.getElementById('projectStatus').value = p.status;
       } else {
-        const defaultCat = projectFilter === 'sns' ? 'sns' : 'client';
-        document.getElementById('modalTitle').textContent = defaultCat === 'sns' ? 'SNS投稿を追加' : '案件を追加';
-        document.getElementById('projectCategory').value = defaultCat;
+        document.getElementById('modalTitle').textContent = '案件を追加';
+        document.getElementById('projectCategory').value = 'client';
         onCategoryChange();
         document.getElementById('projectName').value = '';
         document.getElementById('projectClient').value = '';
         document.getElementById('projectPlatform').value = 'instagram';
-        document.getElementById('projectType').value = defaultCat === 'sns' ? 'feed' : 'web';
+        document.getElementById('projectType').value = 'web';
         document.getElementById('projectStatus').value = 'todo';
       }
       document.getElementById('projectModal').classList.add('open');
@@ -1205,7 +1155,11 @@
     function addTask() {
       const input = document.getElementById('taskInputTop');
       const text = input.value.trim();
-      if (!text) return;
+      if (!text) {
+        toast('タスクを入力してください');
+        input.focus();
+        return;
+      }
       state.tasks.unshift({ id: uid(), text, date: todayStr(), done: false });
       input.value = '';
       saveState();
