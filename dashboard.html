@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>nARK Dashboard</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -111,47 +114,6 @@
       border-radius: 2px;
     }
 
-    /* ── Shortcuts ── */
-    .shortcuts {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 10px;
-    }
-    .shortcut {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      text-decoration: none;
-      color: var(--text);
-      transition: all .2s;
-      cursor: pointer;
-    }
-    .shortcut:hover {
-      border-color: var(--red);
-      background: var(--surface-2);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 20px var(--red-glow);
-    }
-    .shortcut-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      background: var(--red-glow);
-      border: 1px solid rgba(225,29,46,.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: .85rem;
-      font-weight: 800;
-      color: var(--red);
-    }
-    .shortcut-name { font-weight: 700; font-size: .95rem; }
-    .shortcut-desc { font-size: .72rem; color: var(--muted); line-height: 1.4; }
-
     /* ── Kanban ── */
     .kanban {
       display: grid;
@@ -206,12 +168,12 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 12px;
-      cursor: grab;
+      cursor: pointer;
       transition: border-color .15s, box-shadow .15s;
       user-select: none;
     }
-    .card:active { cursor: grabbing; }
-    .card:hover { border-color: #444; }
+    .card:hover { border-color: #444; box-shadow: 0 2px 12px rgba(0,0,0,.3); }
+    .card[draggable="true"]:active { cursor: grabbing; }
     .card.dragging { opacity: .4; }
     .card-name { font-weight: 600; font-size: .88rem; margin-bottom: 4px; }
     .card-meta { font-size: .72rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
@@ -224,6 +186,50 @@
       color: var(--red);
       border: 1px solid rgba(225,29,46,.25);
     }
+    .card-tag.sns {
+      background: rgba(255,255,255,.06);
+      color: #ccc;
+      border-color: #444;
+    }
+    .card.sns-card { border-left: 2px solid var(--red); }
+    .card-link {
+      font-size: .7rem;
+      color: var(--red);
+      background: none;
+      border: none;
+      padding: 0;
+      margin-top: 6px;
+      display: inline-block;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+    .card-link:hover { text-decoration: underline; }
+    .card-hint { font-size: .65rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── Filter tabs ── */
+    .filter-tabs {
+      display: flex;
+      gap: 6px;
+    }
+    .filter-tab {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: .75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all .15s;
+    }
+    .filter-tab:hover { border-color: #555; color: var(--text); }
+    .filter-tab.active {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+    }
+    .section-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .card-actions {
       display: flex;
       gap: 6px;
@@ -370,6 +376,39 @@
     }
     .toast.show { transform: translateY(0); opacity: 1; }
 
+    /* ── Path modal ── */
+    .path-hint { font-size: .82rem; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
+    .path-box {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: .78rem;
+      font-family: ui-monospace, monospace;
+      word-break: break-all;
+      color: #ddd;
+      margin-bottom: 14px;
+    }
+    .path-steps { font-size: .82rem; color: var(--muted); padding-left: 1.2em; line-height: 1.9; }
+    .path-steps kbd {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: .75rem;
+      color: var(--text);
+    }
+    .path-note {
+      margin-top: 14px;
+      padding: 10px 12px;
+      background: var(--red-glow);
+      border: 1px solid rgba(225,29,46,.2);
+      border-radius: 8px;
+      font-size: .78rem;
+      color: #ccc;
+      line-height: 1.5;
+    }
+
     @media (max-width: 1024px) {
       .main-grid { grid-template-columns: 1fr; }
       .kanban { grid-template-columns: 1fr; }
@@ -379,7 +418,6 @@
       .app { padding: 16px; }
       header { flex-direction: column; align-items: flex-start; gap: 12px; }
       .datetime { text-align: left; }
-      .shortcuts { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
@@ -388,7 +426,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard</div>
+        <div class="logo-sub">Business Dashboard · v3</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -398,18 +436,18 @@
 
     <div class="stats" id="stats"></div>
 
-    <section class="section">
-      <div class="section-header">
-        <div class="section-title">フォルダ</div>
-      </div>
-      <div class="shortcuts" id="shortcuts"></div>
-    </section>
-
     <div class="main-grid">
       <section class="section">
         <div class="section-header">
-          <div class="section-title">案件管理</div>
-          <button class="btn btn-primary" onclick="openProjectModal()">+ 案件追加</button>
+          <div class="section-title">プロジェクト管理</div>
+          <div class="section-actions">
+            <div class="filter-tabs" id="filterTabs">
+              <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">すべて</button>
+              <button class="filter-tab" data-filter="client" onclick="setFilter('client')">クライアント</button>
+              <button class="filter-tab" data-filter="sns" onclick="setFilter('sns')">SNS</button>
+            </div>
+            <button class="btn btn-primary" onclick="openProjectModal()">+ 追加</button>
+          </div>
         </div>
         <div class="kanban" id="kanban"></div>
       </section>
@@ -433,17 +471,31 @@
   <!-- Project Modal -->
   <div class="modal-overlay" id="projectModal">
     <div class="modal">
-      <h3 id="modalTitle">案件を追加</h3>
+      <h3 id="modalTitle">プロジェクトを追加</h3>
       <div class="form-group">
-        <label>案件名</label>
-        <input type="text" id="projectName" placeholder="例: 2026-06_○○クリニック_web">
+        <label>カテゴリ</label>
+        <select id="projectCategory" onchange="onCategoryChange()">
+          <option value="client">クライアント案件</option>
+          <option value="sns">SNS投稿</option>
+        </select>
       </div>
       <div class="form-group">
+        <label id="projectNameLabel">案件名</label>
+        <input type="text" id="projectName" placeholder="例: 2026-06_○○クリニック_web">
+      </div>
+      <div class="form-group" id="clientGroup">
         <label>クライアント</label>
         <input type="text" id="projectClient" placeholder="例: 正文堂">
       </div>
+      <div class="form-group" id="platformGroup" style="display:none">
+        <label>プラットフォーム</label>
+        <select id="projectPlatform">
+          <option value="instagram">Instagram</option>
+          <option value="youtube">YouTube</option>
+        </select>
+      </div>
       <div class="form-group">
-        <label>種別</label>
+        <label id="projectTypeLabel">種別</label>
         <select id="projectType">
           <option value="web">web</option>
           <option value="video">video</option>
@@ -468,20 +520,29 @@
     </div>
   </div>
 
+  <!-- Path Modal（フォルダ・ファイルを開く） -->
+  <div class="modal-overlay" id="pathModal">
+    <div class="modal">
+      <h3 id="pathModalTitle">フォルダを開く</h3>
+      <p class="path-hint">ブラウザのセキュリティ制限で、ローカルフォルダは直接開けません。<br>下のパスをコピーして Finder から開いてください。</p>
+      <div class="path-box" id="pathDisplay"></div>
+      <ol class="path-steps">
+        <li>Finder を開く</li>
+        <li><kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd> を押す</li>
+        <li>パスを貼り付けて Enter</li>
+      </ol>
+      <div class="path-note" id="pathNote" style="display:none"></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closePathModal()">閉じる</button>
+        <button class="btn btn-primary" onclick="copyPath()">パスをコピー</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
-    const BASE = 'file:///Users/ogata/Desktop/nARK';
-
-    const FOLDERS = [
-      { id: 'clients',   name: 'clients',   desc: '契約書・ブリーフ・連絡記録', icon: 'CL' },
-      { id: 'projects',  name: 'projects',  desc: '進行中・完了プロジェクト',   icon: 'PJ' },
-      { id: 'finance',   name: 'finance',   desc: '請求書・見積・経費・確定申告', icon: 'FN' },
-      { id: 'templates', name: 'templates', desc: '請求書・見積・提案テンプレ',   icon: 'TP' },
-      { id: 'marketing', name: 'marketing', desc: '営業リスト・提案・キャンペーン', icon: 'MK' },
-      { id: 'sns',       name: 'sns',       desc: 'Instagram・YouTube 管理',    icon: 'SN' },
-      { id: 'ops',       name: 'ops',       desc: '料金表・ワークフロー・運営',   icon: 'OP' },
-    ];
+    const ROOT = '/Users/ogata/Desktop/nARK';
 
     const STATUSES = [
       { id: 'todo',  label: '未着手' },
@@ -489,26 +550,63 @@
       { id: 'done',  label: '完了' },
     ];
 
-    const STORAGE_KEY = 'nark_dashboard_v1';
+    const STORAGE_KEY = 'nark_dashboard_v2';
+
+    const SNS_STATUS_MAP = {
+      draft: 'todo', scheduled: 'doing', designing: 'doing',
+      '翻訳確認中': 'doing', '修正中': 'doing', published: 'done',
+    };
+
+    const SNS_DEFAULTS = [
+      { name: '夏目漱石舊居', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-06-09', folder: 'sns/instagram/posts/2026-06-09_夏目漱石舊居/2026-06-09_夏目漱石舊居.md' },
+      { name: '押戸石之丘', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-06-09', folder: 'sns/instagram/posts/2026-06-09_押戸石之丘/2026-06-09_押戸石之丘.md' },
+      { name: '六月繡球花', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-05-29', folder: 'sns/instagram/posts/2026-05-29_六月繡球花/2026-05-29_六月繡球花.md' },
+      { name: '日語教室資訊', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-05-25', folder: 'sns/instagram/posts/2026-05-25_日語教室資訊/2026-05-25_日語教室資訊.md' },
+      { name: '潮井自然公園', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-23', folder: 'sns/instagram/posts/2026-05-23_潮井自然公園/2026-05-23_潮井自然公園.md' },
+      { name: '日本酒賞味期限', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-23', folder: 'sns/instagram/posts/2026-05-23_日本酒賞味期限/2026-05-23_日本酒賞味期限.md' },
+      { name: '夏目漱石来熊130周年', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-01', folder: 'sns/instagram/posts/2026-5-夏目漱石来熊130周年記念イベント続々開催/2026-5-夏目漱石来熊130周年記念イベント続々開催.md' },
+      { name: '熊本港', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-01', folder: 'sns/instagram/posts/2026-5-熊本港/2026-5-熊本港.md' },
+      { name: '日本の漢方と中医の違い', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-01', folder: 'sns/instagram/posts/2026-5-日本の漢方と中医の違い/2026-5-日本の漢方と中医の違い.md' },
+      { name: 'GO!GO! Rally in 熊本 2026', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-04-01', folder: 'sns/instagram/posts/2026-4-GO!GO! Rally in 熊本 2026/2026-4-GO!GO! Rally in 熊本 2026.md' },
+    ];
 
     let state = loadState();
     let editingProjectId = null;
     let showAllTasksMode = false;
     let draggedId = null;
+    let justDragged = false;
+    let projectFilter = 'all';
+    let currentPath = '';
 
     function defaultState() {
       return {
         projects: [
-          { id: uid(), name: 'チップオデッセイ上映会記録動画', client: '正文堂', type: 'video', status: 'done', created: '2026-05-09' },
+          { id: uid(), category: 'client', name: 'チップオデッセイ上映会記録動画', client: '正文堂', type: 'video', status: 'done', created: '2026-05-09' },
+          ...SNS_DEFAULTS.map(s => ({ id: uid(), category: 'sns', type: 'sns', ...s })),
         ],
         tasks: [],
       };
     }
 
+    function migrateState(data) {
+      data.projects.forEach(p => {
+        if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
+      });
+      const existing = new Set(data.projects.map(p => p.folder || p.name));
+      SNS_DEFAULTS.forEach(s => {
+        if (!existing.has(s.folder) && !existing.has(s.name)) {
+          data.projects.push({ id: uid(), category: 'sns', type: 'sns', ...s });
+        }
+      });
+      return data;
+    }
+
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) return JSON.parse(raw);
+        if (raw) return migrateState(JSON.parse(raw));
+        const v1 = localStorage.getItem('nark_dashboard_v1');
+        if (v1) return migrateState(JSON.parse(v1));
       } catch (_) {}
       return defaultState();
     }
@@ -538,7 +636,6 @@
     function render() {
       renderDateTime();
       renderStats();
-      renderShortcuts();
       renderKanban();
       renderTasks();
     }
@@ -552,17 +649,33 @@
         now.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
     }
 
+    function filteredProjects() {
+      if (projectFilter === 'all') return state.projects;
+      return state.projects.filter(p => p.category === projectFilter);
+    }
+
+    function setFilter(f) {
+      projectFilter = f;
+      document.querySelectorAll('.filter-tab').forEach(el => {
+        el.classList.toggle('active', el.dataset.filter === f);
+      });
+      renderKanban();
+      renderStats();
+    }
+
     function renderStats() {
-      const todo  = state.projects.filter(p => p.status === 'todo').length;
-      const doing = state.projects.filter(p => p.status === 'doing').length;
-      const done  = state.projects.filter(p => p.status === 'done').length;
+      const projects = filteredProjects();
+      const todo  = projects.filter(p => p.status === 'todo').length;
+      const doing = projects.filter(p => p.status === 'doing').length;
+      const done  = projects.filter(p => p.status === 'done').length;
       const today = todayStr();
       const todayTasks = state.tasks.filter(t => !t.done && t.date === today).length;
 
+      const filterLabel = projectFilter === 'all' ? '' : projectFilter === 'sns' ? '（SNS）' : '（クライアント）';
       document.getElementById('stats').innerHTML = [
-        { label: '未着手', value: todo, red: false },
-        { label: '進行中', value: doing, red: true },
-        { label: '完了', value: done, red: false },
+        { label: `未着手${filterLabel}`, value: todo, red: false },
+        { label: `進行中${filterLabel}`, value: doing, red: true },
+        { label: `完了${filterLabel}`, value: done, red: false },
         { label: '今日のタスク', value: todayTasks, red: true },
       ].map(s => `
         <div class="stat">
@@ -572,19 +685,47 @@
       `).join('');
     }
 
-    function renderShortcuts() {
-      document.getElementById('shortcuts').innerHTML = FOLDERS.map(f => `
-        <a class="shortcut" href="${BASE}/${f.id}/" title="${BASE}/${f.id}/">
-          <div class="shortcut-icon">${f.icon}</div>
-          <div class="shortcut-name">${f.name}</div>
-          <div class="shortcut-desc">${f.desc}</div>
-        </a>
-      `).join('');
+    function openPath(relativePath, label) {
+      showPathModal(`${ROOT}/${relativePath}`, label || 'ファイル');
+    }
+
+    function showPathModal(path, title, note) {
+      currentPath = path;
+      document.getElementById('pathModalTitle').textContent = title;
+      document.getElementById('pathDisplay').textContent = path;
+      const noteEl = document.getElementById('pathNote');
+      if (note) {
+        noteEl.textContent = note;
+        noteEl.style.display = '';
+      } else {
+        noteEl.style.display = 'none';
+      }
+      document.getElementById('pathModal').classList.add('open');
+    }
+
+    function closePathModal() {
+      document.getElementById('pathModal').classList.remove('open');
+      currentPath = '';
+    }
+
+    function copyPath() {
+      if (!currentPath) return;
+      navigator.clipboard.writeText(currentPath).then(() => {
+        toast('パスをコピーしました。Finderで ⌘+Shift+G → 貼り付け');
+      }).catch(() => {
+        const el = document.getElementById('pathDisplay');
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        toast('コピーできませんでした。パスを手動で選択してください');
+      });
     }
 
     function renderKanban() {
+      const projects = filteredProjects();
       document.getElementById('kanban').innerHTML = STATUSES.map(s => {
-        const cards = state.projects.filter(p => p.status === s.id);
+        const cards = projects.filter(p => p.status === s.id);
         return `
           <div class="column" data-status="${s.id}"
                ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${s.id}')">
@@ -601,21 +742,36 @@
     }
 
     function renderCard(p) {
+      const isSns = p.category === 'sns';
+      const meta = isSns
+        ? `<span class="card-tag sns">${esc(p.platform || 'instagram')}</span>
+           ${p.snsStatus ? `<span class="card-tag">${esc(p.snsStatus)}</span>` : ''}
+           ${p.created ? `<span>${p.created}</span>` : ''}`
+        : `${p.client ? `<span>${esc(p.client)}</span>` : ''}
+           <span class="card-tag">${esc(p.type)}</span>
+           ${p.created ? `<span>${p.created}</span>` : ''}`;
+      const link = p.folder
+        ? `<button class="card-link" data-path="${attr(p.folder)}" onclick="event.stopPropagation();openPath(this.dataset.path)">ファイルを開く →</button>` : '';
       return `
-        <div class="card" draggable="true" data-id="${p.id}"
+        <div class="card${isSns ? ' sns-card' : ''}" draggable="true" data-id="${p.id}"
+             onclick="onCardClick(event,'${p.id}')"
              ondragstart="onDragStart(event,'${p.id}')" ondragend="onDragEnd(event)">
           <div class="card-name">${esc(p.name)}</div>
-          <div class="card-meta">
-            ${p.client ? `<span>${esc(p.client)}</span>` : ''}
-            <span class="card-tag">${esc(p.type)}</span>
-            ${p.created ? `<span>${p.created}</span>` : ''}
-          </div>
+          <div class="card-meta">${meta}</div>
+          ${link}
+          <div class="card-hint">クリックで編集</div>
           <div class="card-actions">
-            <button class="btn btn-ghost" onclick="editProject('${p.id}')">編集</button>
-            <button class="btn btn-ghost btn-danger" onclick="deleteProject('${p.id}')">削除</button>
+            <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
+            <button class="btn btn-ghost btn-danger" onclick="event.stopPropagation();deleteProject('${p.id}')">削除</button>
           </div>
         </div>
       `;
+    }
+
+    function onCardClick(e, id) {
+      if (justDragged) return;
+      if (e.target.closest('.card-actions') || e.target.closest('.card-link')) return;
+      editProject(id);
     }
 
     function renderTasks() {
@@ -651,19 +807,59 @@
     }
 
     /* ── Projects ── */
+    function onCategoryChange() {
+      const cat = document.getElementById('projectCategory').value;
+      const isSns = cat === 'sns';
+      document.getElementById('clientGroup').style.display = isSns ? 'none' : '';
+      document.getElementById('platformGroup').style.display = isSns ? '' : 'none';
+      document.getElementById('projectNameLabel').textContent = isSns ? '投稿タイトル' : '案件名';
+      document.getElementById('projectName').placeholder = isSns
+        ? '例: 2026-06-09_夏目漱石舊居' : '例: 2026-06_○○クリニック_web';
+      document.getElementById('projectTypeLabel').textContent = isSns ? '投稿形式' : '種別';
+      const typeSel = document.getElementById('projectType');
+      if (isSns) {
+        typeSel.innerHTML = `
+          <option value="feed">フィード</option>
+          <option value="reel">リール</option>
+          <option value="story">ストーリーズ</option>
+          <option value="video">動画</option>
+          <option value="short">ショート</option>`;
+      } else {
+        typeSel.innerHTML = `
+          <option value="web">web</option>
+          <option value="video">video</option>
+          <option value="both">both</option>
+          <option value="meo">MEO</option>
+          <option value="ads">広告</option>
+          <option value="other">その他</option>`;
+      }
+    }
+
     function openProjectModal(id) {
       editingProjectId = id || null;
-      document.getElementById('modalTitle').textContent = id ? '案件を編集' : '案件を追加';
       if (id) {
         const p = state.projects.find(x => x.id === id);
+        document.getElementById('modalTitle').textContent = p.category === 'sns' ? 'SNS投稿を編集' : '案件を編集';
+        document.getElementById('projectCategory').value = p.category || 'client';
+        onCategoryChange();
         document.getElementById('projectName').value = p.name;
         document.getElementById('projectClient').value = p.client || '';
-        document.getElementById('projectType').value = p.type;
+        if (p.category === 'sns') {
+          document.getElementById('projectPlatform').value = p.platform || 'instagram';
+          document.getElementById('projectType').value = p.type === 'sns' ? 'feed' : (p.type || 'feed');
+        } else {
+          document.getElementById('projectType').value = p.type;
+        }
         document.getElementById('projectStatus').value = p.status;
       } else {
+        const defaultCat = projectFilter === 'sns' ? 'sns' : 'client';
+        document.getElementById('modalTitle').textContent = defaultCat === 'sns' ? 'SNS投稿を追加' : '案件を追加';
+        document.getElementById('projectCategory').value = defaultCat;
+        onCategoryChange();
         document.getElementById('projectName').value = '';
         document.getElementById('projectClient').value = '';
-        document.getElementById('projectType').value = 'web';
+        document.getElementById('projectPlatform').value = 'instagram';
+        document.getElementById('projectType').value = defaultCat === 'sns' ? 'feed' : 'web';
         document.getElementById('projectStatus').value = 'todo';
       }
       document.getElementById('projectModal').classList.add('open');
@@ -675,22 +871,38 @@
       editingProjectId = null;
     }
 
+    function statusToSnsStatus(status) {
+      return { todo: 'draft', doing: 'scheduled', done: 'published' }[status] || 'draft';
+    }
+
     function saveProject() {
       const name = document.getElementById('projectName').value.trim();
-      if (!name) { toast('案件名を入力してください'); return; }
+      if (!name) { toast('名前を入力してください'); return; }
+      const category = document.getElementById('projectCategory').value;
+      const status = document.getElementById('projectStatus').value;
       const data = {
+        category,
         name,
-        client: document.getElementById('projectClient').value.trim(),
         type: document.getElementById('projectType').value,
-        status: document.getElementById('projectStatus').value,
+        status,
       };
+      if (category === 'sns') {
+        data.platform = document.getElementById('projectPlatform').value;
+        data.snsStatus = statusToSnsStatus(status);
+        data.client = '';
+      } else {
+        data.client = document.getElementById('projectClient').value.trim();
+        data.platform = '';
+        data.snsStatus = '';
+        data.folder = '';
+      }
       if (editingProjectId) {
         const p = state.projects.find(x => x.id === editingProjectId);
         Object.assign(p, data);
-        toast('案件を更新しました');
+        toast(category === 'sns' ? 'SNS投稿を更新しました' : '案件を更新しました');
       } else {
         state.projects.push({ id: uid(), ...data, created: todayStr() });
-        toast('案件を追加しました');
+        toast(category === 'sns' ? 'SNS投稿を追加しました' : '案件を追加しました');
       }
       closeProjectModal();
       saveState();
@@ -714,6 +926,8 @@
     function onDragEnd(e) {
       e.target.classList.remove('dragging');
       draggedId = null;
+      justDragged = true;
+      setTimeout(() => { justDragged = false; }, 200);
       document.querySelectorAll('.column').forEach(c => c.classList.remove('drag-over'));
     }
     function onDragOver(e) {
@@ -730,6 +944,7 @@
       const p = state.projects.find(x => x.id === draggedId);
       if (p && p.status !== status) {
         p.status = status;
+        if (p.category === 'sns') p.snsStatus = statusToSnsStatus(status);
         saveState();
         const label = STATUSES.find(s => s.id === status).label;
         toast(`「${p.name}」→ ${label}`);
@@ -767,6 +982,10 @@
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    function attr(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+    }
+
     let toastTimer;
     function toast(msg) {
       const el = document.getElementById('toast');
@@ -780,8 +999,11 @@
     document.getElementById('projectModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeProjectModal();
     });
+    document.getElementById('pathModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closePathModal();
+    });
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeProjectModal();
+      if (e.key === 'Escape') { closeProjectModal(); closePathModal(); }
     });
 
     render();
