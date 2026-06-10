@@ -72,7 +72,7 @@
     /* ── Stats ── */
     .stats {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 12px;
       margin-bottom: 32px;
     }
@@ -114,11 +114,47 @@
       border-radius: 2px;
     }
 
+    /* ── Shortcuts ── */
+    .shortcuts {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .shortcut {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      color: var(--text);
+      transition: all .2s;
+      cursor: pointer;
+    }
+    .shortcut:hover {
+      border-color: var(--red);
+      background: var(--surface-2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px var(--red-glow);
+    }
+    .shortcut-icon {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      background: var(--red-glow);
+      border: 1px solid rgba(225,29,46,.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 800; color: var(--red);
+    }
+    .shortcut-name { font-weight: 700; font-size: .9rem; }
+    .shortcut-desc { font-size: .68rem; color: var(--muted); line-height: 1.4; }
+
     /* ── Kanban ── */
     .kanban {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
+      grid-template-columns: 1fr 1.5fr 1fr 0.55fr;
+      gap: 12px;
+      align-items: start;
     }
     .column {
       background: var(--surface);
@@ -128,6 +164,13 @@
       flex-direction: column;
       min-height: 280px;
     }
+    .column.col-done { min-height: 100px; }
+    .column.col-done .column-body { max-height: 400px; }
+    .column.col-done .card { padding: 8px 10px; }
+    .column.col-done .card-name { font-size: .78rem; margin-bottom: 2px; }
+    .column.col-done .phase-btns,
+    .column.col-done .card-hint,
+    .column.col-done .card-actions { display: none; }
     .column.drag-over { border-color: var(--red); background: var(--red-glow); }
     .column-header {
       padding: 14px 16px;
@@ -205,6 +248,50 @@
     }
     .card-link:hover { text-decoration: underline; }
     .card-hint { font-size: .65rem; color: var(--muted); margin-top: 4px; }
+
+    .phase-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 10px;
+    }
+    .phase-btn {
+      padding: 4px 8px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: .65rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all .12s;
+      line-height: 1.3;
+    }
+    .phase-btn:hover { border-color: #555; color: var(--text); }
+    .phase-btn.active {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+    }
+    .phase-btn.advance {
+      width: 100%;
+      padding: 7px;
+      font-size: .75rem;
+      background: var(--red-glow);
+      border-color: rgba(225,29,46,.4);
+      color: var(--red);
+    }
+    .phase-btn.advance:hover {
+      background: var(--red);
+      color: #fff;
+    }
+    .phase-current {
+      font-size: .68rem;
+      color: var(--red);
+      margin-top: 6px;
+      font-weight: 600;
+    }
 
     /* ── Filter tabs ── */
     .filter-tabs {
@@ -426,7 +513,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v3</div>
+        <div class="logo-sub">Business Dashboard · v4</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -439,7 +526,7 @@
     <div class="main-grid">
       <section class="section">
         <div class="section-header">
-          <div class="section-title">プロジェクト管理</div>
+          <div class="section-title">案件管理</div>
           <div class="section-actions">
             <div class="filter-tabs" id="filterTabs">
               <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">すべて</button>
@@ -450,6 +537,11 @@
           </div>
         </div>
         <div class="kanban" id="kanban"></div>
+
+        <div class="section-header" style="margin-top:28px">
+          <div class="section-title">フォルダ</div>
+        </div>
+        <div class="shortcuts" id="shortcuts"></div>
       </section>
 
       <section class="section">
@@ -502,6 +594,8 @@
           <option value="both">both</option>
           <option value="meo">MEO</option>
           <option value="ads">広告</option>
+          <option value="doc">資料作成</option>
+          <option value="biz">事業設計</option>
           <option value="other">その他</option>
         </select>
       </div>
@@ -510,6 +604,7 @@
         <select id="projectStatus">
           <option value="todo">未着手</option>
           <option value="doing">進行中</option>
+          <option value="billing">請求中</option>
           <option value="done">完了</option>
         </select>
       </div>
@@ -544,13 +639,38 @@
   <script>
     const ROOT = '/Users/ogata/Desktop/nARK';
 
-    const STATUSES = [
-      { id: 'todo',  label: '未着手' },
-      { id: 'doing', label: '進行中' },
-      { id: 'done',  label: '完了' },
+    const FOLDERS = [
+      { id: 'clients',   name: 'clients',   desc: '契約書・ブリーフ・連絡記録', icon: 'CL' },
+      { id: 'projects',  name: 'projects',  desc: '進行中・完了プロジェクト',   icon: 'PJ' },
+      { id: 'finance',   name: 'finance',   desc: '請求書・見積・経費・確定申告', icon: 'FN' },
+      { id: 'templates', name: 'templates', desc: '請求書・見積・提案テンプレ',   icon: 'TP' },
+      { id: 'marketing', name: 'marketing', desc: '営業リスト・提案・キャンペーン', icon: 'MK' },
+      { id: 'sns',       name: 'sns',       desc: 'Instagram・YouTube 管理',    icon: 'SN' },
+      { id: 'ops',       name: 'ops',       desc: '料金表・ワークフロー・運営',   icon: 'OP' },
     ];
 
-    const STORAGE_KEY = 'nark_dashboard_v2';
+    const STATUSES = [
+      { id: 'todo',    label: '未着手',  colClass: '' },
+      { id: 'doing',   label: '進行中',  colClass: '' },
+      { id: 'billing', label: '請求中',  colClass: '' },
+      { id: 'done',    label: '完了',    colClass: 'col-done' },
+    ];
+
+    const DOING_PHASES = ['ヒアリング・構成', '撮影', '編集', '制作中', 'チェック中', '納品済'];
+    const BILLING_PHASES = ['請求書作成済', '送付済', '入金済'];
+
+    const CLIENT_TYPES = [
+      { value: 'web', label: 'web' },
+      { value: 'video', label: 'video' },
+      { value: 'both', label: 'both' },
+      { value: 'meo', label: 'MEO' },
+      { value: 'ads', label: '広告' },
+      { value: 'doc', label: '資料作成' },
+      { value: 'biz', label: '事業設計' },
+      { value: 'other', label: 'その他' },
+    ];
+
+    const STORAGE_KEY = 'nark_dashboard_v3';
 
     const SNS_STATUS_MAP = {
       draft: 'todo', scheduled: 'doing', designing: 'doing',
@@ -581,7 +701,7 @@
     function defaultState() {
       return {
         projects: [
-          { id: uid(), category: 'client', name: 'チップオデッセイ上映会記録動画', client: '正文堂', type: 'video', status: 'done', created: '2026-05-09' },
+          { id: uid(), category: 'client', name: 'チップオデッセイ上映会記録動画', client: '正文堂', type: 'video', status: 'done', phase: '', created: '2026-05-09' },
           ...SNS_DEFAULTS.map(s => ({ id: uid(), category: 'sns', type: 'sns', ...s })),
         ],
         tasks: [],
@@ -591,6 +711,8 @@
     function migrateState(data) {
       data.projects.forEach(p => {
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
+        if (p.phase === undefined) p.phase = '';
+        if (p.status === 'done' && p.category === 'client' && !p.phase) p.phase = '';
       });
       const existing = new Set(data.projects.map(p => p.folder || p.name));
       SNS_DEFAULTS.forEach(s => {
@@ -605,8 +727,10 @@
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) return migrateState(JSON.parse(raw));
-        const v1 = localStorage.getItem('nark_dashboard_v1');
-        if (v1) return migrateState(JSON.parse(v1));
+        for (const key of ['nark_dashboard_v2', 'nark_dashboard_v1']) {
+          const old = localStorage.getItem(key);
+          if (old) return migrateState(JSON.parse(old));
+        }
       } catch (_) {}
       return defaultState();
     }
@@ -637,6 +761,7 @@
       renderDateTime();
       renderStats();
       renderKanban();
+      renderShortcuts();
       renderTasks();
     }
 
@@ -665,9 +790,10 @@
 
     function renderStats() {
       const projects = filteredProjects();
-      const todo  = projects.filter(p => p.status === 'todo').length;
-      const doing = projects.filter(p => p.status === 'doing').length;
-      const done  = projects.filter(p => p.status === 'done').length;
+      const todo    = projects.filter(p => p.status === 'todo').length;
+      const doing   = projects.filter(p => p.status === 'doing').length;
+      const billing = projects.filter(p => p.status === 'billing').length;
+      const done    = projects.filter(p => p.status === 'done').length;
       const today = todayStr();
       const todayTasks = state.tasks.filter(t => !t.done && t.date === today).length;
 
@@ -675,6 +801,7 @@
       document.getElementById('stats').innerHTML = [
         { label: `未着手${filterLabel}`, value: todo, red: false },
         { label: `進行中${filterLabel}`, value: doing, red: true },
+        { label: `請求中${filterLabel}`, value: billing, red: false },
         { label: `完了${filterLabel}`, value: done, red: false },
         { label: '今日のタスク', value: todayTasks, red: true },
       ].map(s => `
@@ -683,6 +810,26 @@
           <div class="stat-value${s.red ? ' red' : ''}">${s.value}</div>
         </div>
       `).join('');
+    }
+
+    function renderShortcuts() {
+      document.getElementById('shortcuts').innerHTML = FOLDERS.map(f => `
+        <div class="shortcut" role="button" tabindex="0"
+             onclick="openFolder('${f.id}', '${f.name}')"
+             onkeydown="if(event.key==='Enter'||event.key===' ')openFolder('${f.id}','${f.name}')">
+          <div class="shortcut-icon">${f.icon}</div>
+          <div class="shortcut-name">${f.name}</div>
+          <div class="shortcut-desc">${f.desc}</div>
+        </div>
+      `).join('');
+    }
+
+    const FOLDER_NOTES = {
+      projects: '案件ファイル（契約書・素材など）を置くフォルダです。ダッシュボード上の案件データはブラウザに保存されています。',
+    };
+
+    function openFolder(folderId, folderName) {
+      showPathModal(`${ROOT}/${folderId}`, `${folderName} フォルダ`, FOLDER_NOTES[folderId] || '');
     }
 
     function openPath(relativePath, label) {
@@ -726,14 +873,15 @@
       const projects = filteredProjects();
       document.getElementById('kanban').innerHTML = STATUSES.map(s => {
         const cards = projects.filter(p => p.status === s.id);
+        const emptyMsg = s.id === 'done' ? '' : 'empty';
         return `
-          <div class="column" data-status="${s.id}"
+          <div class="column ${s.colClass}" data-status="${s.id}"
                ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${s.id}')">
             <div class="column-header">
               <span class="column-title">${s.label}</span>
               <span class="column-count">${cards.length}</span>
             </div>
-            <div class="column-body${cards.length === 0 ? ' empty' : ''}">
+            <div class="column-body${cards.length === 0 && emptyMsg ? ' empty' : ''}">
               ${cards.map(p => renderCard(p)).join('')}
             </div>
           </div>
@@ -741,25 +889,58 @@
       }).join('');
     }
 
+    function renderPhaseButtons(p) {
+      if (p.status === 'todo') {
+        return `<div class="phase-btns">
+          <button class="phase-btn advance" onclick="event.stopPropagation();moveToDoing('${p.id}')">進行中へ →</button>
+        </div>`;
+      }
+      if (p.status === 'doing') {
+        const phases = p.category === 'sns'
+          ? ['制作中', 'チェック中', '納品済']
+          : DOING_PHASES;
+        return `<div class="phase-btns">${phases.map(ph => `
+          <button class="phase-btn${p.phase === ph ? ' active' : ''}"
+                  onclick="event.stopPropagation();setDoingPhase('${p.id}','${ph}')">${ph}</button>
+        `).join('')}</div>`;
+      }
+      if (p.status === 'billing') {
+        return `<div class="phase-btns">${BILLING_PHASES.map(ph => `
+          <button class="phase-btn${p.phase === ph ? ' active' : ''}"
+                  onclick="event.stopPropagation();setBillingPhase('${p.id}','${ph}')">${ph}</button>
+        `).join('')}</div>`;
+      }
+      return '';
+    }
+
+    function typeLabel(type) {
+      const t = CLIENT_TYPES.find(x => x.value === type);
+      return t ? t.label : type;
+    }
+
     function renderCard(p) {
       const isSns = p.category === 'sns';
       const meta = isSns
         ? `<span class="card-tag sns">${esc(p.platform || 'instagram')}</span>
-           ${p.snsStatus ? `<span class="card-tag">${esc(p.snsStatus)}</span>` : ''}
+           <span class="card-tag">${esc(typeLabel(p.type))}</span>
            ${p.created ? `<span>${p.created}</span>` : ''}`
         : `${p.client ? `<span>${esc(p.client)}</span>` : ''}
-           <span class="card-tag">${esc(p.type)}</span>
+           <span class="card-tag">${esc(typeLabel(p.type))}</span>
            ${p.created ? `<span>${p.created}</span>` : ''}`;
       const link = p.folder
         ? `<button class="card-link" data-path="${attr(p.folder)}" onclick="event.stopPropagation();openPath(this.dataset.path)">ファイルを開く →</button>` : '';
+      const phaseLabel = p.phase && p.status !== 'done'
+        ? `<div class="phase-current">▸ ${esc(p.phase)}</div>` : '';
       return `
         <div class="card${isSns ? ' sns-card' : ''}" draggable="true" data-id="${p.id}"
              onclick="onCardClick(event,'${p.id}')"
              ondragstart="onDragStart(event,'${p.id}')" ondragend="onDragEnd(event)">
           <div class="card-name">${esc(p.name)}</div>
           <div class="card-meta">${meta}</div>
+          ${phaseLabel}
+          ${renderPhaseButtons(p)}
           ${link}
-          <div class="card-hint">クリックで編集</div>
+          ${p.status !== 'done' ? '<div class="card-hint">クリックで編集</div>' : ''}
           <div class="card-actions">
             <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
             <button class="btn btn-ghost btn-danger" onclick="event.stopPropagation();deleteProject('${p.id}')">削除</button>
@@ -768,9 +949,51 @@
       `;
     }
 
+    function moveToDoing(id) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p) return;
+      p.status = 'doing';
+      p.phase = p.category === 'sns' ? '制作中' : 'ヒアリング・構成';
+      if (p.category === 'sns') p.snsStatus = 'scheduled';
+      saveState();
+      toast(`「${p.name}」→ 進行中`);
+    }
+
+    function setDoingPhase(id, phase) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p) return;
+      p.phase = phase;
+      if (phase === '納品済') {
+        p.status = 'billing';
+        p.phase = '請求書作成済';
+        saveState();
+        toast(`「${p.name}」→ 請求中`);
+        return;
+      }
+      if (p.category === 'sns') p.snsStatus = 'scheduled';
+      saveState();
+      toast(`「${p.name}」→ ${phase}`);
+    }
+
+    function setBillingPhase(id, phase) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p) return;
+      p.phase = phase;
+      if (phase === '入金済') {
+        p.status = 'done';
+        p.phase = '';
+        if (p.category === 'sns') p.snsStatus = 'published';
+        saveState();
+        toast(`「${p.name}」→ 完了`);
+        return;
+      }
+      saveState();
+      toast(`「${p.name}」→ ${phase}`);
+    }
+
     function onCardClick(e, id) {
       if (justDragged) return;
-      if (e.target.closest('.card-actions') || e.target.closest('.card-link')) return;
+      if (e.target.closest('.card-actions') || e.target.closest('.card-link') || e.target.closest('.phase-btn')) return;
       editProject(id);
     }
 
@@ -825,13 +1048,9 @@
           <option value="video">動画</option>
           <option value="short">ショート</option>`;
       } else {
-        typeSel.innerHTML = `
-          <option value="web">web</option>
-          <option value="video">video</option>
-          <option value="both">both</option>
-          <option value="meo">MEO</option>
-          <option value="ads">広告</option>
-          <option value="other">その他</option>`;
+        typeSel.innerHTML = CLIENT_TYPES.map(t =>
+          `<option value="${t.value}">${t.label}</option>`
+        ).join('');
       }
     }
 
@@ -872,7 +1091,7 @@
     }
 
     function statusToSnsStatus(status) {
-      return { todo: 'draft', doing: 'scheduled', done: 'published' }[status] || 'draft';
+      return { todo: 'draft', doing: 'scheduled', billing: 'scheduled', done: 'published' }[status] || 'draft';
     }
 
     function saveProject() {
@@ -898,10 +1117,19 @@
       }
       if (editingProjectId) {
         const p = state.projects.find(x => x.id === editingProjectId);
+        const prevStatus = p.status;
         Object.assign(p, data);
+        if (prevStatus !== data.status) {
+          if (data.status === 'doing' && !p.phase) p.phase = 'ヒアリング・構成';
+          if (data.status === 'billing' && !p.phase) p.phase = '請求書作成済';
+          if (data.status === 'done') p.phase = '';
+          if (data.status === 'todo') p.phase = '';
+        }
         toast(category === 'sns' ? 'SNS投稿を更新しました' : '案件を更新しました');
       } else {
-        state.projects.push({ id: uid(), ...data, created: todayStr() });
+        const phase = data.status === 'doing' ? 'ヒアリング・構成'
+          : data.status === 'billing' ? '請求書作成済' : '';
+        state.projects.push({ id: uid(), ...data, phase, created: todayStr() });
         toast(category === 'sns' ? 'SNS投稿を追加しました' : '案件を追加しました');
       }
       closeProjectModal();
@@ -944,6 +1172,9 @@
       const p = state.projects.find(x => x.id === draggedId);
       if (p && p.status !== status) {
         p.status = status;
+        if (status === 'doing' && !p.phase) p.phase = p.category === 'sns' ? '制作中' : 'ヒアリング・構成';
+        if (status === 'billing' && !p.phase) p.phase = '請求書作成済';
+        if (status === 'done' || status === 'todo') p.phase = '';
         if (p.category === 'sns') p.snsStatus = statusToSnsStatus(status);
         saveState();
         const label = STATUSES.find(s => s.id === status).label;
