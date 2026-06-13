@@ -312,6 +312,26 @@
       margin-top: 6px;
       font-weight: 600;
     }
+    .card-deadline {
+      font-size: .72rem;
+      color: var(--red-dim);
+      margin-top: 6px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .form-hint {
+      font-size: .68rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .deadline-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    @media (max-width: 480px) {
+      .deadline-fields { grid-template-columns: 1fr; }
+    }
 
     .section-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .card-actions {
@@ -502,7 +522,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v8</div>
+        <div class="logo-sub">Business Dashboard · v9</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -583,12 +603,20 @@
       </div>
       <div class="form-group">
         <label>ステータス</label>
-        <select id="projectStatus">
+        <select id="projectStatus" onchange="onStatusChange()">
           <option value="todo">未着手</option>
           <option value="doing">進行中</option>
-          <option value="billing">請求中</option>
+          <option value="billing">請求</option>
           <option value="done">完了</option>
         </select>
+      </div>
+      <div class="form-group" id="deadlineGroup">
+        <label>期日</label>
+        <div class="deadline-fields">
+          <input type="date" id="projectDeadlineDate">
+          <input type="text" id="projectDeadlinePlan" placeholder="例: 初稿提出">
+        </div>
+        <div class="form-hint">カードに「◯月◯日までに〇〇予定」と表示されます</div>
       </div>
       <div class="modal-actions">
         <button class="btn" onclick="closeProjectModal()">キャンセル</button>
@@ -634,12 +662,12 @@
     const STATUSES = [
       { id: 'todo',    label: '未着手',  colClass: '' },
       { id: 'doing',   label: '進行中',  colClass: '' },
-      { id: 'billing', label: '請求中',  colClass: '' },
+      { id: 'billing', label: '請求',    colClass: '' },
       { id: 'done',    label: '完了',    colClass: 'col-done' },
     ];
 
     const DOING_PHASES = ['ヒアリング・構成', '撮影', '編集', '制作中', 'チェック中', '納品済'];
-    const BILLING_PHASES = ['請求書作成済', '送付済', '入金済'];
+    const BILLING_PHASES = ['作成未', '請求書作成済', '送付済', '入金済'];
 
     const CLIENT_TYPES = [
       { value: 'web', label: 'web' },
@@ -693,6 +721,8 @@
       data.projects.forEach(p => {
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
         if (p.phase === undefined) p.phase = '';
+        if (p.deadlineDate === undefined) p.deadlineDate = '';
+        if (p.deadlinePlan === undefined) p.deadlinePlan = '';
         if (p.status === 'done' && p.category === 'client' && !p.phase) p.phase = '';
       });
       const existing = new Set(data.projects.map(p => p.folder || p.name));
@@ -770,7 +800,7 @@
       const cards = [
         { label: '未着手', value: todo, red: false },
         { label: '進行中', value: doing, red: true },
-        { label: '請求中', value: billing, red: false },
+        { label: '請求', value: billing, red: false },
       ].map(s => `
         <div class="stat">
           <div class="stat-label">${s.label}</div>
@@ -862,6 +892,19 @@
       }).join('');
     }
 
+    function formatDeadline(p) {
+      if (!p.deadlineDate && !p.deadlinePlan) return '';
+      if (p.deadlineDate && p.deadlinePlan) {
+        const [y, m, d] = p.deadlineDate.split('-');
+        return `${+m}月${+d}日までに${p.deadlinePlan}予定`;
+      }
+      if (p.deadlineDate) {
+        const [y, m, d] = p.deadlineDate.split('-');
+        return `${+m}月${+d}日まで`;
+      }
+      return `${p.deadlinePlan}予定`;
+    }
+
     function renderPhaseButtons(p) {
       if (p.status === 'todo') {
         return `<div class="phase-btns">
@@ -901,6 +944,8 @@
            <span class="card-tag">${esc(typeLabel(p.type))}</span>
            ${p.created ? `<span>${p.created}</span>` : ''}`;
       const path = p.folder ? `<div class="card-path">${esc(p.folder)}</div>` : '';
+      const deadline = (p.status === 'todo' || p.status === 'doing') && formatDeadline(p)
+        ? `<div class="card-deadline">${esc(formatDeadline(p))}</div>` : '';
       const phaseLabel = p.phase && p.status !== 'done'
         ? `<div class="phase-current">▸ ${esc(p.phase)}</div>` : '';
       const actions = p.status !== 'done' ? `
@@ -916,6 +961,7 @@
             ${actions}
           </div>
           <div class="card-meta">${meta}</div>
+          ${deadline}
           ${phaseLabel}
           ${renderPhaseButtons(p)}
           ${path}
@@ -939,9 +985,9 @@
       p.phase = phase;
       if (phase === '納品済') {
         p.status = 'billing';
-        p.phase = '請求書作成済';
+        p.phase = '作成未';
         saveState();
-        toast(`「${p.name}」→ 請求中`);
+        toast(`「${p.name}」→ 請求`);
         return;
       }
       if (p.category === 'sns') p.snsStatus = 'scheduled';
@@ -1022,6 +1068,12 @@
       }
     }
 
+    function onStatusChange() {
+      const s = document.getElementById('projectStatus').value;
+      document.getElementById('deadlineGroup').style.display =
+        (s === 'todo' || s === 'doing') ? '' : 'none';
+    }
+
     function openProjectModal(id) {
       editingProjectId = id || null;
       if (id) {
@@ -1038,6 +1090,8 @@
           document.getElementById('projectType').value = p.type;
         }
         document.getElementById('projectStatus').value = p.status;
+        document.getElementById('projectDeadlineDate').value = p.deadlineDate || '';
+        document.getElementById('projectDeadlinePlan').value = p.deadlinePlan || '';
       } else {
         document.getElementById('modalTitle').textContent = '案件を追加';
         document.getElementById('projectCategory').value = 'client';
@@ -1047,7 +1101,10 @@
         document.getElementById('projectPlatform').value = 'instagram';
         document.getElementById('projectType').value = 'web';
         document.getElementById('projectStatus').value = 'todo';
+        document.getElementById('projectDeadlineDate').value = '';
+        document.getElementById('projectDeadlinePlan').value = '';
       }
+      onStatusChange();
       document.getElementById('projectModal').classList.add('open');
       setTimeout(() => document.getElementById('projectName').focus(), 50);
     }
@@ -1066,11 +1123,15 @@
       if (!name) { toast('名前を入力してください'); return; }
       const category = document.getElementById('projectCategory').value;
       const status = document.getElementById('projectStatus').value;
+      const deadlineDate = document.getElementById('projectDeadlineDate').value;
+      const deadlinePlan = document.getElementById('projectDeadlinePlan').value.trim();
       const data = {
         category,
         name,
         type: document.getElementById('projectType').value,
         status,
+        deadlineDate: (status === 'todo' || status === 'doing') ? deadlineDate : '',
+        deadlinePlan: (status === 'todo' || status === 'doing') ? deadlinePlan : '',
       };
       if (category === 'sns') {
         data.platform = document.getElementById('projectPlatform').value;
@@ -1088,14 +1149,14 @@
         Object.assign(p, data);
         if (prevStatus !== data.status) {
           if (data.status === 'doing' && !p.phase) p.phase = 'ヒアリング・構成';
-          if (data.status === 'billing' && !p.phase) p.phase = '請求書作成済';
+          if (data.status === 'billing' && !p.phase) p.phase = '作成未';
           if (data.status === 'done') p.phase = '';
           if (data.status === 'todo') p.phase = '';
         }
         toast(category === 'sns' ? 'SNS投稿を更新しました' : '案件を更新しました');
       } else {
         const phase = data.status === 'doing' ? 'ヒアリング・構成'
-          : data.status === 'billing' ? '請求書作成済' : '';
+          : data.status === 'billing' ? '作成未' : '';
         state.projects.push({ id: uid(), ...data, phase, created: todayStr() });
         toast(category === 'sns' ? 'SNS投稿を追加しました' : '案件を追加しました');
       }
@@ -1140,7 +1201,7 @@
       if (p && p.status !== status) {
         p.status = status;
         if (status === 'doing' && !p.phase) p.phase = p.category === 'sns' ? '制作中' : 'ヒアリング・構成';
-        if (status === 'billing' && !p.phase) p.phase = '請求書作成済';
+        if (status === 'billing' && !p.phase) p.phase = '作成未';
         if (status === 'done' || status === 'todo') p.phase = '';
         if (p.category === 'sns') p.snsStatus = statusToSnsStatus(status);
         saveState();
