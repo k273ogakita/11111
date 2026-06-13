@@ -625,6 +625,87 @@
     .cal-legend-dot.client { background: var(--red); }
     .cal-legend-dot.sns { background: #b0a898; }
 
+    /* ── Checklist Modal ── */
+    .checklist-modal {
+      width: 90%;
+      max-width: 560px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .checklist-modal h3 { font-size: 1rem; margin-bottom: 4px; }
+    .checklist-subtitle { font-size: .75rem; color: var(--muted); margin-bottom: 16px; }
+    .checklist-progress {
+      height: 4px;
+      background: var(--surface-2);
+      border-radius: 2px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .checklist-progress-bar {
+      height: 100%;
+      background: var(--red);
+      border-radius: 2px;
+      transition: width .3s;
+    }
+    .checklist-scroll { overflow-y: auto; flex: 1; }
+    .checklist-group { margin-bottom: 18px; }
+    .checklist-group-label {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+      padding-left: 2px;
+    }
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 9px 12px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      margin-bottom: 6px;
+      transition: all .15s;
+    }
+    .checklist-item:hover { border-color: #c9bfb0; }
+    .checklist-item.checked { opacity: .55; }
+    .checklist-item.checked .checklist-text { text-decoration: line-through; }
+    .checklist-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .65rem; font-weight: 700; color: var(--muted);
+      flex-shrink: 0;
+    }
+    .checklist-item.checked .checklist-num {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+    }
+    .checklist-text { flex: 1; font-size: .88rem; }
+    .checklist-tag {
+      font-size: .6rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .checklist-tag.企画 { background: rgba(100,100,200,.1); color: #6464c8; border: 1px solid rgba(100,100,200,.25); }
+    .checklist-tag.デザイン { background: rgba(50,160,120,.1); color: #32a078; border: 1px solid rgba(50,160,120,.25); }
+    .checklist-tag.編集 { background: var(--red-glow); color: var(--red-dim); border: 1px solid rgba(232,149,106,.3); }
+    .checklist-tag.納品 { background: rgba(58,53,48,.07); color: var(--muted); border: 1px solid var(--border); }
+    .checklist-check {
+      width: 18px; height: 18px;
+      accent-color: var(--red);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
     @media (max-width: 1024px) {
       .kanban { grid-template-columns: 1fr; }
       .stats { grid-template-columns: repeat(2, 1fr); }
@@ -784,6 +865,19 @@
       <div class="modal-actions">
         <button class="btn" onclick="closePathModal()">閉じる</button>
         <button class="btn btn-primary" onclick="copyPath()">パスをコピー</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checklist Modal -->
+  <div class="modal-overlay" id="checklistModal">
+    <div class="modal checklist-modal">
+      <h3 id="checklistTitle"></h3>
+      <div class="checklist-subtitle" id="checklistSubtitle"></div>
+      <div class="checklist-progress"><div class="checklist-progress-bar" id="checklistBar"></div></div>
+      <div class="checklist-scroll" id="checklistBody"></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeChecklistModal()">閉じる</button>
       </div>
     </div>
   </div>
@@ -1098,9 +1192,12 @@
             <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
             <button class="btn btn-ghost btn-danger" onclick="event.stopPropagation();deleteProject('${p.id}')">削除</button>
           </div>` : '';
+      const hasWf = !isSns && getWorkflow(p) && p.status === 'doing';
       return `
         <div class="card${isSns ? ' sns-card' : ''}" draggable="true" data-id="${p.id}"
-             ondragstart="onDragStart(event,'${p.id}')" ondragend="onDragEnd(event)">
+             ondragstart="onDragStart(event,'${p.id}')" ondragend="onDragEnd(event)"
+             onclick="if(!justDragged&&${hasWf})openChecklist('${p.id}')"
+             style="${hasWf ? 'cursor:pointer' : ''}">
           <div class="card-header">
             <div class="card-name">${esc(p.name)}</div>
             ${actions}
@@ -1404,6 +1501,101 @@
       toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
     }
 
+    /* ── Workflow Checklists ── */
+    const WORKFLOWS = {
+      video: {
+        title: 'アニメーション広告制作フロー',
+        groups: [
+          {
+            label: '企画・台本',
+            steps: [
+              { id: 1, text: '目的・ゴール設定', tag: '企画' },
+              { id: 2, text: 'ナレーション台本作成', tag: '企画' },
+              { id: 3, text: 'ナレーション収録・確定', tag: '企画' },
+              { id: 4, text: '絵コンテ作成', tag: '企画' },
+            ],
+          },
+          {
+            label: 'デザイン・素材準備',
+            steps: [
+              { id: 5, text: 'トンマナ・デザイン設計（Canva）', tag: 'デザイン' },
+              { id: 6, text: '素材収集・準備', tag: 'デザイン' },
+            ],
+          },
+          {
+            label: '編集',
+            steps: [
+              { id: 7, text: 'Canvaで粗編集', tag: '編集' },
+              { id: 8, text: 'Premiereで本組み', tag: '編集' },
+              { id: 9, text: '微調整', tag: '編集' },
+            ],
+          },
+          {
+            label: '確認・納品',
+            steps: [
+              { id: 10, text: '最終確認・書き出し・納品', tag: '納品' },
+            ],
+          },
+        ],
+      },
+    };
+
+    let checklistProjectId = null;
+
+    function getWorkflow(p) {
+      if (p.type === 'video' || p.type === 'both') return WORKFLOWS.video;
+      return null;
+    }
+
+    function openChecklist(id) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p) return;
+      const wf = getWorkflow(p);
+      if (!wf) return;
+      checklistProjectId = id;
+      if (!p.checklist) p.checklist = {};
+      document.getElementById('checklistTitle').textContent = p.name;
+      document.getElementById('checklistSubtitle').textContent = wf.title;
+      renderChecklistBody(p, wf);
+      document.getElementById('checklistModal').classList.add('open');
+    }
+
+    function renderChecklistBody(p, wf) {
+      const allSteps = wf.groups.flatMap(g => g.steps);
+      const checked = allSteps.filter(s => p.checklist[s.id]).length;
+      const pct = Math.round(checked / allSteps.length * 100);
+      document.getElementById('checklistBar').style.width = pct + '%';
+      document.getElementById('checklistBody').innerHTML = wf.groups.map(g => `
+        <div class="checklist-group">
+          <div class="checklist-group-label">${esc(g.label)}</div>
+          ${g.steps.map(s => `
+            <label class="checklist-item${p.checklist[s.id] ? ' checked' : ''}">
+              <input type="checkbox" class="checklist-check" ${p.checklist[s.id] ? 'checked' : ''}
+                     onchange="toggleChecklist('${p.id}',${s.id},this.checked)">
+              <div class="checklist-num">${s.id}</div>
+              <div class="checklist-text">${esc(s.text)}</div>
+              <span class="checklist-tag ${esc(s.tag)}">${esc(s.tag)}</span>
+            </label>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    function toggleChecklist(projectId, stepId, checked) {
+      const p = state.projects.find(x => x.id === projectId);
+      if (!p) return;
+      if (!p.checklist) p.checklist = {};
+      p.checklist[stepId] = checked;
+      const wf = getWorkflow(p);
+      if (wf) renderChecklistBody(p, wf);
+      saveState();
+    }
+
+    function closeChecklistModal() {
+      document.getElementById('checklistModal').classList.remove('open');
+      checklistProjectId = null;
+    }
+
     /* ── Calendar ── */
     let calYear = new Date().getFullYear();
     let calMonth = new Date().getMonth();
@@ -1478,8 +1670,11 @@
     document.getElementById('pathModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closePathModal();
     });
+    document.getElementById('checklistModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeChecklistModal();
+    });
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { closeProjectModal(); closePathModal(); }
+      if (e.key === 'Escape') { closeProjectModal(); closePathModal(); closeChecklistModal(); }
     });
 
     render();
