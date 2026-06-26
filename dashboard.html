@@ -189,6 +189,7 @@
     .column.col-done .phase-btns,
     .column.col-done .card-actions,
     .column.col-done .card-path { display: none; }
+    .column.col-done .card-actions.has-edit { display: flex; }
     .column.drag-over { border-color: var(--red); background: var(--red-glow); }
     .column-header {
       padding: 14px 16px;
@@ -706,9 +707,152 @@
       flex-shrink: 0;
     }
 
+    /* ── Finance ── */
+    .finance-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 32px;
+    }
+    .finance-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .finance-nav-title { font-size: .85rem; font-weight: 700; color: var(--muted); letter-spacing: .06em; }
+    .finance-nav-btns { display: flex; gap: 6px; align-items: center; }
+    .finance-nav-btn {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .finance-nav-btn:hover { border-color: var(--red); color: var(--red); }
+    .finance-hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .finance-hero-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+    }
+    .finance-hero-item.primary { border-color: rgba(232,149,106,.45); background: var(--red-glow); }
+    .finance-hero-label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+    .finance-hero-value { font-size: 2rem; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; }
+    .finance-hero-value.positive { color: #2a8a5e; }
+    .finance-hero-value.negative { color: var(--red-dim); }
+    .finance-hero-value.neutral { color: var(--text); }
+    .finance-hero-sub { font-size: .75rem; color: var(--muted); margin-top: 6px; }
+    .finance-breakdown {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .finance-bd-item {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .finance-bd-label { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .finance-bd-value { font-size: 1.05rem; font-weight: 700; margin-top: 4px; }
+    .tax-note { font-size: .68rem; color: var(--muted); margin-top: 14px; }
+
+    .sub-list { display: flex; flex-direction: column; gap: 8px; }
+    .sub-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .sub-item.renewal-soon { border-color: rgba(232,149,106,.55); background: var(--red-glow); }
+    .sub-info { flex: 1; min-width: 0; }
+    .sub-name { font-weight: 600; font-size: .88rem; }
+    .sub-meta { font-size: .72rem; color: var(--muted); margin-top: 3px; }
+    .sub-amount { font-weight: 700; font-size: .95rem; white-space: nowrap; }
+    .sub-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .sub-empty { text-align: center; padding: 24px; color: var(--muted); font-size: .82rem; }
+
+    .card-finance {
+      font-size: .7rem;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .card-finance strong { color: var(--text); }
+    .card-finance.profit strong { color: #2a8a5e; }
+
+    .modal-wide { max-width: 520px; max-height: 90vh; overflow-y: auto; }
+    .finance-fields { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 6px; }
+    .finance-fields-title { font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+    .dynamic-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .dynamic-row {
+      display: grid;
+      grid-template-columns: 1fr 90px 28px;
+      gap: 6px;
+      align-items: center;
+    }
+    .dynamic-row.time-row { grid-template-columns: 110px 60px 1fr 28px; }
+    .dynamic-row input { width: 100%; }
+    .row-del-btn {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 5px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: .85rem;
+      line-height: 1;
+    }
+    .row-del-btn:hover { color: var(--red); border-color: var(--red); }
+    .add-row-btn { font-size: .72rem; padding: 5px 10px; margin-bottom: 10px; }
+    input[type="number"] {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: .85rem;
+      font-family: var(--font);
+      outline: none;
+    }
+    input[type="number"]:focus { border-color: var(--red); }
+    textarea {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: var(--text);
+      padding: 8px 12px;
+      font-size: .85rem;
+      font-family: var(--font);
+      outline: none;
+      width: 100%;
+      resize: vertical;
+      min-height: 56px;
+    }
+    textarea:focus { border-color: var(--red); }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
     @media (max-width: 1024px) {
       .kanban { grid-template-columns: 1fr; }
       .stats { grid-template-columns: repeat(2, 1fr); }
+      .finance-hero { grid-template-columns: 1fr; }
+      .finance-breakdown { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 600px) {
       .app { padding: 16px; }
@@ -729,7 +873,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v9</div>
+        <div class="logo-sub">Business Dashboard · v10</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -738,6 +882,16 @@
     </header>
 
     <div class="stats" id="stats"></div>
+
+    <section class="finance-panel" id="financePanel"></section>
+
+    <section class="section">
+      <div class="section-header">
+        <div class="section-title">サブスク（固定費）</div>
+        <button class="btn btn-primary" onclick="openSubModal()">+ 追加</button>
+      </div>
+      <div class="sub-list" id="subList"></div>
+    </section>
 
     <section class="section">
       <div class="section-header">
@@ -789,7 +943,7 @@
 
   <!-- Project Modal -->
   <div class="modal-overlay" id="projectModal">
-    <div class="modal">
+    <div class="modal modal-wide">
       <h3 id="modalTitle">プロジェクトを追加</h3>
       <div class="form-group">
         <label>カテゴリ</label>
@@ -843,6 +997,35 @@
         </div>
         <div class="form-hint">カードに「◯月◯日までに〇〇予定」と表示されます</div>
       </div>
+      <div class="finance-fields" id="financeGroup" style="display:none">
+        <div class="finance-fields-title">収支・時間（税抜）</div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>受注額（税抜）</label>
+            <input type="number" id="projectRevenue" min="0" step="1000" placeholder="130000">
+          </div>
+          <div class="form-group">
+            <label>目標時間（時間）</label>
+            <input type="number" id="projectTargetHours" min="0" step="1" placeholder="20">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>請求日</label>
+          <input type="date" id="projectInvoiceDate">
+          <div class="form-hint">請求ステータスに移すと今日の日付が自動入力されます</div>
+        </div>
+        <div class="form-group">
+          <label>変動費</label>
+          <div class="dynamic-rows" id="variableCostRows"></div>
+          <button type="button" class="btn add-row-btn" onclick="addVariableCostRow()">+ 変動費を追加</button>
+        </div>
+        <div class="form-group">
+          <label>時間ログ</label>
+          <div class="dynamic-rows" id="timeLogRows"></div>
+          <button type="button" class="btn add-row-btn" onclick="addTimeLogRow()">+ 時間を記録</button>
+        </div>
+        <div id="projectProfitPreview" class="form-hint"></div>
+      </div>
       <div class="modal-actions">
         <button class="btn" onclick="closeProjectModal()">キャンセル</button>
         <button class="btn btn-primary" onclick="saveProject()">保存</button>
@@ -865,6 +1048,53 @@
       <div class="modal-actions">
         <button class="btn" onclick="closePathModal()">閉じる</button>
         <button class="btn btn-primary" onclick="copyPath()">パスをコピー</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subscription Modal -->
+  <div class="modal-overlay" id="subModal">
+    <div class="modal">
+      <h3 id="subModalTitle">サブスクを追加</h3>
+      <div class="form-group">
+        <label>サービス名</label>
+        <input type="text" id="subName" placeholder="例: Adobe CC">
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>金額（税抜）</label>
+          <input type="number" id="subAmount" min="0" step="1" placeholder="6578">
+        </div>
+        <div class="form-group">
+          <label>支払い周期</label>
+          <select id="subCycle">
+            <option value="monthly">月払い</option>
+            <option value="annual">年払い</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>次回更新日</label>
+        <input type="date" id="subRenewalDate">
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>開始日</label>
+          <input type="date" id="subStartDate">
+        </div>
+        <div class="form-group">
+          <label>解約日</label>
+          <input type="date" id="subEndDate">
+          <div class="form-hint">空欄＝継続中</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>メモ</label>
+        <textarea id="subMemo" placeholder="任意"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeSubModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveSub()">保存</button>
       </div>
     </div>
   </div>
@@ -918,7 +1148,7 @@
       { value: 'other', label: 'その他' },
     ];
 
-    const STORAGE_KEY = 'nark_dashboard_v3';
+    const STORAGE_KEY = 'nark_dashboard_v4';
 
     const SNS_STATUS_MAP = {
       draft: 'todo', scheduled: 'doing', designing: 'doing',
@@ -940,33 +1170,49 @@
 
     let state = loadState();
     let editingProjectId = null;
+    let editingSubId = null;
     let showAllTasksMode = false;
     let draggedId = null;
     let justDragged = false;
     let currentPath = '';
+    let financeYear = new Date().getFullYear();
+    let financeMonth = new Date().getMonth();
+    let modalCostIds = [];
+    let modalTimeIds = [];
 
     function defaultState() {
       return {
         projects: [
-          { id: uid(), category: 'client', name: 'チップオデッセイ上映会記録動画', client: '正文堂', type: 'video', status: 'done', phase: '', created: '2026-05-09' },
-          ...SNS_DEFAULTS.map(s => ({ id: uid(), category: 'sns', type: 'sns', ...s })),
+          { id: uid(), category: 'client', name: 'チップオデッセイ上映会記録動画', client: '正文堂', type: 'video', status: 'done', phase: '', created: '2026-05-09', revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] },
+          ...SNS_DEFAULTS.map(s => ({ id: uid(), category: 'sns', type: 'sns', ...s, revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] })),
         ],
         tasks: [],
+        subscriptions: [],
       };
     }
 
+    function ensureProjectFinance(p) {
+      if (p.revenue === undefined) p.revenue = 0;
+      if (p.targetHours === undefined) p.targetHours = 0;
+      if (p.invoiceDate === undefined) p.invoiceDate = '';
+      if (!p.variableCosts) p.variableCosts = [];
+      if (!p.timeLogs) p.timeLogs = [];
+    }
+
     function migrateState(data) {
+      if (!data.subscriptions) data.subscriptions = [];
       data.projects.forEach(p => {
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
         if (p.phase === undefined) p.phase = '';
         if (p.deadlineDate === undefined) p.deadlineDate = '';
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
         if (p.status === 'done' && p.category === 'client' && !p.phase) p.phase = '';
+        ensureProjectFinance(p);
       });
       const existing = new Set(data.projects.map(p => p.folder || p.name));
       SNS_DEFAULTS.forEach(s => {
         if (!existing.has(s.folder) && !existing.has(s.name)) {
-          data.projects.push({ id: uid(), category: 'sns', type: 'sns', ...s });
+          data.projects.push({ id: uid(), category: 'sns', type: 'sns', ...s, revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] });
         }
       });
       return data;
@@ -976,7 +1222,7 @@
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) return migrateState(JSON.parse(raw));
-        for (const key of ['nark_dashboard_v2', 'nark_dashboard_v1']) {
+        for (const key of ['nark_dashboard_v3', 'nark_dashboard_v2', 'nark_dashboard_v1']) {
           const old = localStorage.getItem(key);
           if (old) return migrateState(JSON.parse(old));
         }
@@ -1005,14 +1251,198 @@
       return `${y}年${+m}月${+d}日（${days[dt.getDay()]}）`;
     }
 
+    function formatYen(n) {
+      const v = Math.round(n || 0);
+      const prefix = v < 0 ? '−' : '';
+      return prefix + '¥' + Math.abs(v).toLocaleString('ja-JP');
+    }
+
+    function monthFirstDay(y, m) {
+      return `${y}-${String(m + 1).padStart(2, '0')}-01`;
+    }
+
+    function monthLastDay(y, m) {
+      const d = new Date(y, m + 1, 0).getDate();
+      return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+
+    function isActiveInMonth(startDate, endDate, y, m) {
+      const first = monthFirstDay(y, m);
+      const last = monthLastDay(y, m);
+      if (startDate && startDate > last) return false;
+      if (endDate && endDate < first) return false;
+      return true;
+    }
+
+    function subMonthlyAmount(sub) {
+      const amt = Number(sub.amount) || 0;
+      return sub.cycle === 'annual' ? amt / 12 : amt;
+    }
+
+    function getFixedCostForMonth(y, m) {
+      return (state.subscriptions || []).reduce((sum, sub) => {
+        if (!isActiveInMonth(sub.startDate, sub.endDate, y, m)) return sum;
+        return sum + subMonthlyAmount(sub);
+      }, 0);
+    }
+
+    function clientProjectsBilledInMonth(y, m) {
+      const prefix = `${y}-${String(m + 1).padStart(2, '0')}-`;
+      return state.projects.filter(p =>
+        p.category === 'client' && p.invoiceDate && p.invoiceDate.startsWith(prefix)
+      );
+    }
+
+    function getMonthFinance(y, m) {
+      const fixed = getFixedCostForMonth(y, m);
+      const billed = clientProjectsBilledInMonth(y, m);
+      const revenue = billed.reduce((s, p) => s + (Number(p.revenue) || 0), 0);
+      const variable = billed.reduce((s, p) => s + projectVariableTotal(p), 0);
+      const breakEven = fixed + variable;
+      const netProfit = revenue - fixed - variable;
+      const gap = breakEven - revenue;
+      return { fixed, variable, revenue, breakEven, netProfit, gap };
+    }
+
+    function projectVariableTotal(p) {
+      return (p.variableCosts || []).reduce((s, c) => s + (Number(c.amount) || 0), 0);
+    }
+
+    function projectHoursTotal(p) {
+      return (p.timeLogs || []).reduce((s, t) => s + (Number(t.hours) || 0), 0);
+    }
+
+    function projectNetProfit(p) {
+      return (Number(p.revenue) || 0) - projectVariableTotal(p);
+    }
+
+    function projectHourlyProfit(p) {
+      const hours = projectHoursTotal(p);
+      if (hours <= 0) return null;
+      return projectNetProfit(p) / hours;
+    }
+
+    function ensureBillingDate(p) {
+      if ((p.status === 'billing' || p.status === 'done') && !p.invoiceDate) {
+        p.invoiceDate = todayStr();
+      }
+    }
+
+    function daysUntil(dateStr) {
+      if (!dateStr) return null;
+      const today = new Date(todayStr() + 'T00:00:00');
+      const target = new Date(dateStr + 'T00:00:00');
+      return Math.round((target - today) / 86400000);
+    }
+
     /* ── Render ── */
     function render() {
       renderDateTime();
       renderStats();
+      renderFinance();
+      renderSubscriptions();
       renderCalendar();
       renderKanban();
       renderShortcuts();
       renderTasks();
+    }
+
+    function financePrev() {
+      financeMonth--;
+      if (financeMonth < 0) { financeMonth = 11; financeYear--; }
+      renderFinance();
+    }
+
+    function financeNext() {
+      financeMonth++;
+      if (financeMonth > 11) { financeMonth = 0; financeYear++; }
+      renderFinance();
+    }
+
+    function renderFinance() {
+      const f = getMonthFinance(financeYear, financeMonth);
+      const isCurrentMonth = financeYear === new Date().getFullYear() && financeMonth === new Date().getMonth();
+      const gapLabel = f.gap > 0 ? '損益分岐まで' : '分岐点超え';
+      const gapValue = f.gap > 0 ? `あと ${formatYen(f.gap)}` : formatYen(-f.gap);
+      const gapClass = f.gap > 0 ? 'negative' : 'positive';
+      const profitClass = f.netProfit >= 0 ? 'positive' : 'negative';
+
+      document.getElementById('financePanel').innerHTML = `
+        <div class="finance-nav">
+          <div class="finance-nav-title">${financeYear}年${financeMonth + 1}月${isCurrentMonth ? '（今月）' : ''} · 税抜</div>
+          <div class="finance-nav-btns">
+            <button class="finance-nav-btn" onclick="financePrev()">‹</button>
+            <button class="finance-nav-btn" onclick="financeNext()">›</button>
+          </div>
+        </div>
+        <div class="finance-hero">
+          <div class="finance-hero-item primary">
+            <div class="finance-hero-label">${gapLabel}</div>
+            <div class="finance-hero-value ${gapClass}">${gapValue}</div>
+            <div class="finance-hero-sub">分岐点 ${formatYen(f.breakEven)} − 売上 ${formatYen(f.revenue)}</div>
+          </div>
+          <div class="finance-hero-item">
+            <div class="finance-hero-label">今月の純利益</div>
+            <div class="finance-hero-value ${profitClass}">${formatYen(f.netProfit)}</div>
+            <div class="finance-hero-sub">売上 − 固定費 − 変動費</div>
+          </div>
+        </div>
+        <div class="finance-breakdown">
+          <div class="finance-bd-item">
+            <div class="finance-bd-label">固定費</div>
+            <div class="finance-bd-value">${formatYen(f.fixed)}</div>
+          </div>
+          <div class="finance-bd-item">
+            <div class="finance-bd-label">変動費</div>
+            <div class="finance-bd-value">${formatYen(f.variable)}</div>
+          </div>
+          <div class="finance-bd-item">
+            <div class="finance-bd-label">売上</div>
+            <div class="finance-bd-value">${formatYen(f.revenue)}</div>
+          </div>
+          <div class="finance-bd-item">
+            <div class="finance-bd-label">損益分岐点</div>
+            <div class="finance-bd-value">${formatYen(f.breakEven)}</div>
+          </div>
+        </div>
+        <div class="tax-note">請求ベース · 変動費は請求月に集計 · 案件の純利益は固定費を含みません</div>
+      `;
+    }
+
+    function renderSubscriptions() {
+      const subs = (state.subscriptions || []).slice().sort((a, b) => {
+        if (!a.renewalDate) return 1;
+        if (!b.renewalDate) return -1;
+        return a.renewalDate.localeCompare(b.renewalDate);
+      });
+      const el = document.getElementById('subList');
+      if (subs.length === 0) {
+        el.innerHTML = '<div class="sub-empty">サブスクが登録されていません。「+ 追加」から入力してください。</div>';
+        return;
+      }
+      el.innerHTML = subs.map(sub => {
+        const days = daysUntil(sub.renewalDate);
+        const soon = days !== null && days >= 0 && days <= 7;
+        const monthly = subMonthlyAmount(sub);
+        const cycleLabel = sub.cycle === 'annual' ? '年払い' : '月払い';
+        const statusLabel = sub.endDate ? `解約 ${sub.endDate}` : '継続中';
+        const renewalLabel = sub.renewalDate
+          ? `次回更新 ${sub.renewalDate}${soon ? '（あと' + days + '日）' : ''}`
+          : '更新日未設定';
+        return `
+          <div class="sub-item${soon && !sub.endDate ? ' renewal-soon' : ''}">
+            <div class="sub-info">
+              <div class="sub-name">${esc(sub.name)}</div>
+              <div class="sub-meta">${cycleLabel} · 月割 ${formatYen(monthly)} · ${renewalLabel} · ${statusLabel}${sub.memo ? ' · ' + esc(sub.memo) : ''}</div>
+            </div>
+            <div class="sub-amount">${formatYen(Number(sub.amount) || 0)}</div>
+            <div class="sub-actions">
+              <button class="btn btn-ghost" onclick="openSubModal('${sub.id}')">編集</button>
+              <button class="btn btn-ghost btn-danger" onclick="deleteSub('${sub.id}')">削除</button>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     function renderDateTime() {
@@ -1187,11 +1617,15 @@
         ? `<div class="card-deadline">${esc(formatDeadline(p))}</div>` : '';
       const phaseLabel = p.phase && p.status !== 'done'
         ? `<div class="phase-current">▸ ${esc(p.phase)}</div>` : '';
+      const financeBlock = !isSns ? renderCardFinance(p) : '';
       const actions = p.status !== 'done' ? `
           <div class="card-actions">
             <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
             <button class="btn btn-ghost btn-danger" onclick="event.stopPropagation();deleteProject('${p.id}')">削除</button>
-          </div>` : '';
+          </div>` : (!isSns ? `
+          <div class="card-actions has-edit">
+            <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
+          </div>` : '');
       const hasWf = !isSns && getWorkflow(p) && p.status === 'doing';
       return `
         <div class="card${isSns ? ' sns-card' : ''}" draggable="true" data-id="${p.id}"
@@ -1205,10 +1639,33 @@
           <div class="card-meta">${meta}</div>
           ${deadline}
           ${phaseLabel}
+          ${financeBlock}
           ${renderPhaseButtons(p)}
           ${path}
         </div>
       `;
+    }
+
+    function renderCardFinance(p) {
+      const hours = projectHoursTotal(p);
+      const target = Number(p.targetHours) || 0;
+      if (p.status === 'done') {
+        const profit = projectNetProfit(p);
+        const hourly = projectHourlyProfit(p);
+        const hourlyStr = hourly !== null ? formatYen(Math.round(hourly)) + '/h' : '—';
+        return `<div class="card-finance profit">
+          <strong>純利益 ${formatYen(profit)}</strong> · 利益時給 ${hourlyStr}<br>
+          ${hours}h${target ? ' / 目標' + target + 'h' : ''} · 変動費 ${formatYen(projectVariableTotal(p))}
+        </div>`;
+      }
+      if (hours > 0 || target > 0 || (Number(p.revenue) || 0) > 0) {
+        const parts = [];
+        if (hours || target) parts.push(`${hours}h${target ? ' / 目標' + target + 'h' : ''}`);
+        if (Number(p.revenue) || 0) parts.push('受注 ' + formatYen(p.revenue));
+        if (projectVariableTotal(p)) parts.push('変動費 ' + formatYen(projectVariableTotal(p)));
+        return `<div class="card-finance">${parts.join(' · ')}</div>`;
+      }
+      return '';
     }
 
     function moveToDoing(id) {
@@ -1228,6 +1685,7 @@
       if (phase === '納品済') {
         p.status = 'billing';
         p.phase = '作成未';
+        ensureBillingDate(p);
         saveState();
         toast(`「${p.name}」→ 請求`);
         return;
@@ -1291,6 +1749,7 @@
       const isSns = cat === 'sns';
       document.getElementById('clientGroup').style.display = isSns ? 'none' : '';
       document.getElementById('platformGroup').style.display = isSns ? '' : 'none';
+      document.getElementById('financeGroup').style.display = isSns ? 'none' : '';
       document.getElementById('projectNameLabel').textContent = isSns ? '投稿タイトル' : '案件名';
       document.getElementById('projectName').placeholder = isSns
         ? '例: 2026-06-09_夏目漱石舊居' : '例: 2026-06_○○クリニック_web';
@@ -1314,6 +1773,107 @@
       const s = document.getElementById('projectStatus').value;
       document.getElementById('deadlineGroup').style.display =
         (s === 'todo' || s === 'doing') ? '' : 'none';
+      updateProjectProfitPreview();
+    }
+
+    function renderVariableCostRows(costs) {
+      modalCostIds = costs.map(c => c.id);
+      document.getElementById('variableCostRows').innerHTML = costs.map(c => `
+        <div class="dynamic-row" data-cost-id="${c.id}">
+          <input type="text" class="cost-label" value="${attr(c.label || '')}" placeholder="例: カメラマン代">
+          <input type="number" class="cost-amount" min="0" step="1000" value="${Number(c.amount) || ''}" placeholder="40000">
+          <button type="button" class="row-del-btn" onclick="removeVariableCostRow('${c.id}')">×</button>
+        </div>
+      `).join('');
+    }
+
+    function renderTimeLogRows(logs) {
+      modalTimeIds = logs.map(t => t.id);
+      document.getElementById('timeLogRows').innerHTML = logs.map(t => `
+        <div class="dynamic-row time-row" data-time-id="${t.id}">
+          <input type="date" class="time-date" value="${t.date || todayStr()}">
+          <input type="number" class="time-hours" min="1" step="1" value="${Number(t.hours) || 1}" placeholder="3">
+          <input type="text" class="time-note" value="${attr(t.note || '')}" placeholder="メモ（任意）">
+          <button type="button" class="row-del-btn" onclick="removeTimeLogRow('${t.id}')">×</button>
+        </div>
+      `).join('');
+    }
+
+    function addVariableCostRow() {
+      const id = uid();
+      modalCostIds.push(id);
+      const container = document.getElementById('variableCostRows');
+      const div = document.createElement('div');
+      div.className = 'dynamic-row';
+      div.dataset.costId = id;
+      div.innerHTML = `
+        <input type="text" class="cost-label" placeholder="例: カメラマン代">
+        <input type="number" class="cost-amount" min="0" step="1000" placeholder="40000">
+        <button type="button" class="row-del-btn" onclick="removeVariableCostRow('${id}')">×</button>
+      `;
+      container.appendChild(div);
+      updateProjectProfitPreview();
+    }
+
+    function removeVariableCostRow(id) {
+      const row = document.querySelector(`[data-cost-id="${id}"]`);
+      if (row) row.remove();
+      modalCostIds = modalCostIds.filter(x => x !== id);
+      updateProjectProfitPreview();
+    }
+
+    function addTimeLogRow() {
+      const id = uid();
+      modalTimeIds.push(id);
+      const container = document.getElementById('timeLogRows');
+      const div = document.createElement('div');
+      div.className = 'dynamic-row time-row';
+      div.dataset.timeId = id;
+      div.innerHTML = `
+        <input type="date" class="time-date" value="${todayStr()}">
+        <input type="number" class="time-hours" min="1" step="1" value="1">
+        <input type="text" class="time-note" placeholder="メモ（任意）">
+        <button type="button" class="row-del-btn" onclick="removeTimeLogRow('${id}')">×</button>
+      `;
+      container.appendChild(div);
+      updateProjectProfitPreview();
+    }
+
+    function removeTimeLogRow(id) {
+      const row = document.querySelector(`[data-time-id="${id}"]`);
+      if (row) row.remove();
+      modalTimeIds = modalTimeIds.filter(x => x !== id);
+      updateProjectProfitPreview();
+    }
+
+    function readVariableCostsFromModal() {
+      return [...document.querySelectorAll('#variableCostRows .dynamic-row')].map(row => ({
+        id: row.dataset.costId || uid(),
+        label: row.querySelector('.cost-label').value.trim(),
+        amount: Number(row.querySelector('.cost-amount').value) || 0,
+      })).filter(c => c.label || c.amount);
+    }
+
+    function readTimeLogsFromModal() {
+      return [...document.querySelectorAll('#timeLogRows .dynamic-row')].map(row => ({
+        id: row.dataset.timeId || uid(),
+        date: row.querySelector('.time-date').value || todayStr(),
+        hours: Number(row.querySelector('.time-hours').value) || 0,
+        note: row.querySelector('.time-note').value.trim(),
+      })).filter(t => t.hours > 0);
+    }
+
+    function updateProjectProfitPreview() {
+      const el = document.getElementById('projectProfitPreview');
+      if (!el || document.getElementById('financeGroup').style.display === 'none') return;
+      const revenue = Number(document.getElementById('projectRevenue').value) || 0;
+      const costs = readVariableCostsFromModal();
+      const logs = readTimeLogsFromModal();
+      const varTotal = costs.reduce((s, c) => s + c.amount, 0);
+      const hours = logs.reduce((s, t) => s + t.hours, 0);
+      const profit = revenue - varTotal;
+      const hourly = hours > 0 ? Math.round(profit / hours) : null;
+      el.innerHTML = `純利益 ${formatYen(profit)} · 合計 ${hours}h${hourly !== null ? ' · 利益時給 ' + formatYen(hourly) + '/h' : ''}`;
     }
 
     function openProjectModal(id) {
@@ -1334,6 +1894,12 @@
         document.getElementById('projectStatus').value = p.status;
         document.getElementById('projectDeadlineDate').value = p.deadlineDate || '';
         document.getElementById('projectDeadlinePlan').value = p.deadlinePlan || '';
+        ensureProjectFinance(p);
+        document.getElementById('projectRevenue').value = p.revenue || '';
+        document.getElementById('projectTargetHours').value = p.targetHours || '';
+        document.getElementById('projectInvoiceDate').value = p.invoiceDate || '';
+        renderVariableCostRows(p.variableCosts.length ? p.variableCosts : []);
+        renderTimeLogRows(p.timeLogs.length ? p.timeLogs : []);
       } else {
         document.getElementById('modalTitle').textContent = '案件を追加';
         document.getElementById('projectCategory').value = 'client';
@@ -1345,8 +1911,14 @@
         document.getElementById('projectStatus').value = 'todo';
         document.getElementById('projectDeadlineDate').value = '';
         document.getElementById('projectDeadlinePlan').value = '';
+        document.getElementById('projectRevenue').value = '';
+        document.getElementById('projectTargetHours').value = '';
+        document.getElementById('projectInvoiceDate').value = '';
+        renderVariableCostRows([]);
+        renderTimeLogRows([]);
       }
       onStatusChange();
+      updateProjectProfitPreview();
       document.getElementById('projectModal').classList.add('open');
       setTimeout(() => document.getElementById('projectName').focus(), 50);
     }
@@ -1354,6 +1926,8 @@
     function closeProjectModal() {
       document.getElementById('projectModal').classList.remove('open');
       editingProjectId = null;
+      modalCostIds = [];
+      modalTimeIds = [];
     }
 
     function statusToSnsStatus(status) {
@@ -1384,6 +1958,11 @@
         data.platform = '';
         data.snsStatus = '';
         data.folder = '';
+        data.revenue = Number(document.getElementById('projectRevenue').value) || 0;
+        data.targetHours = Number(document.getElementById('projectTargetHours').value) || 0;
+        data.invoiceDate = document.getElementById('projectInvoiceDate').value;
+        data.variableCosts = readVariableCostsFromModal();
+        data.timeLogs = readTimeLogsFromModal();
       }
       if (editingProjectId) {
         const p = state.projects.find(x => x.id === editingProjectId);
@@ -1395,11 +1974,20 @@
           if (data.status === 'done') p.phase = '';
           if (data.status === 'todo') p.phase = '';
         }
+        if (data.status === 'billing' || data.status === 'done') ensureBillingDate(p);
         toast(category === 'sns' ? 'SNS投稿を更新しました' : '案件を更新しました');
       } else {
         const phase = data.status === 'doing' ? 'ヒアリング・構成'
           : data.status === 'billing' ? '作成未' : '';
-        state.projects.push({ id: uid(), ...data, phase, created: todayStr() });
+        const newProject = { id: uid(), ...data, phase, created: todayStr() };
+        if (category !== 'sns') {
+          if (!newProject.variableCosts) newProject.variableCosts = readVariableCostsFromModal();
+          if (!newProject.timeLogs) newProject.timeLogs = readTimeLogsFromModal();
+        } else {
+          ensureProjectFinance(newProject);
+        }
+        if (newProject.status === 'billing' || newProject.status === 'done') ensureBillingDate(newProject);
+        state.projects.push(newProject);
         toast(category === 'sns' ? 'SNS投稿を追加しました' : '案件を追加しました');
       }
       closeProjectModal();
@@ -1444,6 +2032,7 @@
         p.status = status;
         if (status === 'doing' && !p.phase) p.phase = p.category === 'sns' ? '制作中' : 'ヒアリング・構成';
         if (status === 'billing' && !p.phase) p.phase = '作成未';
+        if (status === 'billing' || status === 'done') ensureBillingDate(p);
         if (status === 'done' || status === 'todo') p.phase = '';
         if (p.category === 'sns') p.snsStatus = statusToSnsStatus(status);
         saveState();
@@ -1596,6 +2185,69 @@
       checklistProjectId = null;
     }
 
+    /* ── Subscriptions ── */
+    function openSubModal(id) {
+      editingSubId = id || null;
+      if (id) {
+        const sub = state.subscriptions.find(s => s.id === id);
+        document.getElementById('subModalTitle').textContent = 'サブスクを編集';
+        document.getElementById('subName').value = sub.name;
+        document.getElementById('subAmount').value = sub.amount || '';
+        document.getElementById('subCycle').value = sub.cycle || 'monthly';
+        document.getElementById('subRenewalDate').value = sub.renewalDate || '';
+        document.getElementById('subStartDate').value = sub.startDate || '';
+        document.getElementById('subEndDate').value = sub.endDate || '';
+        document.getElementById('subMemo').value = sub.memo || '';
+      } else {
+        document.getElementById('subModalTitle').textContent = 'サブスクを追加';
+        document.getElementById('subName').value = '';
+        document.getElementById('subAmount').value = '';
+        document.getElementById('subCycle').value = 'monthly';
+        document.getElementById('subRenewalDate').value = '';
+        document.getElementById('subStartDate').value = todayStr();
+        document.getElementById('subEndDate').value = '';
+        document.getElementById('subMemo').value = '';
+      }
+      document.getElementById('subModal').classList.add('open');
+      setTimeout(() => document.getElementById('subName').focus(), 50);
+    }
+
+    function closeSubModal() {
+      document.getElementById('subModal').classList.remove('open');
+      editingSubId = null;
+    }
+
+    function saveSub() {
+      const name = document.getElementById('subName').value.trim();
+      if (!name) { toast('サービス名を入力してください'); return; }
+      const data = {
+        name,
+        amount: Number(document.getElementById('subAmount').value) || 0,
+        cycle: document.getElementById('subCycle').value,
+        renewalDate: document.getElementById('subRenewalDate').value,
+        startDate: document.getElementById('subStartDate').value,
+        endDate: document.getElementById('subEndDate').value,
+        memo: document.getElementById('subMemo').value.trim(),
+      };
+      if (editingSubId) {
+        const sub = state.subscriptions.find(s => s.id === editingSubId);
+        Object.assign(sub, data);
+        toast('サブスクを更新しました');
+      } else {
+        state.subscriptions.push({ id: uid(), ...data });
+        toast('サブスクを追加しました');
+      }
+      closeSubModal();
+      saveState();
+    }
+
+    function deleteSub(id) {
+      if (!confirm('このサブスクを削除しますか？')) return;
+      state.subscriptions = state.subscriptions.filter(s => s.id !== id);
+      saveState();
+      toast('サブスクを削除しました');
+    }
+
     /* ── Calendar ── */
     let calYear = new Date().getFullYear();
     let calMonth = new Date().getMonth();
@@ -1673,8 +2325,12 @@
     document.getElementById('checklistModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeChecklistModal();
     });
+    document.getElementById('subModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeSubModal();
+    });
+    document.getElementById('financeGroup').addEventListener('input', updateProjectProfitPreview);
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { closeProjectModal(); closePathModal(); closeChecklistModal(); }
+      if (e.key === 'Escape') { closeProjectModal(); closePathModal(); closeChecklistModal(); closeSubModal(); }
     });
 
     render();
