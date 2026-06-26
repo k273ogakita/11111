@@ -345,6 +345,16 @@
       font-weight: 600;
       line-height: 1.4;
     }
+    .card-memo {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
     .form-hint {
       font-size: .68rem;
       color: var(--muted);
@@ -927,7 +937,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v12</div>
+        <div class="logo-sub">Business Dashboard · v13</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -1057,6 +1067,10 @@
           <input type="text" id="projectDeadlinePlan" placeholder="例: 初稿提出">
         </div>
         <div class="form-hint">カードに「◯月◯日までに〇〇予定」と表示されます</div>
+      </div>
+      <div class="form-group">
+        <label>メモ</label>
+        <textarea id="projectMemo" placeholder="案件メモ（自由記載）"></textarea>
       </div>
       <div class="finance-fields" id="financeGroup">
         <div class="finance-fields-title">収支・時間（税抜）</div>
@@ -1258,6 +1272,7 @@
       if (p.revenue === undefined) p.revenue = 0;
       if (p.targetHours === undefined) p.targetHours = 0;
       if (p.invoiceDate === undefined) p.invoiceDate = '';
+      if (p.memo === undefined) p.memo = '';
       if (!p.variableCosts) p.variableCosts = [];
       if (!p.timeLogs) p.timeLogs = [];
     }
@@ -1693,6 +1708,8 @@
       const path = p.folder ? `<div class="card-path">${esc(p.folder)}</div>` : '';
       const deadline = (p.status === 'todo' || p.status === 'doing') && formatDeadline(p)
         ? `<div class="card-deadline">${esc(formatDeadline(p))}</div>` : '';
+      const memoBlock = p.memo && p.memo.trim()
+        ? `<div class="card-memo">${esc(p.memo.trim())}</div>` : '';
       const phaseLabel = p.phase && p.status !== 'done'
         ? `<div class="phase-current">▸ ${esc(p.phase)}</div>` : '';
       const financeBlock = renderCardFinance(p);
@@ -1716,6 +1733,7 @@
           </div>
           <div class="card-meta">${meta}</div>
           ${deadline}
+          ${memoBlock}
           ${phaseLabel}
           ${financeBlock}
           ${renderPhaseButtons(p)}
@@ -1972,6 +1990,7 @@
         document.getElementById('projectStatus').value = p.status;
         document.getElementById('projectDeadlineDate').value = p.deadlineDate || '';
         document.getElementById('projectDeadlinePlan').value = p.deadlinePlan || '';
+        document.getElementById('projectMemo').value = p.memo || '';
         ensureProjectFinance(p);
         document.getElementById('projectRevenue').value = p.revenue || '';
         document.getElementById('projectTargetHours').value = p.targetHours || '';
@@ -1989,6 +2008,7 @@
         document.getElementById('projectStatus').value = 'todo';
         document.getElementById('projectDeadlineDate').value = '';
         document.getElementById('projectDeadlinePlan').value = '';
+        document.getElementById('projectMemo').value = '';
         document.getElementById('projectRevenue').value = '';
         document.getElementById('projectTargetHours').value = '';
         document.getElementById('projectInvoiceDate').value = '';
@@ -2026,6 +2046,7 @@
         status,
         deadlineDate: (status === 'todo' || status === 'doing') ? deadlineDate : '',
         deadlinePlan: (status === 'todo' || status === 'doing') ? deadlinePlan : '',
+        memo: document.getElementById('projectMemo').value.trim(),
       };
       const financeData = {
         revenue: Number(document.getElementById('projectRevenue').value) || 0,
