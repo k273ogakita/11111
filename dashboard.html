@@ -69,25 +69,38 @@
     .date-main { font-size: 1.1rem; font-weight: 600; }
     .date-sub { font-size: .8rem; color: var(--muted); margin-top: 2px; }
 
-    /* ── Stats ── */
+    /* ── Stats (compact) ── */
     .stats {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-bottom: 32px;
-    }
-    .stat {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 14px;
+      margin-bottom: 20px;
+      padding: 7px 14px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px 18px;
-      transition: border-color .2s;
+      border-radius: 8px;
+      font-size: .72rem;
+      color: var(--muted);
     }
-    .stat:hover { border-color: var(--red-dim); }
-    .stat-label { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-    .stat-value { font-size: 1.8rem; font-weight: 700; margin-top: 4px; }
-    .stat-value.red { color: var(--red); }
-    .stat-tasks { display: flex; flex-direction: column; }
+    .stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .stat-chip strong {
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .stat-chip.highlight strong { color: var(--red); }
+    .stat-divider {
+      width: 1px;
+      height: 12px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
     .task-add-row {
       display: flex;
       gap: 8px;
@@ -182,14 +195,26 @@
       flex-direction: column;
       min-height: 280px;
     }
-    .column.col-done { min-height: 100px; }
+    .column.col-done { min-height: auto; }
+    .column.col-done.collapsed { min-height: 0; }
     .column.col-done .column-body { max-height: 400px; }
+    .column.col-done.collapsed .column-body { display: none; }
     .column.col-done .card { padding: 8px 10px; }
     .column.col-done .card-name { font-size: .78rem; margin-bottom: 2px; }
     .column.col-done .phase-btns,
     .column.col-done .card-actions,
     .column.col-done .card-path { display: none; }
     .column.col-done .card-actions.has-edit { display: flex; }
+    .column-header.clickable {
+      cursor: pointer;
+      user-select: none;
+    }
+    .column-header.clickable:hover { background: var(--surface-2); }
+    .collapse-chevron {
+      font-size: .7rem;
+      color: var(--muted);
+      margin-left: 4px;
+    }
     .column.drag-over { border-color: var(--red); background: var(--red-glow); }
     .column-header {
       padding: 14px 16px;
@@ -788,6 +813,34 @@
     .sub-actions { display: flex; gap: 4px; flex-shrink: 0; }
     .sub-empty { text-align: center; padding: 24px; color: var(--muted); font-size: .82rem; }
 
+    .collapsible-header {
+      cursor: pointer;
+      user-select: none;
+      margin-bottom: 0 !important;
+    }
+    .collapsible-header:hover .section-title { color: var(--text); }
+    .collapsible-header-left { flex: 1; min-width: 0; }
+    .collapse-summary {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 400;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .collapse-summary::before { display: none; }
+    .collapsible-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .collapse-body {
+      display: none;
+      margin-top: 14px;
+    }
+    .collapse-body.open { display: block; }
+
     .card-finance {
       font-size: .7rem;
       margin-top: 8px;
@@ -852,7 +905,6 @@
 
     @media (max-width: 1024px) {
       .kanban { grid-template-columns: 1fr; }
-      .stats { grid-template-columns: repeat(2, 1fr); }
       .finance-hero { grid-template-columns: 1fr; }
       .finance-breakdown { grid-template-columns: repeat(2, 1fr); }
     }
@@ -875,7 +927,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v11</div>
+        <div class="logo-sub">Business Dashboard · v12</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -887,12 +939,19 @@
 
     <section class="finance-panel" id="financePanel"></section>
 
-    <section class="section">
-      <div class="section-header">
-        <div class="section-title">サブスク（固定費）</div>
-        <button class="btn btn-primary" onclick="openSubModal()">+ 追加</button>
+    <section class="section" id="subSection">
+      <div class="section-header collapsible-header" onclick="toggleSubs()">
+        <div class="collapsible-header-left">
+          <div class="section-title">サブスク（固定費）<span class="collapse-chevron" id="subChevron">▸</span></div>
+          <div class="collapse-summary" id="subSummary"></div>
+        </div>
+        <div class="collapsible-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-primary" onclick="openSubModal()">+ 追加</button>
+        </div>
       </div>
-      <div class="sub-list" id="subList"></div>
+      <div class="collapse-body" id="subCollapse">
+        <div class="sub-list" id="subList"></div>
+      </div>
     </section>
 
     <section class="section">
@@ -1181,6 +1240,8 @@
     let financeMonth = new Date().getMonth();
     let modalCostIds = [];
     let modalTimeIds = [];
+    let subsExpanded = false;
+    let doneExpanded = false;
 
     function defaultState() {
       return {
@@ -1408,6 +1469,13 @@
         if (!b.renewalDate) return -1;
         return a.renewalDate.localeCompare(b.renewalDate);
       });
+      const fixed = getFixedCostForMonth(financeYear, financeMonth);
+      const activeCount = subs.filter(s => isActiveInMonth(s.startDate, s.endDate, financeYear, financeMonth)).length;
+      document.getElementById('subSummary').textContent =
+        subs.length === 0 ? '未登録' : `今月 ${formatYen(fixed)} · ${activeCount}件`;
+      document.getElementById('subChevron').textContent = subsExpanded ? '▾' : '▸';
+      document.getElementById('subCollapse').classList.toggle('open', subsExpanded);
+
       const el = document.getElementById('subList');
       if (subs.length === 0) {
         el.innerHTML = '<div class="sub-empty">サブスクが登録されていません。「+ 追加」から入力してください。</div>';
@@ -1438,6 +1506,16 @@
       }).join('');
     }
 
+    function toggleSubs() {
+      subsExpanded = !subsExpanded;
+      renderSubscriptions();
+    }
+
+    function toggleDoneColumn() {
+      doneExpanded = !doneExpanded;
+      renderKanban();
+    }
+
     function renderDateTime() {
       const now = new Date();
       const days = ['日','月','火','水','木','金','土'];
@@ -1459,22 +1537,15 @@
       const today = todayStr();
       const todayTasks = state.tasks.filter(t => !t.done && t.date === today).length;
 
-      const cards = [
-        { label: '未着手', value: todo, red: false },
-        { label: '進行中', value: doing, red: true },
-        { label: '請求', value: billing, red: false },
-      ].map(s => `
-        <div class="stat">
-          <div class="stat-label">${s.label}</div>
-          <div class="stat-value${s.red ? ' red' : ''}">${s.value}</div>
-        </div>
-      `).join('');
-
-      document.getElementById('stats').innerHTML = cards + `
-        <div class="stat stat-tasks">
-          <div class="stat-label">今日のタスク</div>
-          <div class="stat-value red" id="todayTaskCount">${todayTasks}</div>
-        </div>`;
+      document.getElementById('stats').innerHTML = `
+        <span class="stat-chip">未着手 <strong>${todo}</strong></span>
+        <span class="stat-divider"></span>
+        <span class="stat-chip highlight">進行中 <strong>${doing}</strong></span>
+        <span class="stat-divider"></span>
+        <span class="stat-chip">請求 <strong>${billing}</strong></span>
+        <span class="stat-divider"></span>
+        <span class="stat-chip highlight">今日のタスク <strong id="todayTaskCount">${todayTasks}</strong></span>
+      `;
     }
 
     function renderShortcuts() {
@@ -1539,6 +1610,20 @@
       document.getElementById('kanban').innerHTML = STATUSES.map(s => {
         const cards = projects.filter(p => p.status === s.id);
         const emptyMsg = s.id === 'done' ? '' : 'empty';
+        if (s.id === 'done') {
+          return `
+            <div class="column ${s.colClass}${doneExpanded ? '' : ' collapsed'}" data-status="${s.id}"
+                 ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${s.id}')">
+              <div class="column-header clickable" onclick="toggleDoneColumn()">
+                <span class="column-title">${s.label}<span class="collapse-chevron">${doneExpanded ? ' ▾' : ' ▸'}</span></span>
+                <span class="column-count">${cards.length}</span>
+              </div>
+              <div class="column-body${cards.length === 0 ? '' : ''}">
+                ${cards.map(p => renderCard(p)).join('')}
+              </div>
+            </div>
+          `;
+        }
         return `
           <div class="column ${s.colClass}" data-status="${s.id}"
                ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${s.id}')">
@@ -1695,6 +1780,7 @@
       if (phase === '入金済') {
         p.status = 'done';
         p.phase = '';
+        doneExpanded = true;
         if (p.category === 'sns') p.snsStatus = 'published';
         saveState();
         toast(`「${p.name}」→ 完了`);
@@ -2023,6 +2109,7 @@
         if (status === 'doing' && !p.phase) p.phase = p.category === 'sns' ? '制作中' : 'ヒアリング・構成';
         if (status === 'billing' && !p.phase) p.phase = '作成未';
         if (status === 'billing' || status === 'done') ensureBillingDate(p);
+        if (status === 'done') doneExpanded = true;
         if (status === 'done' || status === 'todo') p.phase = '';
         if (p.category === 'sns') p.snsStatus = statusToSnsStatus(status);
         saveState();
