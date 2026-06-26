@@ -446,7 +446,7 @@
     .btn-ghost:hover { color: var(--red); background: var(--red-glow); border-color: transparent; }
     .btn-danger:hover { color: var(--red); }
 
-    input[type="text"], input[type="date"], select {
+    input[type="text"], input[type="date"], input[type="month"], select {
       background: var(--surface-2);
       border: 1px solid var(--border);
       border-radius: 7px;
@@ -484,7 +484,7 @@
     .modal h3 { font-size: 1rem; margin-bottom: 16px; }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: .72rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
-    .form-group input, .form-group select { width: 100%; }
+    .form-group input, .form-group select, .form-group input[type="month"] { width: 100%; }
     .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 
     .tasks-section { margin-bottom: 28px; }
@@ -795,6 +795,7 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
     }
+    .finance-breakdown-5 { grid-template-columns: repeat(5, 1fr); }
     .finance-bd-item {
       background: var(--surface-2);
       border: 1px solid var(--border);
@@ -917,6 +918,7 @@
       .kanban { grid-template-columns: 1fr; }
       .finance-hero { grid-template-columns: 1fr; }
       .finance-breakdown { grid-template-columns: repeat(2, 1fr); }
+      .finance-breakdown-5 { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 600px) {
       .app { padding: 16px; }
@@ -937,7 +939,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v13</div>
+        <div class="logo-sub">Business Dashboard · v14</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -961,6 +963,21 @@
       </div>
       <div class="collapse-body" id="subCollapse">
         <div class="sub-list" id="subList"></div>
+      </div>
+    </section>
+
+    <section class="section" id="adSection">
+      <div class="section-header collapsible-header" onclick="toggleAds()">
+        <div class="collapsible-header-left">
+          <div class="section-title">広告費（集客）<span class="collapse-chevron" id="adChevron">▸</span></div>
+          <div class="collapse-summary" id="adSummary"></div>
+        </div>
+        <div class="collapsible-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-primary" onclick="openAdModal()">+ 追加</button>
+        </div>
+      </div>
+      <div class="collapse-body" id="adCollapse">
+        <div class="sub-list" id="adList"></div>
       </div>
     </section>
 
@@ -1174,6 +1191,35 @@
     </div>
   </div>
 
+  <!-- Ad Expense Modal -->
+  <div class="modal-overlay" id="adModal">
+    <div class="modal">
+      <h3 id="adModalTitle">広告費を追加</h3>
+      <div class="form-group">
+        <label>媒体</label>
+        <input type="text" id="adPlatform" value="Google検索広告" readonly style="opacity:.7">
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>支出月</label>
+          <input type="month" id="adMonth">
+        </div>
+        <div class="form-group">
+          <label>金額（税抜）</label>
+          <input type="number" id="adAmount" min="0" step="1" placeholder="30000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>メモ</label>
+        <textarea id="adMemo" placeholder="任意（例: 6月分請求）"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeAdModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveAd()">保存</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Checklist Modal -->
   <div class="modal-overlay" id="checklistModal">
     <div class="modal checklist-modal">
@@ -1255,7 +1301,9 @@
     let modalCostIds = [];
     let modalTimeIds = [];
     let subsExpanded = false;
+    let adsExpanded = false;
     let doneExpanded = false;
+    let editingAdId = null;
 
     function defaultState() {
       return {
@@ -1265,6 +1313,7 @@
         ],
         tasks: [],
         subscriptions: [],
+        adExpenses: [],
       };
     }
 
@@ -1279,6 +1328,7 @@
 
     function migrateState(data) {
       if (!data.subscriptions) data.subscriptions = [];
+      if (!data.adExpenses) data.adExpenses = [];
       data.projects.forEach(p => {
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
         if (p.phase === undefined) p.phase = '';
@@ -1371,14 +1421,27 @@
       );
     }
 
+    function monthKey(y, m) {
+      return `${y}-${String(m + 1).padStart(2, '0')}`;
+    }
+
+    function getAdSpendForMonth(y, m) {
+      const key = monthKey(y, m);
+      return (state.adExpenses || []).reduce((sum, ad) => {
+        if (ad.month !== key) return sum;
+        return sum + (Number(ad.amount) || 0);
+      }, 0);
+    }
+
     function getMonthFinance(y, m) {
       const fixed = getFixedCostForMonth(y, m);
       const billed = projectsBilledInMonth(y, m);
       const revenue = billed.reduce((s, p) => s + (Number(p.revenue) || 0), 0);
       const variable = billed.reduce((s, p) => s + projectVariableTotal(p), 0);
-      const breakEven = fixed + variable;
-      const netProfit = revenue - fixed - variable;
-      return { fixed, variable, revenue, breakEven, netProfit };
+      const adSpend = getAdSpendForMonth(y, m);
+      const breakEven = fixed + variable + adSpend;
+      const netProfit = revenue - fixed - variable - adSpend;
+      return { fixed, variable, adSpend, revenue, breakEven, netProfit };
     }
 
     function projectVariableTotal(p) {
@@ -1418,6 +1481,7 @@
       renderStats();
       renderFinance();
       renderSubscriptions();
+      renderAdExpenses();
       renderCalendar();
       renderKanban();
       renderShortcuts();
@@ -1428,12 +1492,16 @@
       financeMonth--;
       if (financeMonth < 0) { financeMonth = 11; financeYear--; }
       renderFinance();
+      renderSubscriptions();
+      renderAdExpenses();
     }
 
     function financeNext() {
       financeMonth++;
       if (financeMonth > 11) { financeMonth = 0; financeYear++; }
       renderFinance();
+      renderSubscriptions();
+      renderAdExpenses();
     }
 
     function renderFinance() {
@@ -1453,10 +1521,10 @@
           <div class="finance-hero-item primary">
             <div class="finance-hero-label">今月の純利益</div>
             <div class="finance-hero-value ${profitClass}">${formatYen(f.netProfit)}</div>
-            <div class="finance-hero-sub">売上 ${formatYen(f.revenue)} − 固定費 ${formatYen(f.fixed)} − 変動費 ${formatYen(f.variable)}</div>
+            <div class="finance-hero-sub">売上 ${formatYen(f.revenue)} − 固定費 ${formatYen(f.fixed)} − 変動費 ${formatYen(f.variable)} − 広告費 ${formatYen(f.adSpend)}</div>
           </div>
         </div>
-        <div class="finance-breakdown">
+        <div class="finance-breakdown finance-breakdown-5">
           <div class="finance-bd-item">
             <div class="finance-bd-label">固定費</div>
             <div class="finance-bd-value">${formatYen(f.fixed)}</div>
@@ -1464,6 +1532,10 @@
           <div class="finance-bd-item">
             <div class="finance-bd-label">変動費</div>
             <div class="finance-bd-value">${formatYen(f.variable)}</div>
+          </div>
+          <div class="finance-bd-item">
+            <div class="finance-bd-label">広告費</div>
+            <div class="finance-bd-value">${formatYen(f.adSpend)}</div>
           </div>
           <div class="finance-bd-item">
             <div class="finance-bd-label">売上</div>
@@ -1474,7 +1546,7 @@
             <div class="finance-bd-value">${formatYen(f.breakEven)}</div>
           </div>
         </div>
-        <div class="tax-note">請求ベース · 変動費は請求月に集計 · 案件の純利益は固定費を含みません</div>
+        <div class="tax-note">請求ベース · 変動費は請求月 · 広告費は支出月 · 案件の純利益は固定費・広告費を含みません</div>
       `;
     }
 
@@ -1524,6 +1596,52 @@
     function toggleSubs() {
       subsExpanded = !subsExpanded;
       renderSubscriptions();
+    }
+
+    function formatMonthLabel(ym) {
+      if (!ym) return '';
+      const [y, m] = ym.split('-');
+      return `${y}年${+m}月`;
+    }
+
+    function renderAdExpenses() {
+      const ads = (state.adExpenses || []).slice().sort((a, b) => {
+        if (a.month !== b.month) return b.month.localeCompare(a.month);
+        return 0;
+      });
+      const monthTotal = getAdSpendForMonth(financeYear, financeMonth);
+      const monthCount = ads.filter(a => a.month === monthKey(financeYear, financeMonth)).length;
+      document.getElementById('adSummary').textContent =
+        ads.length === 0 ? '未登録' : `${formatMonthLabel(monthKey(financeYear, financeMonth))} ${formatYen(monthTotal)}${monthCount ? ' · ' + monthCount + '件' : ''}`;
+      document.getElementById('adChevron').textContent = adsExpanded ? '▾' : '▸';
+      document.getElementById('adCollapse').classList.toggle('open', adsExpanded);
+
+      const el = document.getElementById('adList');
+      if (ads.length === 0) {
+        el.innerHTML = '<div class="sub-empty">広告費が登録されていません。「+ 追加」から入力してください。</div>';
+        return;
+      }
+      el.innerHTML = ads.map(ad => {
+        const isViewMonth = ad.month === monthKey(financeYear, financeMonth);
+        return `
+          <div class="sub-item${isViewMonth ? ' renewal-soon' : ''}">
+            <div class="sub-info">
+              <div class="sub-name">Google検索広告 · ${formatMonthLabel(ad.month)}</div>
+              <div class="sub-meta">支出月 ${formatMonthLabel(ad.month)}${ad.memo ? ' · ' + esc(ad.memo) : ''}</div>
+            </div>
+            <div class="sub-amount">${formatYen(Number(ad.amount) || 0)}</div>
+            <div class="sub-actions">
+              <button class="btn btn-ghost" onclick="openAdModal('${ad.id}')">編集</button>
+              <button class="btn btn-ghost btn-danger" onclick="deleteAd('${ad.id}')">削除</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleAds() {
+      adsExpanded = !adsExpanded;
+      renderAdExpenses();
     }
 
     function toggleDoneColumn() {
@@ -2346,6 +2464,60 @@
       toast('サブスクを削除しました');
     }
 
+    /* ── Ad Expenses ── */
+    function openAdModal(id) {
+      editingAdId = id || null;
+      const defaultMonth = monthKey(financeYear, financeMonth);
+      if (id) {
+        const ad = state.adExpenses.find(a => a.id === id);
+        document.getElementById('adModalTitle').textContent = '広告費を編集';
+        document.getElementById('adMonth').value = ad.month || defaultMonth;
+        document.getElementById('adAmount').value = ad.amount || '';
+        document.getElementById('adMemo').value = ad.memo || '';
+      } else {
+        document.getElementById('adModalTitle').textContent = '広告費を追加';
+        document.getElementById('adMonth').value = defaultMonth;
+        document.getElementById('adAmount').value = '';
+        document.getElementById('adMemo').value = '';
+      }
+      document.getElementById('adModal').classList.add('open');
+      setTimeout(() => document.getElementById('adAmount').focus(), 50);
+    }
+
+    function closeAdModal() {
+      document.getElementById('adModal').classList.remove('open');
+      editingAdId = null;
+    }
+
+    function saveAd() {
+      const month = document.getElementById('adMonth').value;
+      if (!month) { toast('支出月を選択してください'); return; }
+      const amount = Number(document.getElementById('adAmount').value) || 0;
+      if (amount <= 0) { toast('金額を入力してください'); return; }
+      const data = {
+        month,
+        amount,
+        memo: document.getElementById('adMemo').value.trim(),
+      };
+      if (editingAdId) {
+        const ad = state.adExpenses.find(a => a.id === editingAdId);
+        Object.assign(ad, data);
+        toast('広告費を更新しました');
+      } else {
+        state.adExpenses.push({ id: uid(), ...data });
+        toast('広告費を追加しました');
+      }
+      closeAdModal();
+      saveState();
+    }
+
+    function deleteAd(id) {
+      if (!confirm('この広告費を削除しますか？')) return;
+      state.adExpenses = state.adExpenses.filter(a => a.id !== id);
+      saveState();
+      toast('広告費を削除しました');
+    }
+
     /* ── Calendar ── */
     let calYear = new Date().getFullYear();
     let calMonth = new Date().getMonth();
@@ -2426,9 +2598,12 @@
     document.getElementById('subModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeSubModal();
     });
+    document.getElementById('adModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeAdModal();
+    });
     document.getElementById('financeGroup').addEventListener('input', updateProjectProfitPreview);
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { closeProjectModal(); closePathModal(); closeChecklistModal(); closeSubModal(); }
+      if (e.key === 'Escape') { closeProjectModal(); closePathModal(); closeChecklistModal(); closeSubModal(); closeAdModal(); }
     });
 
     render();
