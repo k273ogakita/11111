@@ -417,6 +417,56 @@
       color: var(--muted);
       font-size: .82rem;
     }
+    .task-category {
+      font-size: .62rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+      flex-shrink: 0;
+      background: rgba(58,53,48,.06);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .task-category.営業 { background: var(--red-glow); color: var(--red-dim); border-color: rgba(232,149,106,.3); }
+    .task-category.集客 { background: rgba(50,120,200,.08); color: #3278c8; border-color: rgba(50,120,200,.25); }
+    .task-category.経理 { background: rgba(50,160,120,.1); color: #32a078; border-color: rgba(50,160,120,.25); }
+    .task-category.運営 { background: rgba(58,53,48,.07); color: var(--muted); border-color: var(--border); }
+    .task-item.overdue .task-date { color: var(--red-dim); font-weight: 700; }
+    .task-item.overdue .task-text { color: var(--red-dim); }
+    .task-project {
+      font-size: .68rem;
+      color: var(--muted);
+      flex-shrink: 0;
+      max-width: 120px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .biz-todo-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .biz-todo-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-chip {
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      font-size: .68rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--font);
+    }
+    .filter-chip.active {
+      background: var(--red-glow);
+      border-color: rgba(232,149,106,.45);
+      color: var(--red-dim);
+    }
 
     /* ── Buttons & Inputs ── */
     .btn {
@@ -660,6 +710,12 @@
     }
     .cal-legend-dot.client { background: var(--red); }
     .cal-legend-dot.sns { background: #b0a898; }
+    .cal-legend-dot.biz { background: #3278c8; }
+    .cal-event.biz-todo {
+      background: rgba(50,120,200,.12);
+      color: #3278c8;
+      border-left: 2px solid #3278c8;
+    }
 
     /* ── Checklist Modal ── */
     .checklist-modal {
@@ -939,7 +995,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v14</div>
+        <div class="logo-sub">Business Dashboard · v15</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -995,7 +1051,21 @@
         <div class="cal-legend">
           <div class="cal-legend-item"><div class="cal-legend-dot client"></div>クライアント案件の期日</div>
           <div class="cal-legend-item"><div class="cal-legend-dot sns"></div>SNS投稿</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot biz"></div>事業TODO</div>
         </div>
+      </div>
+    </section>
+
+    <section class="section tasks-section">
+      <div class="section-header">
+        <div class="section-title">事業TODO</div>
+      </div>
+      <div class="biz-todo-toolbar">
+        <div class="biz-todo-filters" id="bizTodoFilters"></div>
+        <button class="btn btn-primary" onclick="openBizTodoModal()">+ 追加</button>
+      </div>
+      <div class="tasks-panel">
+        <div class="task-list" id="bizTodoList"></div>
       </div>
     </section>
 
@@ -1027,6 +1097,48 @@
         </div>
         <div class="shortcuts" id="shortcuts"></div>
     </section>
+  </div>
+
+  <!-- Biz Todo Modal -->
+  <div class="modal-overlay" id="bizTodoModal">
+    <div class="modal">
+      <h3 id="bizTodoModalTitle">事業TODOを追加</h3>
+      <div class="form-group">
+        <label>タスク</label>
+        <input type="text" id="bizTodoText" placeholder="例: 紹介元へのお礼メール送付">
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>期限</label>
+          <input type="date" id="bizTodoDueDate">
+          <div class="form-hint">空欄可</div>
+        </div>
+        <div class="form-group">
+          <label>カテゴリ</label>
+          <select id="bizTodoCategory">
+            <option value="営業">営業</option>
+            <option value="集客">集客</option>
+            <option value="経理">経理</option>
+            <option value="運営">運営</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>関連案件（任意）</label>
+        <select id="bizTodoProject">
+          <option value="">なし</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>メモ</label>
+        <textarea id="bizTodoMemo" placeholder="任意"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeBizTodoModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveBizTodo()">保存</button>
+      </div>
+    </div>
   </div>
 
   <!-- Project Modal -->
@@ -1270,6 +1382,7 @@
     ];
 
     const STORAGE_KEY = 'nark_dashboard_v4';
+    const BIZ_TODO_CATEGORIES = ['営業', '集客', '経理', '運営', 'その他'];
 
     const SNS_STATUS_MAP = {
       draft: 'todo', scheduled: 'doing', designing: 'doing',
@@ -1304,6 +1417,9 @@
     let adsExpanded = false;
     let doneExpanded = false;
     let editingAdId = null;
+    let editingBizTodoId = null;
+    let bizTodoFilter = 'open';
+    let bizTodoShowDone = false;
 
     function defaultState() {
       return {
@@ -1314,6 +1430,7 @@
         tasks: [],
         subscriptions: [],
         adExpenses: [],
+        bizTodos: [],
       };
     }
 
@@ -1329,6 +1446,7 @@
     function migrateState(data) {
       if (!data.subscriptions) data.subscriptions = [];
       if (!data.adExpenses) data.adExpenses = [];
+      if (!data.bizTodos) data.bizTodos = [];
       data.projects.forEach(p => {
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
         if (p.phase === undefined) p.phase = '';
@@ -1482,6 +1600,7 @@
       renderFinance();
       renderSubscriptions();
       renderAdExpenses();
+      renderBizTodos();
       renderCalendar();
       renderKanban();
       renderShortcuts();
@@ -1669,6 +1788,7 @@
       const billing = projects.filter(p => p.status === 'billing').length;
       const today = todayStr();
       const todayTasks = state.tasks.filter(t => !t.done && t.date === today).length;
+      const openBizTodos = (state.bizTodos || []).filter(t => !t.done).length;
 
       document.getElementById('stats').innerHTML = `
         <span class="stat-chip">未着手 <strong>${todo}</strong></span>
@@ -1678,6 +1798,8 @@
         <span class="stat-chip">請求 <strong>${billing}</strong></span>
         <span class="stat-divider"></span>
         <span class="stat-chip highlight">今日のタスク <strong id="todayTaskCount">${todayTasks}</strong></span>
+        <span class="stat-divider"></span>
+        <span class="stat-chip">事業TODO <strong>${openBizTodos}</strong></span>
       `;
     }
 
@@ -2288,6 +2410,163 @@
       renderTasks();
     }
 
+    function isOverdue(dueDate) {
+      if (!dueDate) return false;
+      return dueDate < todayStr();
+    }
+
+    function formatDueLabel(dueDate) {
+      if (!dueDate) return '';
+      const today = todayStr();
+      if (dueDate === today) return '今日';
+      if (isOverdue(dueDate)) return `期限切れ ${dueDate.slice(5).replace('-', '/')}`;
+      return dueDate;
+    }
+
+    function projectNameById(id) {
+      if (!id) return '';
+      const p = state.projects.find(x => x.id === id);
+      return p ? p.name : '';
+    }
+
+    function populateBizTodoProjectSelect(selectedId) {
+      const sel = document.getElementById('bizTodoProject');
+      const active = state.projects.filter(p => p.status !== 'done');
+      sel.innerHTML = '<option value="">なし</option>' + active.map(p =>
+        `<option value="${p.id}"${p.id === selectedId ? ' selected' : ''}>${esc(p.name)}</option>`
+      ).join('');
+    }
+
+    function renderBizTodos() {
+      const today = todayStr();
+      let todos = (state.bizTodos || []).slice();
+
+      document.getElementById('bizTodoFilters').innerHTML = [
+        { id: 'open', label: '未完了' },
+        { id: 'all', label: 'すべて' },
+        ...BIZ_TODO_CATEGORIES.map(c => ({ id: 'cat:' + c, label: c })),
+      ].map(f => `
+        <button type="button" class="filter-chip${bizTodoFilter === f.id ? ' active' : ''}"
+                onclick="setBizTodoFilter('${f.id}')">${f.label}</button>
+      `).join('') + `
+        <button type="button" class="filter-chip${bizTodoShowDone ? ' active' : ''}"
+                onclick="toggleBizTodoDone()">${bizTodoShowDone ? '完了を隠す' : '完了も表示'}</button>
+      `;
+
+      if (bizTodoFilter.startsWith('cat:')) {
+        const cat = bizTodoFilter.slice(4);
+        todos = todos.filter(t => t.category === cat);
+      } else if (bizTodoFilter === 'open') {
+        todos = todos.filter(t => !t.done);
+      }
+
+      if (!bizTodoShowDone && bizTodoFilter === 'all') {
+        todos = todos.filter(t => !t.done);
+      }
+
+      todos.sort((a, b) => {
+        if (a.done !== b.done) return a.done ? 1 : -1;
+        const ad = a.dueDate || '9999-99-99';
+        const bd = b.dueDate || '9999-99-99';
+        if (ad !== bd) return ad.localeCompare(bd);
+        return (b.created || '').localeCompare(a.created || '');
+      });
+
+      const el = document.getElementById('bizTodoList');
+      if (todos.length === 0) {
+        el.innerHTML = '<div class="task-empty">事業TODOはありません。「+ 追加」から登録してください。</div>';
+        return;
+      }
+
+      el.innerHTML = todos.map(t => {
+        const overdue = !t.done && isOverdue(t.dueDate);
+        const projectName = projectNameById(t.projectId);
+        return `
+          <div class="task-item${t.done ? ' done' : ''}${overdue ? ' overdue' : ''}">
+            <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} onchange="toggleBizTodo('${t.id}')">
+            <span class="task-category ${esc(t.category || 'その他')}">${esc(t.category || 'その他')}</span>
+            <span class="task-text">${esc(t.text)}${t.memo ? `<span style="color:var(--muted);font-size:.75rem"> — ${esc(t.memo)}</span>` : ''}</span>
+            ${projectName ? `<span class="task-project" title="${attr(projectName)}">${esc(projectName)}</span>` : ''}
+            ${t.dueDate ? `<span class="task-date${t.dueDate === today ? ' today' : ''}${overdue ? '' : ''}">${formatDueLabel(t.dueDate)}</span>` : ''}
+            <button class="btn btn-ghost" onclick="openBizTodoModal('${t.id}')">編集</button>
+            <button class="btn btn-ghost btn-danger" onclick="deleteBizTodo('${t.id}')">×</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setBizTodoFilter(id) {
+      bizTodoFilter = id;
+      renderBizTodos();
+    }
+
+    function toggleBizTodoDone() {
+      bizTodoShowDone = !bizTodoShowDone;
+      renderBizTodos();
+    }
+
+    function openBizTodoModal(id) {
+      editingBizTodoId = id || null;
+      populateBizTodoProjectSelect('');
+      if (id) {
+        const t = state.bizTodos.find(x => x.id === id);
+        document.getElementById('bizTodoModalTitle').textContent = '事業TODOを編集';
+        document.getElementById('bizTodoText').value = t.text;
+        document.getElementById('bizTodoDueDate').value = t.dueDate || '';
+        document.getElementById('bizTodoCategory').value = t.category || 'その他';
+        document.getElementById('bizTodoMemo').value = t.memo || '';
+        populateBizTodoProjectSelect(t.projectId || '');
+      } else {
+        document.getElementById('bizTodoModalTitle').textContent = '事業TODOを追加';
+        document.getElementById('bizTodoText').value = '';
+        document.getElementById('bizTodoDueDate').value = '';
+        document.getElementById('bizTodoCategory').value = '営業';
+        document.getElementById('bizTodoMemo').value = '';
+        populateBizTodoProjectSelect('');
+      }
+      document.getElementById('bizTodoModal').classList.add('open');
+      setTimeout(() => document.getElementById('bizTodoText').focus(), 50);
+    }
+
+    function closeBizTodoModal() {
+      document.getElementById('bizTodoModal').classList.remove('open');
+      editingBizTodoId = null;
+    }
+
+    function saveBizTodo() {
+      const text = document.getElementById('bizTodoText').value.trim();
+      if (!text) { toast('タスクを入力してください'); return; }
+      const data = {
+        text,
+        dueDate: document.getElementById('bizTodoDueDate').value,
+        category: document.getElementById('bizTodoCategory').value,
+        projectId: document.getElementById('bizTodoProject').value,
+        memo: document.getElementById('bizTodoMemo').value.trim(),
+      };
+      if (editingBizTodoId) {
+        const t = state.bizTodos.find(x => x.id === editingBizTodoId);
+        Object.assign(t, data);
+        toast('事業TODOを更新しました');
+      } else {
+        state.bizTodos.unshift({ id: uid(), ...data, done: false, created: todayStr() });
+        toast('事業TODOを追加しました');
+      }
+      closeBizTodoModal();
+      saveState();
+    }
+
+    function toggleBizTodo(id) {
+      const t = state.bizTodos.find(x => x.id === id);
+      if (t) { t.done = !t.done; saveState(); }
+    }
+
+    function deleteBizTodo(id) {
+      if (!confirm('このTODOを削除しますか？')) return;
+      state.bizTodos = state.bizTodos.filter(t => t.id !== id);
+      saveState();
+      toast('TODOを削除しました');
+    }
+
     /* ── Utils ── */
     function esc(s) {
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -2535,6 +2814,12 @@
           events[p.deadlineDate].push({ label, category: p.category, client: p.client, status: p.status });
         }
       });
+      (state.bizTodos || []).forEach(t => {
+        if (t.dueDate && !t.done) {
+          if (!events[t.dueDate]) events[t.dueDate] = [];
+          events[t.dueDate].push({ label: `TODO: ${t.text}`, category: 'biz-todo', client: '', status: '' });
+        }
+      });
       return events;
     }
 
@@ -2601,9 +2886,15 @@
     document.getElementById('adModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeAdModal();
     });
+    document.getElementById('bizTodoModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeBizTodoModal();
+    });
     document.getElementById('financeGroup').addEventListener('input', updateProjectProfitPreview);
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') { closeProjectModal(); closePathModal(); closeChecklistModal(); closeSubModal(); closeAdModal(); }
+      if (e.key === 'Escape') {
+        closeProjectModal(); closePathModal(); closeChecklistModal();
+        closeSubModal(); closeAdModal(); closeBizTodoModal();
+      }
     });
 
     render();
