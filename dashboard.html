@@ -740,6 +740,8 @@
       gap: 20px;
       margin-bottom: 20px;
     }
+    .finance-hero-single { grid-template-columns: 1fr; }
+    .finance-hero-single .finance-hero-item { text-align: center; }
     .finance-hero-item {
       background: var(--surface-2);
       border: 1px solid var(--border);
@@ -873,7 +875,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v10</div>
+        <div class="logo-sub">Business Dashboard · v11</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -997,7 +999,7 @@
         </div>
         <div class="form-hint">カードに「◯月◯日までに〇〇予定」と表示されます</div>
       </div>
-      <div class="finance-fields" id="financeGroup" style="display:none">
+      <div class="finance-fields" id="financeGroup">
         <div class="finance-fields-title">収支・時間（税抜）</div>
         <div class="form-row-2">
           <div class="form-group">
@@ -1286,22 +1288,21 @@
       }, 0);
     }
 
-    function clientProjectsBilledInMonth(y, m) {
+    function projectsBilledInMonth(y, m) {
       const prefix = `${y}-${String(m + 1).padStart(2, '0')}-`;
       return state.projects.filter(p =>
-        p.category === 'client' && p.invoiceDate && p.invoiceDate.startsWith(prefix)
+        p.invoiceDate && p.invoiceDate.startsWith(prefix)
       );
     }
 
     function getMonthFinance(y, m) {
       const fixed = getFixedCostForMonth(y, m);
-      const billed = clientProjectsBilledInMonth(y, m);
+      const billed = projectsBilledInMonth(y, m);
       const revenue = billed.reduce((s, p) => s + (Number(p.revenue) || 0), 0);
       const variable = billed.reduce((s, p) => s + projectVariableTotal(p), 0);
       const breakEven = fixed + variable;
       const netProfit = revenue - fixed - variable;
-      const gap = breakEven - revenue;
-      return { fixed, variable, revenue, breakEven, netProfit, gap };
+      return { fixed, variable, revenue, breakEven, netProfit };
     }
 
     function projectVariableTotal(p) {
@@ -1362,9 +1363,6 @@
     function renderFinance() {
       const f = getMonthFinance(financeYear, financeMonth);
       const isCurrentMonth = financeYear === new Date().getFullYear() && financeMonth === new Date().getMonth();
-      const gapLabel = f.gap > 0 ? '損益分岐まで' : '分岐点超え';
-      const gapValue = f.gap > 0 ? `あと ${formatYen(f.gap)}` : formatYen(-f.gap);
-      const gapClass = f.gap > 0 ? 'negative' : 'positive';
       const profitClass = f.netProfit >= 0 ? 'positive' : 'negative';
 
       document.getElementById('financePanel').innerHTML = `
@@ -1375,16 +1373,11 @@
             <button class="finance-nav-btn" onclick="financeNext()">›</button>
           </div>
         </div>
-        <div class="finance-hero">
+        <div class="finance-hero finance-hero-single">
           <div class="finance-hero-item primary">
-            <div class="finance-hero-label">${gapLabel}</div>
-            <div class="finance-hero-value ${gapClass}">${gapValue}</div>
-            <div class="finance-hero-sub">分岐点 ${formatYen(f.breakEven)} − 売上 ${formatYen(f.revenue)}</div>
-          </div>
-          <div class="finance-hero-item">
             <div class="finance-hero-label">今月の純利益</div>
             <div class="finance-hero-value ${profitClass}">${formatYen(f.netProfit)}</div>
-            <div class="finance-hero-sub">売上 − 固定費 − 変動費</div>
+            <div class="finance-hero-sub">売上 ${formatYen(f.revenue)} − 固定費 ${formatYen(f.fixed)} − 変動費 ${formatYen(f.variable)}</div>
           </div>
         </div>
         <div class="finance-breakdown">
@@ -1617,15 +1610,15 @@
         ? `<div class="card-deadline">${esc(formatDeadline(p))}</div>` : '';
       const phaseLabel = p.phase && p.status !== 'done'
         ? `<div class="phase-current">▸ ${esc(p.phase)}</div>` : '';
-      const financeBlock = !isSns ? renderCardFinance(p) : '';
+      const financeBlock = renderCardFinance(p);
       const actions = p.status !== 'done' ? `
           <div class="card-actions">
             <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
             <button class="btn btn-ghost btn-danger" onclick="event.stopPropagation();deleteProject('${p.id}')">削除</button>
-          </div>` : (!isSns ? `
+          </div>` : `
           <div class="card-actions has-edit">
             <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
-          </div>` : '');
+          </div>`;
       const hasWf = !isSns && getWorkflow(p) && p.status === 'doing';
       return `
         <div class="card${isSns ? ' sns-card' : ''}" draggable="true" data-id="${p.id}"
@@ -1749,7 +1742,6 @@
       const isSns = cat === 'sns';
       document.getElementById('clientGroup').style.display = isSns ? 'none' : '';
       document.getElementById('platformGroup').style.display = isSns ? '' : 'none';
-      document.getElementById('financeGroup').style.display = isSns ? 'none' : '';
       document.getElementById('projectNameLabel').textContent = isSns ? '投稿タイトル' : '案件名';
       document.getElementById('projectName').placeholder = isSns
         ? '例: 2026-06-09_夏目漱石舊居' : '例: 2026-06_○○クリニック_web';
@@ -1865,7 +1857,7 @@
 
     function updateProjectProfitPreview() {
       const el = document.getElementById('projectProfitPreview');
-      if (!el || document.getElementById('financeGroup').style.display === 'none') return;
+      if (!el) return;
       const revenue = Number(document.getElementById('projectRevenue').value) || 0;
       const costs = readVariableCostsFromModal();
       const logs = readTimeLogsFromModal();
@@ -1949,6 +1941,13 @@
         deadlineDate: (status === 'todo' || status === 'doing') ? deadlineDate : '',
         deadlinePlan: (status === 'todo' || status === 'doing') ? deadlinePlan : '',
       };
+      const financeData = {
+        revenue: Number(document.getElementById('projectRevenue').value) || 0,
+        targetHours: Number(document.getElementById('projectTargetHours').value) || 0,
+        invoiceDate: document.getElementById('projectInvoiceDate').value,
+        variableCosts: readVariableCostsFromModal(),
+        timeLogs: readTimeLogsFromModal(),
+      };
       if (category === 'sns') {
         data.platform = document.getElementById('projectPlatform').value;
         data.snsStatus = statusToSnsStatus(status);
@@ -1958,12 +1957,8 @@
         data.platform = '';
         data.snsStatus = '';
         data.folder = '';
-        data.revenue = Number(document.getElementById('projectRevenue').value) || 0;
-        data.targetHours = Number(document.getElementById('projectTargetHours').value) || 0;
-        data.invoiceDate = document.getElementById('projectInvoiceDate').value;
-        data.variableCosts = readVariableCostsFromModal();
-        data.timeLogs = readTimeLogsFromModal();
       }
+      Object.assign(data, financeData);
       if (editingProjectId) {
         const p = state.projects.find(x => x.id === editingProjectId);
         const prevStatus = p.status;
@@ -1977,15 +1972,10 @@
         if (data.status === 'billing' || data.status === 'done') ensureBillingDate(p);
         toast(category === 'sns' ? 'SNS投稿を更新しました' : '案件を更新しました');
       } else {
-        const phase = data.status === 'doing' ? 'ヒアリング・構成'
+        const phase = data.status === 'doing' ? (category === 'sns' ? '制作中' : 'ヒアリング・構成')
           : data.status === 'billing' ? '作成未' : '';
         const newProject = { id: uid(), ...data, phase, created: todayStr() };
-        if (category !== 'sns') {
-          if (!newProject.variableCosts) newProject.variableCosts = readVariableCostsFromModal();
-          if (!newProject.timeLogs) newProject.timeLogs = readTimeLogsFromModal();
-        } else {
-          ensureProjectFinance(newProject);
-        }
+        ensureProjectFinance(newProject);
         if (newProject.status === 'billing' || newProject.status === 'done') ensureBillingDate(newProject);
         state.projects.push(newProject);
         toast(category === 'sns' ? 'SNS投稿を追加しました' : '案件を追加しました');
