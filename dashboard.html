@@ -81,6 +81,13 @@
       color: var(--muted);
       margin-right: 2px;
     }
+    .header-backup-dir {
+      width: 100%;
+      font-size: .65rem;
+      color: var(--muted);
+      text-align: right;
+      line-height: 1.3;
+    }
     .logo {
       font-size: 2rem;
       font-weight: 800;
@@ -1040,7 +1047,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v20</div>
+        <div class="logo-sub">Business Dashboard · v21</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1048,8 +1055,10 @@
           <button class="btn" onclick="exportJsonBackup()">JSONバックアップ</button>
           <button class="btn" onclick="exportCsvBackup()">CSV出力</button>
           <button class="btn" onclick="triggerImportBackup()">復元</button>
+          <button class="btn btn-ghost" onclick="pickBackupDirectory()" title="nARK 内の「ダッシュボードバックアップ」フォルダを選ぶ">保存先</button>
           <input type="file" id="backupImportInput" accept=".json,application/json" style="display:none" onchange="importJsonBackup(event)">
         </div>
+        <div class="header-backup-dir" id="backupDirLabel"></div>
         <div class="datetime">
           <div class="date-main" id="dateMain"></div>
           <div class="date-sub" id="dateSub"></div>
@@ -1442,6 +1451,13 @@
 
     const STORAGE_KEY = 'nark_dashboard_v4';
     const AUTO_BACKUP_LAST_KEY = 'nark_dashboard_auto_backup_last';
+    const BACKUP_DIR_LABEL_KEY = 'nark_backup_dir_label';
+    const BACKUP_DB_NAME = 'nark_dashboard_backup';
+    const BACKUP_DB_VERSION = 1;
+    const BACKUP_DIR_STORE = 'settings';
+
+    let backupDirHandle = null;
+    let backupDirName = localStorage.getItem(BACKUP_DIR_LABEL_KEY) || '';
     const BIZ_TODO_CATEGORIES = ['営業', '集客', '経理', '運営', 'その他'];
 
     const SNS_STATUS_MAP = {
@@ -1546,6 +1562,103 @@
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
+    function supportsBackupDir() {
+      return typeof window.showDirectoryPicker === 'function';
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function openBackupDb() {
+      return new Promise(function(resolve, reject) {
+        const req = indexedDB.open(BACKUP_DB_NAME, BACKUP_DB_VERSION);
+        req.onupgradeneeded = function() {
+          req.result.createObjectStore(BACKUP_DIR_STORE);
+        };
+        req.onsuccess = function() { resolve(req.result); };
+        req.onerror = function() { reject(req.error); };
+      });
+    }
+
+    function loadBackupDirHandle() {
+      if (!supportsBackupDir()) return Promise.resolve(null);
+      return openBackupDb().then(function(db) {
+        return new Promise(function(resolve, reject) {
+          const tx = db.transaction(BACKUP_DIR_STORE, 'readonly');
+          const req = tx.objectStore(BACKUP_DIR_STORE).get('backupDir');
+          req.onsuccess = function() { resolve(req.result || null); };
+          req.onerror = function() { reject(req.error); };
+        });
+      }).catch(function() { return null; });
+    }
+
+    function persistBackupDirHandle(handle) {
+      return openBackupDb().then(function(db) {
+        return new Promise(function(resolve, reject) {
+          const tx = db.transaction(BACKUP_DIR_STORE, 'readwrite');
+          tx.objectStore(BACKUP_DIR_STORE).put(handle, 'backupDir');
+          tx.oncomplete = function() { resolve(); };
+          tx.onerror = function() { reject(tx.error); };
+        });
+      });
+    }
+
+    async function ensureBackupDirPermission(handle) {
+      if (!handle) return false;
+      const opts = { mode: 'readwrite' };
+      if ((await handle.queryPermission(opts)) === 'granted') return true;
+      if ((await handle.requestPermission(opts)) === 'granted') return true;
+      return false;
+    }
+
+    function updateBackupDirLabel() {
+      const el = document.getElementById('backupDirLabel');
+      if (!el) return;
+      if (backupDirHandle && backupDirName) {
+        el.textContent = '保存先: nARK/' + backupDirName;
+      } else if (supportsBackupDir()) {
+        el.textContent = '保存先: 未設定（「保存先」から ダッシュボードバックアップ を選択）';
+      } else {
+        el.textContent = '保存先: ダウンロードフォルダ（このブラウザはフォルダ指定非対応）';
+      }
+    }
+
+    async function initBackupDir() {
+      backupDirHandle = await loadBackupDirHandle();
+      if (backupDirHandle) {
+        const ok = await ensureBackupDirPermission(backupDirHandle);
+        if (!ok) backupDirHandle = null;
+      }
+      updateBackupDirLabel();
+    }
+
+    async function pickBackupDirectory() {
+      if (!supportsBackupDir()) {
+        alert('このブラウザではフォルダ指定に対応していません。Chrome または Edge をお使いください。');
+        return;
+      }
+      try {
+        const handle = await window.showDirectoryPicker({
+          id: 'nark-dashboard-backup',
+          mode: 'readwrite',
+        });
+        backupDirHandle = handle;
+        backupDirName = handle.name;
+        await persistBackupDirHandle(handle);
+        localStorage.setItem(BACKUP_DIR_LABEL_KEY, backupDirName);
+        updateBackupDirLabel();
+        showBackupToast(
+          '保存先を <strong>' + escapeHtml(backupDirName) + '</strong> に設定しました。<br>以降のバックアップはこのフォルダに保存されます。'
+        );
+      } catch (err) {
+        if (err && err.name !== 'AbortError') alert('フォルダの選択に失敗しました。');
+      }
+    }
+
     function downloadFile(filename, content, mimeType) {
       const blob = new Blob([content], { type: mimeType });
       const url = URL.createObjectURL(blob);
@@ -1558,20 +1671,36 @@
       URL.revokeObjectURL(url);
     }
 
+    async function saveBackupFile(filename, content, mimeType) {
+      if (backupDirHandle && await ensureBackupDirPermission(backupDirHandle)) {
+        try {
+          const fileHandle = await backupDirHandle.getFileHandle(filename, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(new Blob([content], { type: mimeType }));
+          await writable.close();
+          return 'folder';
+        } catch (_) {}
+      }
+      downloadFile(filename, content, mimeType);
+      return 'download';
+    }
+
+    function backupDestinationLabel() {
+      if (backupDirHandle && backupDirName) return 'nARK/' + backupDirName;
+      return 'ダウンロードフォルダ';
+    }
+
     function csvEscape(val) {
       const s = String(val);
       if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
       return s;
     }
 
-    function exportJsonBackup(options) {
+    async function exportJsonBackup(options) {
       const auto = options && options.auto;
+      const filename = backupFileDate() + (auto ? '_自動' : '') + '.json';
       const json = JSON.stringify(state, null, 2);
-      downloadFile(
-        `ダッシュボードバックアップ_${backupFileDate()}${auto ? '_自動' : ''}.json`,
-        json,
-        'application/json;charset=utf-8'
-      );
+      await saveBackupFile(filename, json, 'application/json;charset=utf-8');
     }
 
     function getThisWeekMonday14(now) {
@@ -1606,19 +1735,18 @@
       document.getElementById('backupToast').hidden = true;
     }
 
-    function runWeeklyAutoBackupIfDue() {
+    async function runWeeklyAutoBackupIfDue() {
       if (!isWeeklyBackupDue()) return;
-      exportJsonBackup({ auto: true });
-      setTimeout(function() {
-        exportCsvBackup({ auto: true });
-      }, 500);
+      await exportJsonBackup({ auto: true });
+      await exportCsvBackup({ auto: true });
       markWeeklyBackupDone();
       showBackupToast(
-        '<strong>週次バックアップ</strong>を実行しました（毎週月曜 14:00）。<br>ダウンロードフォルダに JSON と CSV が保存されているか確認してください。'
+        '<strong>週次バックアップ</strong>を実行しました（毎週月曜 14:00）。<br>' +
+        escapeHtml(backupDestinationLabel()) + ' に JSON と CSV を保存しました。'
       );
     }
 
-    function exportCsvBackup(options) {
+    async function exportCsvBackup(options) {
       const auto = options && options.auto;
       const header = '顧客名,売上,進捗';
       const rows = state.projects.map(p => {
@@ -1628,11 +1756,8 @@
         return [name, revenue, progress].map(csvEscape).join(',');
       });
       const csv = '\uFEFF' + header + '\n' + rows.join('\n');
-      downloadFile(
-        `案件一覧_${backupFileDate()}${auto ? '_自動' : ''}.csv`,
-        csv,
-        'text/csv;charset=utf-8'
-      );
+      const filename = '案件一覧_' + backupFileDate() + (auto ? '_自動' : '') + '.csv';
+      await saveBackupFile(filename, csv, 'text/csv;charset=utf-8');
     }
 
     function triggerImportBackup() {
@@ -3085,9 +3210,11 @@
     });
 
     render();
-    runWeeklyAutoBackupIfDue();
+    initBackupDir().then(function() {
+      runWeeklyAutoBackupIfDue();
+    });
     setInterval(renderDateTime, 30000);
-    setInterval(runWeeklyAutoBackupIfDue, 60000);
+    setInterval(function() { runWeeklyAutoBackupIfDue(); }, 60000);
   </script>
 </body>
 </html>
