@@ -1096,7 +1096,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v24</div>
+        <div class="logo-sub">Business Dashboard · v25</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1347,7 +1347,7 @@
             </select>
           </div>
         </div>
-        <div class="form-hint">請求・アフターフォロー欄のボタンからメール文面をコピーできます</div>
+        <div class="form-hint">ボタンを押すとメールアプリが開き、件名・本文が入った状態になります</div>
       </div>
       <div class="finance-fields" id="financeGroup">
         <div class="finance-fields-title">収支・時間（税抜）</div>
@@ -1381,32 +1381,6 @@
       <div class="modal-actions">
         <button class="btn" onclick="closeProjectModal()">キャンセル</button>
         <button class="btn btn-primary" onclick="saveProject()">保存</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Follow Mail Modal -->
-  <div class="modal-overlay" id="followMailModal">
-    <div class="modal modal-wide">
-      <h3 id="followMailTitle">フォローメール</h3>
-      <div class="form-group">
-        <label>件名</label>
-        <div class="mail-copy-row">
-          <input type="text" id="followMailSubject" readonly>
-          <button type="button" class="btn" onclick="copyFollowMailSubject()">コピー</button>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>本文</label>
-        <textarea id="followMailBody" readonly></textarea>
-        <div class="mail-copy-actions">
-          <button type="button" class="btn btn-primary" onclick="copyFollowMailBody()">本文をコピー</button>
-          <button type="button" class="btn" onclick="copyFollowMailAll()">件名＋本文をコピー</button>
-          <button type="button" class="btn btn-primary" onclick="markFollowMailDone()">送信済みにする</button>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button type="button" class="btn" onclick="closeFollowMailModal()">閉じる</button>
       </div>
     </div>
   </div>
@@ -1637,9 +1611,6 @@ nARK　緒方 和奈
     let bizTodoFilter = 'open';
     let bizTodoShowDone = false;
 
-    let followMailProjectId = null;
-    let followMailStep = null;
-
     function defaultState() {
       return {
         projects: [
@@ -1683,7 +1654,6 @@ nARK　緒方 和奈
       e.stopPropagation();
     }
     window.stopCardDrag = stopCardDrag;
-    window.openFollowMailModal = openFollowMailModal;
 
     function mailAddressBlock(p) {
       const clinic = (p.mailClinic || p.client || '〇〇クリニック').trim();
@@ -1692,7 +1662,7 @@ nARK　緒方 和奈
       return `${clinic}\n院長　〇〇先生\n`;
     }
 
-    function mailAddressBlock(p) {
+    function buildThanksMail(p) {
       const timingNote = p.followUpTiming === '1month'
         ? '納品から1ヶ月後'
         : '納品から2週間後';
@@ -2611,7 +2581,7 @@ ${MAIL_FOOTER}`,
           return `<button type="button" class="phase-btn${isDone ? ' done' : ''}"
                     data-follow-mail="1" data-follow-id="${p.id}" data-follow-step="${ph.key}"
                     onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
-                    title="クリックでメール文面を表示">${isDone ? '✓ ' : ''}${label}</button>`;
+                    title="クリックでメールアプリを開く">${isDone ? '✓ ' : ''}${label}</button>`;
         }).join('')}</div>
       </div>`;
     }
@@ -2762,33 +2732,47 @@ ${MAIL_FOOTER}`,
       toast(`「${p.name}」→ ${phase}`);
     }
 
-    function openFollowMailModal(projectId, step) {
-      try {
-        const p = state.projects.find(x => x.id === projectId);
-        if (!p) {
-          toast('案件が見つかりません');
-          return;
-        }
-        ensureProjectFinance(p);
-        followMailProjectId = projectId;
-        followMailStep = step;
-        const mail = getFollowMail(step, p);
-        const phaseLabel = AFTER_FOLLOW_PHASES.find(x => x.key === step)?.label || 'フォローメール';
-        document.getElementById('followMailTitle').textContent = phaseLabel;
-        document.getElementById('followMailSubject').value = mail.subject;
-        document.getElementById('followMailBody').value = mail.body;
-        document.getElementById('followMailModal').classList.add('open');
-      } catch (err) {
-        console.error(err);
-        toast('メール文面の表示に失敗しました');
-      }
+    function plainMailText(text) {
+      return String(text).replace(/\*\*(.+?)\*\*/g, '$1');
     }
 
-    function closeFollowMailModal() {
-      document.getElementById('followMailModal').classList.remove('open');
-      followMailProjectId = null;
-      followMailStep = null;
+    function buildMailtoUrl(mail, to) {
+      const subject = plainMailText(mail.subject);
+      const body = plainMailText(mail.body);
+      const params = [];
+      if (subject) params.push('subject=' + encodeURIComponent(subject));
+      if (body) params.push('body=' + encodeURIComponent(body));
+      const addr = (to || '').trim();
+      return 'mailto:' + addr + (params.length ? '?' + params.join('&') : '');
     }
+
+    function openFollowMail(projectId, step) {
+      const p = state.projects.find(x => x.id === projectId);
+      if (!p) {
+        toast('案件が見つかりません');
+        return;
+      }
+      ensureProjectFinance(p);
+      const mail = getFollowMail(step, p);
+      const to = (p.mailTo || '').trim();
+      let url = buildMailtoUrl(mail, to);
+      const MAILTO_MAX = 2000;
+
+      if (url.length > MAILTO_MAX) {
+        const body = plainMailText(mail.body);
+        copyTextToClipboard(body, '本文をコピーしました');
+        url = buildMailtoUrl({ subject: mail.subject, body: '' }, to);
+        toast('本文が長いためクリップボードにコピーしました。メールに貼り付けてください');
+      }
+
+      window.location.href = url;
+
+      p.afterFollowDone[step] = true;
+      saveState();
+      const label = AFTER_FOLLOW_PHASES.find(x => x.key === step)?.label || 'メール';
+      toast(`「${label}」→ メールアプリを開きました`);
+    }
+    window.openFollowMail = openFollowMail;
 
     function copyTextToClipboard(text, msg) {
       navigator.clipboard.writeText(text).then(() => {
@@ -2802,34 +2786,6 @@ ${MAIL_FOOTER}`,
         document.body.removeChild(ta);
         toast(msg || 'コピーしました');
       });
-    }
-
-    function copyFollowMailSubject() {
-      const subject = document.getElementById('followMailSubject').value;
-      copyTextToClipboard(subject, '件名をコピーしました');
-    }
-
-    function copyFollowMailBody() {
-      const body = document.getElementById('followMailBody').value;
-      copyTextToClipboard(body, '本文をコピーしました');
-    }
-
-    function copyFollowMailAll() {
-      const subject = document.getElementById('followMailSubject').value;
-      const body = document.getElementById('followMailBody').value;
-      copyTextToClipboard(`件名: ${subject}\n\n${body}`, '件名＋本文をコピーしました');
-    }
-
-    function markFollowMailDone() {
-      if (!followMailProjectId || !followMailStep) return;
-      const p = state.projects.find(x => x.id === followMailProjectId);
-      if (!p) return;
-      ensureProjectFinance(p);
-      p.afterFollowDone[followMailStep] = true;
-      saveState();
-      closeFollowMailModal();
-      const label = AFTER_FOLLOW_PHASES.find(x => x.key === followMailStep)?.label || '';
-      toast(`「${label}」を送信済みにしました`);
     }
 
     function renderTasks() {
@@ -3688,21 +3644,17 @@ ${MAIL_FOOTER}`,
     document.getElementById('bizTodoModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeBizTodoModal();
     });
-    document.getElementById('followMailModal').addEventListener('click', e => {
-      if (e.target === e.currentTarget) closeFollowMailModal();
-    });
     document.getElementById('kanban').addEventListener('click', e => {
       const btn = e.target.closest('[data-follow-mail]');
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
-      openFollowMailModal(btn.dataset.followId, btn.dataset.followStep);
+      openFollowMail(btn.dataset.followId, btn.dataset.followStep);
     });
     document.getElementById('financeGroup').addEventListener('input', updateProjectProfitPreview);
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         closeProjectModal(); closePathModal(); closeChecklistModal();
-        closeFollowMailModal();
         closeSubModal(); closeAdModal(); closeBizTodoModal();
       }
     });
