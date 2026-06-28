@@ -995,7 +995,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v15</div>
+        <div class="logo-sub">Business Dashboard · v16</div>
       </div>
       <div class="datetime">
         <div class="date-main" id="dateMain"></div>
@@ -1087,7 +1087,11 @@
         <div class="section-header">
           <div class="section-title">案件管理</div>
           <div class="section-actions">
-            <button class="btn btn-primary" onclick="openProjectModal()">+ 追加</button>
+            <button class="btn btn-primary" onclick="openProjectModal()">案件追加</button>
+            <button class="btn" onclick="exportJsonBackup()">JSONバックアップ</button>
+            <button class="btn" onclick="exportCsvBackup()">CSV出力</button>
+            <button class="btn" onclick="triggerImportBackup()">復元</button>
+            <input type="file" id="backupImportInput" accept=".json,application/json" style="display:none" onchange="importJsonBackup(event)">
           </div>
         </div>
         <div class="kanban" id="kanban"></div>
@@ -1479,6 +1483,85 @@
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       render();
+    }
+
+    function backupFileDate() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function downloadFile(filename, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(val) {
+      const s = String(val);
+      if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+
+    function exportJsonBackup() {
+      const raw = localStorage.getItem(STORAGE_KEY) || JSON.stringify(state);
+      downloadFile(
+        `案件バックアップ_${backupFileDate()}.json`,
+        raw,
+        'application/json;charset=utf-8'
+      );
+    }
+
+    function exportCsvBackup() {
+      const header = '顧客名,売上,進捗';
+      const rows = state.projects.map(p => {
+        const name = p.client || p.name || '';
+        const revenue = Number(p.revenue) || 0;
+        const progress = (STATUSES.find(s => s.id === p.status) || {}).label || p.status || '';
+        return [name, revenue, progress].map(csvEscape).join(',');
+      });
+      const csv = '\uFEFF' + header + '\n' + rows.join('\n');
+      downloadFile(
+        `案件バックアップ_${backupFileDate()}.csv`,
+        csv,
+        'text/csv;charset=utf-8'
+      );
+    }
+
+    function triggerImportBackup() {
+      const input = document.getElementById('backupImportInput');
+      input.value = '';
+      input.click();
+    }
+
+    function importJsonBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!confirm('バックアップで現在のデータを上書きします。よろしいですか？')) return;
+          if (Array.isArray(data)) {
+            state = migrateState({ projects: data, tasks: [], subscriptions: [], adExpenses: [], bizTodos: [] });
+          } else if (data && typeof data === 'object') {
+            state = migrateState(data);
+          } else {
+            alert('無効なバックアップファイルです。');
+            return;
+          }
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          render();
+        } catch (_) {
+          alert('JSONの読み込みに失敗しました。');
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
     }
 
     function uid() {
