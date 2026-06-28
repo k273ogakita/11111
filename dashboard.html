@@ -1040,7 +1040,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v19</div>
+        <div class="logo-sub">Business Dashboard · v20</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1609,13 +1609,17 @@
     function runWeeklyAutoBackupIfDue() {
       if (!isWeeklyBackupDue()) return;
       exportJsonBackup({ auto: true });
+      setTimeout(function() {
+        exportCsvBackup({ auto: true });
+      }, 500);
       markWeeklyBackupDone();
       showBackupToast(
-        '<strong>週次バックアップ</strong>を実行しました（毎週月曜 14:00）。<br>ダウンロードフォルダに JSON が保存されているか確認してください。'
+        '<strong>週次バックアップ</strong>を実行しました（毎週月曜 14:00）。<br>ダウンロードフォルダに JSON と CSV が保存されているか確認してください。'
       );
     }
 
-    function exportCsvBackup() {
+    function exportCsvBackup(options) {
+      const auto = options && options.auto;
       const header = '顧客名,売上,進捗';
       const rows = state.projects.map(p => {
         const name = p.client || p.name || '';
@@ -1625,7 +1629,7 @@
       });
       const csv = '\uFEFF' + header + '\n' + rows.join('\n');
       downloadFile(
-        `案件一覧_${backupFileDate()}.csv`,
+        `案件一覧_${backupFileDate()}${auto ? '_自動' : ''}.csv`,
         csv,
         'text/csv;charset=utf-8'
       );
