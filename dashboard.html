@@ -53,9 +53,33 @@
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
       margin-bottom: 36px;
       padding-bottom: 24px;
       border-bottom: 1px solid var(--border);
+    }
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      margin-left: auto;
+    }
+    .header-backup-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .header-backup-label {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-right: 2px;
     }
     .logo {
       font-size: 2rem;
@@ -995,11 +1019,20 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v16</div>
+        <div class="logo-sub">Business Dashboard · v18</div>
       </div>
-      <div class="datetime">
-        <div class="date-main" id="dateMain"></div>
-        <div class="date-sub" id="dateSub"></div>
+      <div class="header-right">
+        <div class="header-backup-actions">
+          <span class="header-backup-label">データ</span>
+          <button class="btn" onclick="exportJsonBackup()">JSONバックアップ</button>
+          <button class="btn" onclick="exportCsvBackup()">CSV出力</button>
+          <button class="btn" onclick="triggerImportBackup()">復元</button>
+          <input type="file" id="backupImportInput" accept=".json,application/json" style="display:none" onchange="importJsonBackup(event)">
+        </div>
+        <div class="datetime">
+          <div class="date-main" id="dateMain"></div>
+          <div class="date-sub" id="dateSub"></div>
+        </div>
       </div>
     </header>
 
@@ -1088,10 +1121,6 @@
           <div class="section-title">案件管理</div>
           <div class="section-actions">
             <button class="btn btn-primary" onclick="openProjectModal()">案件追加</button>
-            <button class="btn" onclick="exportJsonBackup()">JSONバックアップ</button>
-            <button class="btn" onclick="exportCsvBackup()">CSV出力</button>
-            <button class="btn" onclick="triggerImportBackup()">復元</button>
-            <input type="file" id="backupImportInput" accept=".json,application/json" style="display:none" onchange="importJsonBackup(event)">
           </div>
         </div>
         <div class="kanban" id="kanban"></div>
@@ -1509,10 +1538,10 @@
     }
 
     function exportJsonBackup() {
-      const raw = localStorage.getItem(STORAGE_KEY) || JSON.stringify(state);
+      const json = JSON.stringify(state, null, 2);
       downloadFile(
-        `案件バックアップ_${backupFileDate()}.json`,
-        raw,
+        `ダッシュボードバックアップ_${backupFileDate()}.json`,
+        json,
         'application/json;charset=utf-8'
       );
     }
@@ -1527,7 +1556,7 @@
       });
       const csv = '\uFEFF' + header + '\n' + rows.join('\n');
       downloadFile(
-        `案件バックアップ_${backupFileDate()}.csv`,
+        `案件一覧_${backupFileDate()}.csv`,
         csv,
         'text/csv;charset=utf-8'
       );
@@ -1546,13 +1575,15 @@
       reader.onload = function(e) {
         try {
           const data = JSON.parse(e.target.result);
-          if (!confirm('バックアップで現在のデータを上書きします。よろしいですか？')) return;
+          if (!confirm('ダッシュボード全体のデータをバックアップで上書きします。よろしいですか？')) return;
           if (Array.isArray(data)) {
-            state = migrateState({ projects: data, tasks: [], subscriptions: [], adExpenses: [], bizTodos: [] });
-          } else if (data && typeof data === 'object') {
+            alert('案件配列のみのファイルです。ダッシュボード全体のバックアップ（projects・tasks などを含むJSON）を選んでください。');
+            return;
+          }
+          if (data && typeof data === 'object' && Array.isArray(data.projects)) {
             state = migrateState(data);
           } else {
-            alert('無効なバックアップファイルです。');
+            alert('無効なバックアップファイルです。ダッシュボード全体のJSONを選んでください。');
             return;
           }
           localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
