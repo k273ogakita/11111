@@ -1096,7 +1096,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v25</div>
+        <div class="logo-sub">Business Dashboard · v26</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -2733,7 +2733,7 @@ ${MAIL_FOOTER}`,
     }
 
     function plainMailText(text) {
-      return String(text).replace(/\*\*(.+?)\*\*/g, '$1');
+      return String(text).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\r?\n/g, '\r\n');
     }
 
     function buildMailtoUrl(mail, to) {
@@ -2746,6 +2746,26 @@ ${MAIL_FOOTER}`,
       return 'mailto:' + addr + (params.length ? '?' + params.join('&') : '');
     }
 
+    function copyTextToClipboardSync(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+
+    function launchMailto(url) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
     function openFollowMail(projectId, step) {
       const p = state.projects.find(x => x.id === projectId);
       if (!p) {
@@ -2755,22 +2775,29 @@ ${MAIL_FOOTER}`,
       ensureProjectFinance(p);
       const mail = getFollowMail(step, p);
       const to = (p.mailTo || '').trim();
+      const bodyText = plainMailText(mail.body);
       let url = buildMailtoUrl(mail, to);
-      const MAILTO_MAX = 2000;
+      const MAILTO_MAX = 8000;
+      let usedClipboardFallback = false;
 
       if (url.length > MAILTO_MAX) {
-        const body = plainMailText(mail.body);
-        copyTextToClipboard(body, '本文をコピーしました');
+        copyTextToClipboardSync(bodyText);
         url = buildMailtoUrl({ subject: mail.subject, body: '' }, to);
-        toast('本文が長いためクリップボードにコピーしました。メールに貼り付けてください');
+        usedClipboardFallback = true;
       }
 
-      window.location.href = url;
+      launchMailto(url);
 
-      p.afterFollowDone[step] = true;
-      saveState();
-      const label = AFTER_FOLLOW_PHASES.find(x => x.key === step)?.label || 'メール';
-      toast(`「${label}」→ メールアプリを開きました`);
+      setTimeout(function() {
+        p.afterFollowDone[step] = true;
+        saveState();
+        const label = AFTER_FOLLOW_PHASES.find(x => x.key === step)?.label || 'メール';
+        if (usedClipboardFallback) {
+          toast(`「${label}」→ 件名のみ反映。本文はコピー済みなので ⌘V で貼り付けてください`);
+        } else {
+          toast(`「${label}」→ メールアプリを開きました`);
+        }
+      }, 150);
     }
     window.openFollowMail = openFollowMail;
 
