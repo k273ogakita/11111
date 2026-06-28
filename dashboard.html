@@ -1096,7 +1096,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v26</div>
+        <div class="logo-sub">Business Dashboard · v27</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1520,9 +1520,12 @@
     const AFTER_FOLLOW_PHASES = [
       { key: 'thanks', label: 'お礼状の送付' },
       { key: 'followup', label: 'アフターフォロー' },
-      { key: 'support', label: 'サポートプラスのご提案' },
+      { key: 'supportCoconala', label: 'サポートプラス…（ココナラ）' },
+      { key: 'supportDirect', label: 'サポートプラス…（通常）' },
       { key: 'portfolio', label: '実績公開の可否確認' },
     ];
+    const SUPPORT_PERIOD_BLOCK = `【サポートプラス適用期間】
+　　　年　　月　　日 〜 　　　年　　月　　日`;
     const MAIL_FOOTER = `────────────────
 nARK　緒方 和奈
 080-2732-5456
@@ -1636,7 +1639,19 @@ nARK　緒方 和奈
       if (p.followUpTiming === undefined) p.followUpTiming = '2week';
       if (p.contractRoute === undefined) p.contractRoute = detectContractRoute(p);
       if (!p.afterFollowDone || typeof p.afterFollowDone !== 'object') {
-        p.afterFollowDone = { thanks: false, followup: false, support: false, portfolio: false };
+        p.afterFollowDone = { thanks: false, followup: false, supportCoconala: false, supportDirect: false, portfolio: false };
+      } else {
+        if (p.afterFollowDone.support) {
+          const route = p.contractRoute || detectContractRoute(p);
+          if (route === 'coconala') p.afterFollowDone.supportCoconala = true;
+          else p.afterFollowDone.supportDirect = true;
+          delete p.afterFollowDone.support;
+        }
+        if (p.afterFollowDone.supportCoconala === undefined) p.afterFollowDone.supportCoconala = false;
+        if (p.afterFollowDone.supportDirect === undefined) p.afterFollowDone.supportDirect = false;
+        if (p.afterFollowDone.portfolio === undefined) p.afterFollowDone.portfolio = false;
+        if (p.afterFollowDone.thanks === undefined) p.afterFollowDone.thanks = false;
+        if (p.afterFollowDone.followup === undefined) p.afterFollowDone.followup = false;
       }
     }
 
@@ -1722,9 +1737,7 @@ ${MAIL_FOOTER}`,
       };
     }
 
-    function buildSupportMail(p) {
-      ensureProjectFinance(p);
-      const route = p.contractRoute || detectContractRoute(p);
+    function buildSupportMailCoconala(p) {
       const sharedRest = `【サポート内容】
 ・軽微な修正（年3回まで）
 ・テキスト修正
@@ -1742,10 +1755,9 @@ ${MAIL_FOOTER}`,
 ・1本目：白内障の説明動画（¥30,000）← 今回
 ・2本目：手術当日の流れ → **¥22,500**
 ・3本目：点眼の方法 → **¥18,900**`;
-      if (route === 'coconala') {
-        return {
-          subject: '患者説明動画サポートプラスのご案内｜nARK 緒方',
-          body: `${mailAddressBlock(p)}
+      return {
+        subject: '患者説明動画サポートプラスのご案内｜nARK 緒方',
+        body: `${mailAddressBlock(p)}
 お世話になっております。nARKの緒方です。
 先日はご感想をお寄せいただき、ありがとうございました。
 院内でうまく定着しているとのこと、大変嬉しく思います。
@@ -1759,6 +1771,8 @@ ${MAIL_FOOTER}`,
 作った後に「こう直したい」「この部分を最新の情報にしたい」といった
 ご要望にも、安心してご相談いただけます。
 
+${SUPPORT_PERIOD_BLOCK}
+
 ${sharedRest}
 
 ご加入は任意です。更新しなくても、お届け済みの動画は永続利用できます。
@@ -1766,8 +1780,10 @@ ${sharedRest}
 引き続きよろしくお願いいたします。
 
 ${MAIL_FOOTER}`,
-        };
-      }
+      };
+    }
+
+    function buildSupportMailDirect(p) {
       return {
         subject: '患者説明動画のサポートについて｜nARK 緒方',
         body: `${mailAddressBlock(p)}
@@ -1777,6 +1793,8 @@ ${MAIL_FOOTER}`,
 
 実は今回の患者説明動画には、**初年度のサポートプラス**が
 サービス料金に含まれております。
+
+${SUPPORT_PERIOD_BLOCK}
 
 ${SUPPORT_PLUS_SHARED}
 
@@ -1826,7 +1844,8 @@ ${MAIL_FOOTER}`,
       const builders = {
         thanks: buildThanksMail,
         followup: buildFollowupMail,
-        support: buildSupportMail,
+        supportCoconala: buildSupportMailCoconala,
+        supportDirect: buildSupportMailDirect,
         portfolio: buildPortfolioMail,
       };
       return (builders[step] || buildThanksMail)(p);
@@ -2572,16 +2591,14 @@ ${MAIL_FOOTER}`,
     function renderAfterFollowButtons(p) {
       ensureProjectFinance(p);
       const done = p.afterFollowDone || {};
-      const supportHint = (p.contractRoute || detectContractRoute(p)) === 'coconala' ? '（ココナラ）' : '（直接）';
       return `<div class="after-follow-section">
         <div class="after-follow-label">アフターフォロー</div>
         <div class="phase-btns interactive">${AFTER_FOLLOW_PHASES.map(ph => {
           const isDone = !!done[ph.key];
-          const label = ph.key === 'support' ? ph.label + supportHint : ph.label;
           return `<button type="button" class="phase-btn${isDone ? ' done' : ''}"
                     data-follow-mail="1" data-follow-id="${p.id}" data-follow-step="${ph.key}"
                     onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
-                    title="クリックでメールアプリを開く">${isDone ? '✓ ' : ''}${label}</button>`;
+                    title="クリックでメールアプリを開く">${isDone ? '✓ ' : ''}${ph.label}</button>`;
         }).join('')}</div>
       </div>`;
     }
