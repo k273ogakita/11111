@@ -354,6 +354,9 @@
       gap: 4px;
       margin-top: 10px;
     }
+    .phase-btns.interactive {
+      cursor: default;
+    }
     .phase-btn {
       padding: 4px 8px;
       border-radius: 5px;
@@ -614,7 +617,7 @@
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,.7);
-      z-index: 100;
+      z-index: 1000;
       align-items: center;
       justify-content: center;
       backdrop-filter: blur(4px);
@@ -1093,7 +1096,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v23</div>
+        <div class="logo-sub">Business Dashboard · v24</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1661,7 +1664,9 @@ nARK　緒方 和奈
       if (p.mailDirector === undefined) p.mailDirector = '';
       if (p.followUpTiming === undefined) p.followUpTiming = '2week';
       if (p.contractRoute === undefined) p.contractRoute = detectContractRoute(p);
-      if (!p.afterFollowDone) p.afterFollowDone = { thanks: false, followup: false, support: false, portfolio: false };
+      if (!p.afterFollowDone || typeof p.afterFollowDone !== 'object') {
+        p.afterFollowDone = { thanks: false, followup: false, support: false, portfolio: false };
+      }
     }
 
     function detectContractRoute(p) {
@@ -1671,8 +1676,14 @@ nARK　緒方 和奈
     }
 
     function isAfterFollowEligible(p) {
-      return p.category === 'client' && (p.type === 'video' || p.type === 'both');
+      return p.category === 'client';
     }
+
+    function stopCardDrag(e) {
+      e.stopPropagation();
+    }
+    window.stopCardDrag = stopCardDrag;
+    window.openFollowMailModal = openFollowMailModal;
 
     function mailAddressBlock(p) {
       const clinic = (p.mailClinic || p.client || '〇〇クリニック').trim();
@@ -2594,11 +2605,12 @@ ${MAIL_FOOTER}`,
       const supportHint = (p.contractRoute || detectContractRoute(p)) === 'coconala' ? '（ココナラ）' : '（直接）';
       return `<div class="after-follow-section">
         <div class="after-follow-label">アフターフォロー</div>
-        <div class="phase-btns">${AFTER_FOLLOW_PHASES.map(ph => {
+        <div class="phase-btns interactive">${AFTER_FOLLOW_PHASES.map(ph => {
           const isDone = !!done[ph.key];
           const label = ph.key === 'support' ? ph.label + supportHint : ph.label;
-          return `<button class="phase-btn${isDone ? ' done' : ''}"
-                    onclick="event.stopPropagation();openFollowMailModal('${p.id}','${ph.key}')"
+          return `<button type="button" class="phase-btn${isDone ? ' done' : ''}"
+                    data-follow-mail="1" data-follow-id="${p.id}" data-follow-step="${ph.key}"
+                    onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
                     title="クリックでメール文面を表示">${isDone ? '✓ ' : ''}${label}</button>`;
         }).join('')}</div>
       </div>`;
@@ -2751,17 +2763,25 @@ ${MAIL_FOOTER}`,
     }
 
     function openFollowMailModal(projectId, step) {
-      const p = state.projects.find(x => x.id === projectId);
-      if (!p) return;
-      ensureProjectFinance(p);
-      followMailProjectId = projectId;
-      followMailStep = step;
-      const mail = getFollowMail(step, p);
-      const phaseLabel = AFTER_FOLLOW_PHASES.find(x => x.key === step)?.label || 'フォローメール';
-      document.getElementById('followMailTitle').textContent = phaseLabel;
-      document.getElementById('followMailSubject').value = mail.subject;
-      document.getElementById('followMailBody').value = mail.body;
-      document.getElementById('followMailModal').classList.add('open');
+      try {
+        const p = state.projects.find(x => x.id === projectId);
+        if (!p) {
+          toast('案件が見つかりません');
+          return;
+        }
+        ensureProjectFinance(p);
+        followMailProjectId = projectId;
+        followMailStep = step;
+        const mail = getFollowMail(step, p);
+        const phaseLabel = AFTER_FOLLOW_PHASES.find(x => x.key === step)?.label || 'フォローメール';
+        document.getElementById('followMailTitle').textContent = phaseLabel;
+        document.getElementById('followMailSubject').value = mail.subject;
+        document.getElementById('followMailBody').value = mail.body;
+        document.getElementById('followMailModal').classList.add('open');
+      } catch (err) {
+        console.error(err);
+        toast('メール文面の表示に失敗しました');
+      }
     }
 
     function closeFollowMailModal() {
@@ -3670,6 +3690,13 @@ ${MAIL_FOOTER}`,
     });
     document.getElementById('followMailModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeFollowMailModal();
+    });
+    document.getElementById('kanban').addEventListener('click', e => {
+      const btn = e.target.closest('[data-follow-mail]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openFollowMailModal(btn.dataset.followId, btn.dataset.followStep);
     });
     document.getElementById('financeGroup').addEventListener('input', updateProjectProfitPreview);
     document.addEventListener('keydown', e => {
