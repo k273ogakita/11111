@@ -93,6 +93,27 @@
     .date-main { font-size: 1.1rem; font-weight: 600; }
     .date-sub { font-size: .8rem; color: var(--muted); margin-top: 2px; }
 
+    .backup-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: min(420px, calc(100vw - 48px));
+      padding: 12px 14px;
+      background: var(--surface);
+      border: 1px solid var(--red);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(58, 53, 48, .12);
+      font-size: .82rem;
+      line-height: 1.45;
+    }
+    .backup-toast[hidden] { display: none !important; }
+    .backup-toast-msg { flex: 1; }
+    .backup-toast-msg strong { color: var(--red); }
+
     /* ── Stats (compact) ── */
     .stats {
       display: flex;
@@ -1019,7 +1040,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v18</div>
+        <div class="logo-sub">Business Dashboard · v19</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1035,6 +1056,11 @@
         </div>
       </div>
     </header>
+
+    <div class="backup-toast" id="backupToast" hidden>
+      <div class="backup-toast-msg" id="backupToastMsg"></div>
+      <button type="button" class="btn btn-ghost" onclick="dismissBackupToast()">閉じる</button>
+    </div>
 
     <div class="stats" id="stats"></div>
 
@@ -1415,6 +1441,7 @@
     ];
 
     const STORAGE_KEY = 'nark_dashboard_v4';
+    const AUTO_BACKUP_LAST_KEY = 'nark_dashboard_auto_backup_last';
     const BIZ_TODO_CATEGORIES = ['営業', '集客', '経理', '運営', 'その他'];
 
     const SNS_STATUS_MAP = {
@@ -1537,12 +1564,54 @@
       return s;
     }
 
-    function exportJsonBackup() {
+    function exportJsonBackup(options) {
+      const auto = options && options.auto;
       const json = JSON.stringify(state, null, 2);
       downloadFile(
-        `ダッシュボードバックアップ_${backupFileDate()}.json`,
+        `ダッシュボードバックアップ_${backupFileDate()}${auto ? '_自動' : ''}.json`,
         json,
         'application/json;charset=utf-8'
+      );
+    }
+
+    function getThisWeekMonday14(now) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const day = d.getDay();
+      const diffToMonday = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diffToMonday);
+      d.setHours(14, 0, 0, 0);
+      return d;
+    }
+
+    function isWeeklyBackupDue(now) {
+      now = now || new Date();
+      const monday14 = getThisWeekMonday14(now);
+      if (now < monday14) return false;
+      const last = localStorage.getItem(AUTO_BACKUP_LAST_KEY);
+      if (!last) return true;
+      return new Date(last) < monday14;
+    }
+
+    function markWeeklyBackupDone(now) {
+      localStorage.setItem(AUTO_BACKUP_LAST_KEY, (now || new Date()).toISOString());
+    }
+
+    function showBackupToast(message) {
+      const toast = document.getElementById('backupToast');
+      document.getElementById('backupToastMsg').innerHTML = message;
+      toast.hidden = false;
+    }
+
+    function dismissBackupToast() {
+      document.getElementById('backupToast').hidden = true;
+    }
+
+    function runWeeklyAutoBackupIfDue() {
+      if (!isWeeklyBackupDue()) return;
+      exportJsonBackup({ auto: true });
+      markWeeklyBackupDone();
+      showBackupToast(
+        '<strong>週次バックアップ</strong>を実行しました（毎週月曜 14:00）。<br>ダウンロードフォルダに JSON が保存されているか確認してください。'
       );
     }
 
@@ -3012,7 +3081,9 @@
     });
 
     render();
+    runWeeklyAutoBackupIfDue();
     setInterval(renderDateTime, 30000);
+    setInterval(runWeeklyAutoBackupIfDue, 60000);
   </script>
 </body>
 </html>
