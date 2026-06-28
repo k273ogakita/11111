@@ -256,6 +256,7 @@
     .column.col-done .phase-btns,
     .column.col-done .card-actions,
     .column.col-done .card-path { display: none; }
+    .column.col-done .after-follow-section { display: block; }
     .column.col-done .card-actions.has-edit { display: flex; }
     .column-header.clickable {
       cursor: pointer;
@@ -383,6 +384,51 @@
     .phase-btn.advance:hover {
       background: var(--red);
       color: #fff;
+    }
+    .phase-btn.done {
+      background: #e8f5e9;
+      border-color: #81c784;
+      color: #2e7d32;
+    }
+    .phase-btn.done.active {
+      background: #43a047;
+      border-color: #43a047;
+      color: #fff;
+    }
+    .after-follow-section {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+    }
+    .after-follow-label {
+      font-size: .62rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .04em;
+      margin-bottom: 4px;
+    }
+    .mail-copy-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .mail-copy-row input {
+      flex: 1;
+      font-size: .82rem;
+    }
+    #followMailBody {
+      width: 100%;
+      font-family: ui-monospace, monospace;
+      font-size: .72rem;
+      line-height: 1.55;
+      resize: vertical;
+      min-height: 280px;
+    }
+    .mail-copy-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
     }
     .phase-current {
       font-size: .68rem;
@@ -1047,7 +1093,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v21</div>
+        <div class="logo-sub">Business Dashboard · v23</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1055,6 +1101,7 @@
           <button class="btn" onclick="exportJsonBackup()">JSONバックアップ</button>
           <button class="btn" onclick="exportCsvBackup()">CSV出力</button>
           <button class="btn" onclick="triggerImportBackup()">復元</button>
+          <button class="btn btn-ghost" onclick="restorePreviousState()">1つ前に戻す</button>
           <button class="btn btn-ghost" onclick="pickBackupDirectory()" title="nARK 内の「ダッシュボードバックアップ」フォルダを選ぶ">保存先</button>
           <input type="file" id="backupImportInput" accept=".json,application/json" style="display:none" onchange="importJsonBackup(event)">
         </div>
@@ -1269,6 +1316,36 @@
         <label>メモ</label>
         <textarea id="projectMemo" placeholder="案件メモ（自由記載）"></textarea>
       </div>
+      <div class="finance-fields" id="followUpGroup" style="display:none">
+        <div class="finance-fields-title">アフターフォロー（メール宛先）</div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>宛先クリニック名</label>
+            <input type="text" id="projectMailClinic" placeholder="〇〇クリニック">
+          </div>
+          <div class="form-group">
+            <label>宛先 院長名</label>
+            <input type="text" id="projectMailDirector" placeholder="山田">
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>契約経路</label>
+            <select id="projectContractRoute">
+              <option value="direct">直接契約（初年度サポートプラス込み）</option>
+              <option value="coconala">ココナラ経由</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>様子見のタイミング</label>
+            <select id="projectFollowTiming">
+              <option value="2week">2週間後</option>
+              <option value="1month">1ヶ月後</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-hint">請求・アフターフォロー欄のボタンからメール文面をコピーできます</div>
+      </div>
       <div class="finance-fields" id="financeGroup">
         <div class="finance-fields-title">収支・時間（税抜）</div>
         <div class="form-row-2">
@@ -1301,6 +1378,32 @@
       <div class="modal-actions">
         <button class="btn" onclick="closeProjectModal()">キャンセル</button>
         <button class="btn btn-primary" onclick="saveProject()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Follow Mail Modal -->
+  <div class="modal-overlay" id="followMailModal">
+    <div class="modal modal-wide">
+      <h3 id="followMailTitle">フォローメール</h3>
+      <div class="form-group">
+        <label>件名</label>
+        <div class="mail-copy-row">
+          <input type="text" id="followMailSubject" readonly>
+          <button type="button" class="btn" onclick="copyFollowMailSubject()">コピー</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>本文</label>
+        <textarea id="followMailBody" readonly></textarea>
+        <div class="mail-copy-actions">
+          <button type="button" class="btn btn-primary" onclick="copyFollowMailBody()">本文をコピー</button>
+          <button type="button" class="btn" onclick="copyFollowMailAll()">件名＋本文をコピー</button>
+          <button type="button" class="btn btn-primary" onclick="markFollowMailDone()">送信済みにする</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" onclick="closeFollowMailModal()">閉じる</button>
       </div>
     </div>
   </div>
@@ -1431,12 +1534,44 @@
     const STATUSES = [
       { id: 'todo',    label: '未着手',  colClass: '' },
       { id: 'doing',   label: '進行中',  colClass: '' },
-      { id: 'billing', label: '請求',    colClass: '' },
+      { id: 'billing', label: '請求・アフターフォロー', colClass: '' },
       { id: 'done',    label: '完了',    colClass: 'col-done' },
     ];
 
     const DOING_PHASES = ['ヒアリング・構成', '撮影', '編集', '制作中', 'チェック中', '納品済'];
     const BILLING_PHASES = ['作成未', '請求書作成済', '送付済', '入金済'];
+    const AFTER_FOLLOW_PHASES = [
+      { key: 'thanks', label: 'お礼状の送付' },
+      { key: 'followup', label: 'アフターフォロー' },
+      { key: 'support', label: 'サポートプラスのご提案' },
+      { key: 'portfolio', label: '実績公開の可否確認' },
+    ];
+    const MAIL_FOOTER = `────────────────
+nARK　緒方 和奈
+080-2732-5456
+────────────────`;
+    const SUPPORT_PLUS_SHARED = `【サポートプラスとは】
+「動画をいつでも最新の状態に保てる安心感」のための年間サポートです。
+作った後に「こう直したい」「この部分を最新の情報にしたい」といった
+ご要望にも、安心してご相談いただけます。
+
+【サポート内容】
+・軽微な修正（年3回まで）
+・テキスト修正
+・写真・ロゴ差し替え
+・簡単なスライド追加（1〜2枚程度）
+　（外来担当表の変更、季節に応じた変更、情勢に合わせた変更・追加 など）
+※大幅な変更は別途お見積り
+
+【サポートプラス加入中の割引（2本目以降の説明動画）】
+・2本目：25%OFF（¥30,000 → ¥22,500）
+・3本目：37%OFF（¥30,000 → ¥18,900）
+・4本目以降：45%OFF（¥30,000 → ¥16,500）
+
+【イメージしやすい例】
+・1本目：白内障の説明動画（¥30,000）← 今回
+・2本目：手術当日の流れ → **¥22,500**
+・3本目：点眼の方法 → **¥18,900**`;
 
     const CLIENT_TYPES = [
       { value: 'web', label: 'web' },
@@ -1450,6 +1585,7 @@
     ];
 
     const STORAGE_KEY = 'nark_dashboard_v4';
+    const STORAGE_PREV_KEY = 'nark_dashboard_v4_prev';
     const AUTO_BACKUP_LAST_KEY = 'nark_dashboard_auto_backup_last';
     const BACKUP_DIR_LABEL_KEY = 'nark_backup_dir_label';
     const BACKUP_DB_NAME = 'nark_dashboard_backup';
@@ -1458,6 +1594,7 @@
 
     let backupDirHandle = null;
     let backupDirName = localStorage.getItem(BACKUP_DIR_LABEL_KEY) || '';
+    let autoSaveTimer = null;
     const BIZ_TODO_CATEGORIES = ['営業', '集客', '経理', '運営', 'その他'];
 
     const SNS_STATUS_MAP = {
@@ -1497,6 +1634,9 @@
     let bizTodoFilter = 'open';
     let bizTodoShowDone = false;
 
+    let followMailProjectId = null;
+    let followMailStep = null;
+
     function defaultState() {
       return {
         projects: [
@@ -1517,6 +1657,198 @@
       if (p.memo === undefined) p.memo = '';
       if (!p.variableCosts) p.variableCosts = [];
       if (!p.timeLogs) p.timeLogs = [];
+      if (p.mailClinic === undefined) p.mailClinic = '';
+      if (p.mailDirector === undefined) p.mailDirector = '';
+      if (p.followUpTiming === undefined) p.followUpTiming = '2week';
+      if (p.contractRoute === undefined) p.contractRoute = detectContractRoute(p);
+      if (!p.afterFollowDone) p.afterFollowDone = { thanks: false, followup: false, support: false, portfolio: false };
+    }
+
+    function detectContractRoute(p) {
+      const s = ((p.client || '') + ' ' + (p.memo || '') + ' ' + (p.name || '')).toLowerCase();
+      if (s.includes('ココナラ') || s.includes('coconala')) return 'coconala';
+      return 'direct';
+    }
+
+    function isAfterFollowEligible(p) {
+      return p.category === 'client' && (p.type === 'video' || p.type === 'both');
+    }
+
+    function mailAddressBlock(p) {
+      const clinic = (p.mailClinic || p.client || '〇〇クリニック').trim();
+      const director = (p.mailDirector || '').trim();
+      if (director) return `${clinic}\n院長　${director}先生\n`;
+      return `${clinic}\n院長　〇〇先生\n`;
+    }
+
+    function mailAddressBlock(p) {
+      const timingNote = p.followUpTiming === '1month'
+        ? '納品から1ヶ月後'
+        : '納品から2週間後';
+      return {
+        subject: '患者説明動画の納品のご連絡｜nARK 緒方',
+        body: `${mailAddressBlock(p)}
+お世話になっております。nARKの緒方です。
+この度は患者説明動画のご依頼、誠にありがとうございました。
+
+動画データを添付（または共有URLにて）お送りいたします。
+制作した動画が院内でお役に立ち、先生をはじめスタッフの方々の
+負担軽減、患者様の理解度・安心度の向上に繋がりますと幸いです。
+
+【使い始めのポイント】
+・看護師以外でも、事務員さんなどにも再生方法をご共有いただけますと、
+　スムーズに動画の活用が進むかと思います。ぜひご活用ください。
+・テロップの内容で気になる点があれば、いつでもお知らせください。
+
+${timingNote}に、
+「院内での使い心地」について短くお伺いするメールをお送りします。
+その際、テキストの修正なども承りますので、
+その時点で「ここを直したい」があればお気軽にお知らせください。
+
+引き続きどうぞよろしくお願いいたします。
+
+${MAIL_FOOTER}`,
+      };
+    }
+
+    function buildFollowupMail(p) {
+      const opening = p.followUpTiming === '1month'
+        ? '納品から1ヶ月ほど経ちましたが、院内でのご活用はいかがでしょうか。'
+        : '先日お届けした患者説明動画、院内でのご活用はいかがでしょうか。';
+      return {
+        subject: '患者説明動画のご活用状況について｜nARK 緒方',
+        body: `${mailAddressBlock(p)}
+お世話になっております。nARKの緒方です。
+${opening}
+
+お忙しいところ恐れ入りますが、
+下記①〜③のいずれかで、番号だけご返信いただけると助かります。
+
+① 説明の負担が楽になった・患者さんの理解が進んだ
+② まだ様子見・これから本格活用
+③ あまり変化を感じない
+
+その他ご感想などあれば、ご記載ください。
+
+テキストの修正や表現の調整など、
+ご希望があればこのメールへの返信でお知らせください。
+（患者説明動画のテキスト修正に限り承ります）
+
+先生のお時間を取りすぎないよう、簡潔にお伺いしております。
+どうぞよろしくお願いいたします。
+
+${MAIL_FOOTER}`,
+      };
+    }
+
+    function buildSupportMail(p) {
+      ensureProjectFinance(p);
+      const route = p.contractRoute || detectContractRoute(p);
+      const sharedRest = `【サポート内容】
+・軽微な修正（年3回まで）
+・テキスト修正
+・写真・ロゴ差し替え
+・簡単なスライド追加（1〜2枚程度）
+　（外来担当表の変更、季節に応じた変更、情勢に合わせた変更・追加 など）
+※大幅な変更は別途お見積り
+
+【サポートプラス加入中の割引（2本目以降の説明動画）】
+・2本目：25%OFF（¥30,000 → ¥22,500）
+・3本目：37%OFF（¥30,000 → ¥18,900）
+・4本目以降：45%OFF（¥30,000 → ¥16,500）
+
+【イメージしやすい例】
+・1本目：白内障の説明動画（¥30,000）← 今回
+・2本目：手術当日の流れ → **¥22,500**
+・3本目：点眼の方法 → **¥18,900**`;
+      if (route === 'coconala') {
+        return {
+          subject: '患者説明動画サポートプラスのご案内｜nARK 緒方',
+          body: `${mailAddressBlock(p)}
+お世話になっております。nARKの緒方です。
+先日はご感想をお寄せいただき、ありがとうございました。
+院内でうまく定着しているとのこと、大変嬉しく思います。
+
+動画納品後、「ここをこうしたかったな」などというご希望にお応えするため、
+サポートプラスプランをご用意しております。
+
+【サポートプラスとは】
+年額¥5,800（税別）の年間サポートプランです。
+「動画をいつでも最新の状態に保てる安心感」のためのもので、
+作った後に「こう直したい」「この部分を最新の情報にしたい」といった
+ご要望にも、安心してご相談いただけます。
+
+${sharedRest}
+
+ご加入は任意です。更新しなくても、お届け済みの動画は永続利用できます。
+
+引き続きよろしくお願いいたします。
+
+${MAIL_FOOTER}`,
+        };
+      }
+      return {
+        subject: '患者説明動画のサポートについて｜nARK 緒方',
+        body: `${mailAddressBlock(p)}
+お世話になっております。nARKの緒方です。
+先日はご感想をお寄せいただき、ありがとうございました。
+院内でうまく定着しているとのこと、大変嬉しく思います。
+
+実は今回の患者説明動画には、**初年度のサポートプラス**が
+サービス料金に含まれております。
+
+${SUPPORT_PLUS_SHARED}
+
+2年目以降も同様のサポートを継続される場合は、
+年額¥5,800（税別）の任意更新となります。
+更新しなくても、お届け済みの動画は永続してお使いいただけます。
+
+ほかの説明動画の追加や、待合・Webまわりの整備など、
+「次にこうしたい」がございましたら、お気軽にお知らせください。
+
+引き続きよろしくお願いいたします。
+
+${MAIL_FOOTER}`,
+      };
+    }
+
+    function buildPortfolioMail(p) {
+      return {
+        subject: '患者説明動画の掲載についてご相談｜nARK 緒方',
+        body: `${mailAddressBlock(p)}
+お世話になっております。nARKの緒方です。
+先日はご感想をお寄せいただき、ありがとうございました。
+
+開業準備中や開業直後の先生方から、
+「実際の説明動画はどのような仕上がりか」を
+よくお問い合わせいただきます。
+
+もしよろしければ、今回の患者説明動画を
+**院名を出さない形**（またはロゴ・院内が特定されないよう加工した形）で、
+nARKの実績として掲載させていただくことは可能でしょうか。
+
+掲載前には必ずプレビューをお送りし、
+先生ご確認・ご承認のうえ公開いたします。
+ご都合が変われば取り下げも可能です。
+
+ご無理のない範囲で結構ですので、
+「掲載してよい」「院内利用のみにしたい」など、
+ご希望をお知らせいただけますと幸いです。
+
+今後ともどうぞよろしくお願いいたします。
+
+${MAIL_FOOTER}`,
+      };
+    }
+
+    function getFollowMail(step, p) {
+      const builders = {
+        thanks: buildThanksMail,
+        followup: buildFollowupMail,
+        support: buildSupportMail,
+        portfolio: buildPortfolioMail,
+      };
+      return (builders[step] || buildThanksMail)(p);
     }
 
     function migrateState(data) {
@@ -1553,8 +1885,32 @@
     }
 
     function saveState() {
+      const current = localStorage.getItem(STORAGE_KEY);
+      if (current) localStorage.setItem(STORAGE_PREV_KEY, current);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      scheduleAutoSaveToFolder();
+      render();
+    }
+
+    function scheduleAutoSaveToFolder() {
+      clearTimeout(autoSaveTimer);
+      if (!backupDirHandle) return;
+      autoSaveTimer = setTimeout(function() {
+        exportJsonBackup({ filename: 'latest.json' });
+      }, 2000);
+    }
+
+    function restorePreviousState() {
+      const prev = localStorage.getItem(STORAGE_PREV_KEY);
+      if (!prev) {
+        alert('戻せる以前の状態がありません。');
+        return;
+      }
+      if (!confirm('直前の状態に戻します。今の変更は失われます。よろしいですか？')) return;
+      state = migrateState(JSON.parse(prev));
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       render();
+      showBackupToast('<strong>1つ前の状態</strong>に戻しました。');
     }
 
     function backupFileDate() {
@@ -1697,8 +2053,13 @@
     }
 
     async function exportJsonBackup(options) {
-      const auto = options && options.auto;
-      const filename = backupFileDate() + (auto ? '_自動' : '') + '.json';
+      options = options || {};
+      const filename = options.filename || (
+        backupFileDate() +
+        (options.auto ? '_自動' : '') +
+        (options.safety ? '_復元前' : '') +
+        '.json'
+      );
       const json = JSON.stringify(state, null, 2);
       await saveBackupFile(filename, json, 'application/json;charset=utf-8');
     }
@@ -1774,18 +2135,26 @@
         try {
           const data = JSON.parse(e.target.result);
           if (!confirm('ダッシュボード全体のデータをバックアップで上書きします。よろしいですか？')) return;
-          if (Array.isArray(data)) {
-            alert('案件配列のみのファイルです。ダッシュボード全体のバックアップ（projects・tasks などを含むJSON）を選んでください。');
-            return;
-          }
-          if (data && typeof data === 'object' && Array.isArray(data.projects)) {
-            state = migrateState(data);
-          } else {
-            alert('無効なバックアップファイルです。ダッシュボード全体のJSONを選んでください。');
-            return;
-          }
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-          render();
+          exportJsonBackup({ safety: true }).then(function() {
+            if (Array.isArray(data)) {
+              alert('案件配列のみのファイルです。ダッシュボード全体のバックアップ（projects・tasks などを含むJSON）を選んでください。');
+              return;
+            }
+            if (data && typeof data === 'object' && Array.isArray(data.projects)) {
+              const current = localStorage.getItem(STORAGE_KEY);
+              if (current) localStorage.setItem(STORAGE_PREV_KEY, current);
+              state = migrateState(data);
+            } else {
+              alert('無効なバックアップファイルです。ダッシュボード全体のJSONを選んでください。');
+              return;
+            }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            render();
+            showBackupToast(
+              '復元しました。上書き前のデータは <strong>' + escapeHtml(backupDestinationLabel()) +
+              '</strong> の <strong>_復元前.json</strong> に保存されています。'
+            );
+          });
         } catch (_) {
           alert('JSONの読み込みに失敗しました。');
         }
@@ -2107,7 +2476,7 @@
         <span class="stat-divider"></span>
         <span class="stat-chip highlight">進行中 <strong>${doing}</strong></span>
         <span class="stat-divider"></span>
-        <span class="stat-chip">請求 <strong>${billing}</strong></span>
+        <span class="stat-chip">請求/AF <strong>${billing}</strong></span>
         <span class="stat-divider"></span>
         <span class="stat-chip highlight">今日のタスク <strong id="todayTaskCount">${todayTasks}</strong></span>
         <span class="stat-divider"></span>
@@ -2219,6 +2588,22 @@
       return `${p.deadlinePlan}予定`;
     }
 
+    function renderAfterFollowButtons(p) {
+      ensureProjectFinance(p);
+      const done = p.afterFollowDone || {};
+      const supportHint = (p.contractRoute || detectContractRoute(p)) === 'coconala' ? '（ココナラ）' : '（直接）';
+      return `<div class="after-follow-section">
+        <div class="after-follow-label">アフターフォロー</div>
+        <div class="phase-btns">${AFTER_FOLLOW_PHASES.map(ph => {
+          const isDone = !!done[ph.key];
+          const label = ph.key === 'support' ? ph.label + supportHint : ph.label;
+          return `<button class="phase-btn${isDone ? ' done' : ''}"
+                    onclick="event.stopPropagation();openFollowMailModal('${p.id}','${ph.key}')"
+                    title="クリックでメール文面を表示">${isDone ? '✓ ' : ''}${label}</button>`;
+        }).join('')}</div>
+      </div>`;
+    }
+
     function renderPhaseButtons(p) {
       if (p.status === 'todo') {
         return `<div class="phase-btns">
@@ -2235,10 +2620,15 @@
         `).join('')}</div>`;
       }
       if (p.status === 'billing') {
-        return `<div class="phase-btns">${BILLING_PHASES.map(ph => `
+        const billing = `<div class="phase-btns">${BILLING_PHASES.map(ph => `
           <button class="phase-btn${p.phase === ph ? ' active' : ''}"
                   onclick="event.stopPropagation();setBillingPhase('${p.id}','${ph}')">${ph}</button>
         `).join('')}</div>`;
+        const afterFollow = isAfterFollowEligible(p) ? renderAfterFollowButtons(p) : '';
+        return billing + afterFollow;
+      }
+      if (p.status === 'done' && isAfterFollowEligible(p)) {
+        return renderAfterFollowButtons(p);
       }
       return '';
     }
@@ -2335,7 +2725,7 @@
         p.phase = '作成未';
         ensureBillingDate(p);
         saveState();
-        toast(`「${p.name}」→ 請求`);
+        toast(`「${p.name}」→ 請求・アフターフォロー`);
         return;
       }
       if (p.category === 'sns') p.snsStatus = 'scheduled';
@@ -2358,6 +2748,68 @@
       }
       saveState();
       toast(`「${p.name}」→ ${phase}`);
+    }
+
+    function openFollowMailModal(projectId, step) {
+      const p = state.projects.find(x => x.id === projectId);
+      if (!p) return;
+      ensureProjectFinance(p);
+      followMailProjectId = projectId;
+      followMailStep = step;
+      const mail = getFollowMail(step, p);
+      const phaseLabel = AFTER_FOLLOW_PHASES.find(x => x.key === step)?.label || 'フォローメール';
+      document.getElementById('followMailTitle').textContent = phaseLabel;
+      document.getElementById('followMailSubject').value = mail.subject;
+      document.getElementById('followMailBody').value = mail.body;
+      document.getElementById('followMailModal').classList.add('open');
+    }
+
+    function closeFollowMailModal() {
+      document.getElementById('followMailModal').classList.remove('open');
+      followMailProjectId = null;
+      followMailStep = null;
+    }
+
+    function copyTextToClipboard(text, msg) {
+      navigator.clipboard.writeText(text).then(() => {
+        toast(msg || 'コピーしました');
+      }).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        toast(msg || 'コピーしました');
+      });
+    }
+
+    function copyFollowMailSubject() {
+      const subject = document.getElementById('followMailSubject').value;
+      copyTextToClipboard(subject, '件名をコピーしました');
+    }
+
+    function copyFollowMailBody() {
+      const body = document.getElementById('followMailBody').value;
+      copyTextToClipboard(body, '本文をコピーしました');
+    }
+
+    function copyFollowMailAll() {
+      const subject = document.getElementById('followMailSubject').value;
+      const body = document.getElementById('followMailBody').value;
+      copyTextToClipboard(`件名: ${subject}\n\n${body}`, '件名＋本文をコピーしました');
+    }
+
+    function markFollowMailDone() {
+      if (!followMailProjectId || !followMailStep) return;
+      const p = state.projects.find(x => x.id === followMailProjectId);
+      if (!p) return;
+      ensureProjectFinance(p);
+      p.afterFollowDone[followMailStep] = true;
+      saveState();
+      closeFollowMailModal();
+      const label = AFTER_FOLLOW_PHASES.find(x => x.key === followMailStep)?.label || '';
+      toast(`「${label}」を送信済みにしました`);
     }
 
     function renderTasks() {
@@ -2398,6 +2850,7 @@
       const isSns = cat === 'sns';
       document.getElementById('clientGroup').style.display = isSns ? 'none' : '';
       document.getElementById('platformGroup').style.display = isSns ? '' : 'none';
+      document.getElementById('followUpGroup').style.display = isSns ? 'none' : '';
       document.getElementById('projectNameLabel').textContent = isSns ? '投稿タイトル' : '案件名';
       document.getElementById('projectName').placeholder = isSns
         ? '例: 2026-06-09_夏目漱石舊居' : '例: 2026-06_○○クリニック_web';
@@ -2547,6 +3000,10 @@
         document.getElementById('projectRevenue').value = p.revenue || '';
         document.getElementById('projectTargetHours').value = p.targetHours || '';
         document.getElementById('projectInvoiceDate').value = p.invoiceDate || '';
+        document.getElementById('projectMailClinic').value = p.mailClinic || p.client || '';
+        document.getElementById('projectMailDirector').value = p.mailDirector || '';
+        document.getElementById('projectContractRoute').value = p.contractRoute || detectContractRoute(p);
+        document.getElementById('projectFollowTiming').value = p.followUpTiming || '2week';
         renderVariableCostRows(p.variableCosts.length ? p.variableCosts : []);
         renderTimeLogRows(p.timeLogs.length ? p.timeLogs : []);
       } else {
@@ -2564,6 +3021,10 @@
         document.getElementById('projectRevenue').value = '';
         document.getElementById('projectTargetHours').value = '';
         document.getElementById('projectInvoiceDate').value = '';
+        document.getElementById('projectMailClinic').value = '';
+        document.getElementById('projectMailDirector').value = '';
+        document.getElementById('projectContractRoute').value = 'direct';
+        document.getElementById('projectFollowTiming').value = '2week';
         renderVariableCostRows([]);
         renderTimeLogRows([]);
       }
@@ -2607,6 +3068,12 @@
         variableCosts: readVariableCostsFromModal(),
         timeLogs: readTimeLogsFromModal(),
       };
+      if (category === 'client') {
+        financeData.mailClinic = document.getElementById('projectMailClinic').value.trim();
+        financeData.mailDirector = document.getElementById('projectMailDirector').value.trim();
+        financeData.contractRoute = document.getElementById('projectContractRoute').value;
+        financeData.followUpTiming = document.getElementById('projectFollowTiming').value;
+      }
       if (category === 'sns') {
         data.platform = document.getElementById('projectPlatform').value;
         data.snsStatus = statusToSnsStatus(status);
@@ -3201,10 +3668,14 @@
     document.getElementById('bizTodoModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeBizTodoModal();
     });
+    document.getElementById('followMailModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeFollowMailModal();
+    });
     document.getElementById('financeGroup').addEventListener('input', updateProjectProfitPreview);
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         closeProjectModal(); closePathModal(); closeChecklistModal();
+        closeFollowMailModal();
         closeSubModal(); closeAdModal(); closeBizTodoModal();
       }
     });
