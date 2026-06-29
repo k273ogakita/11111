@@ -1114,7 +1114,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v30</div>
+        <div class="logo-sub">Business Dashboard · v31</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1189,6 +1189,7 @@
           <div class="cal-legend-item"><div class="cal-legend-dot sns"></div>SNS投稿</div>
           <div class="cal-legend-item"><div class="cal-legend-dot biz"></div>事業TODO</div>
           <div class="cal-legend-item"><div class="cal-legend-dot task"></div>予定タスク</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot subscription"></div>サブスク更新</div>
         </div>
       </div>
     </section>
@@ -3701,6 +3702,19 @@ ${MAIL_FOOTER}`,
           if (!events[t.date]) events[t.date] = [];
           events[t.date].push({ label: t.text, category: 'scheduled-task', client: '', status: '' });
         }
+      });
+      (state.subscriptions || []).forEach(sub => {
+        if (!sub.renewalDate) return;
+        if (sub.endDate && sub.renewalDate > sub.endDate) return;
+        const days = daysUntil(sub.renewalDate);
+        const soonNote = days !== null && days >= 0 && days <= 7 ? `（あと${days}日）` : '';
+        if (!events[sub.renewalDate]) events[sub.renewalDate] = [];
+        events[sub.renewalDate].push({
+          label: `更新: ${sub.name}${soonNote}`,
+          category: 'subscription',
+          client: (sub.cycle === 'annual' ? '年払い' : '月払い') + ' ' + formatYen(Number(sub.amount) || 0),
+          status: '',
+        });
       });
       return events;
     }
