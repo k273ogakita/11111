@@ -1069,11 +1069,13 @@
       max-width: 32px;
       min-height: 3px;
       border-radius: 4px 4px 0 0;
-      background: rgba(232,149,106,.45);
+      background: rgba(42,138,94,.45);
     }
-    .revenue-bar-col.current .revenue-bar { background: rgba(232,149,106,.75); }
-    .revenue-bar-col.selected .revenue-bar { background: #2a8a5e; }
-    .revenue-bar-col.selected .revenue-bar-value { color: #2a8a5e; }
+    .revenue-bar-col.positive .revenue-bar { background: rgba(42,138,94,.55); }
+    .revenue-bar-col.positive.current .revenue-bar { background: rgba(42,138,94,.85); }
+    .revenue-bar-col.positive.selected .revenue-bar { background: #2a8a5e; }
+    .revenue-bar-col.positive.has-value .revenue-bar-value { color: #2a8a5e; }
+    .revenue-bar-col.positive.selected .revenue-bar-value { color: #2a8a5e; }
     .revenue-bar-label {
       font-size: .62rem;
       color: var(--muted);
@@ -1081,7 +1083,8 @@
       line-height: 1;
     }
     .revenue-bar-col.current .revenue-bar-label { font-weight: 700; color: var(--text); }
-    .revenue-bar-col.selected .revenue-bar-label { font-weight: 700; color: #2a8a5e; }
+    .revenue-bar-col.positive.selected .revenue-bar-label { font-weight: 700; color: #2a8a5e; }
+    .revenue-bar-col.negative.selected .revenue-bar-label { font-weight: 700; color: #c05050; }
     .finance-hero-item.annual {
       border-color: rgba(42,138,94,.35);
       background: rgba(42,138,94,.08);
@@ -1228,7 +1231,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v38</div>
+        <div class="logo-sub">Business Dashboard · v39</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -2630,7 +2633,7 @@ ${MAIL_FOOTER}`,
           </div>
           <div class="revenue-chart">
             ${chartData.map(d => `
-              <div class="revenue-bar-col${d.netProfit ? ' has-value' : ''}${d.isNegative ? ' negative' : ''}${d.isCurrent ? ' current' : ''}${d.isSelected ? ' selected' : ''}"
+              <div class="revenue-bar-col${d.netProfit ? ' has-value' : ''}${d.netProfit > 0 ? ' positive' : ''}${d.isNegative ? ' negative' : ''}${d.isCurrent ? ' current' : ''}${d.isSelected ? ' selected' : ''}"
                    title="${d.label} ${formatYen(d.netProfit)}"
                    onclick="financeGoTo(${d.y}, ${d.m})">
                 <div class="revenue-bar-value">${formatYenCompact(d.netProfit)}</div>
