@@ -1004,7 +1004,7 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
     }
-    .finance-breakdown-5 { grid-template-columns: repeat(5, 1fr); }
+    .finance-breakdown-3 { grid-template-columns: repeat(3, 1fr); }
     .finance-bd-item {
       background: var(--surface-2);
       border: 1px solid var(--border);
@@ -1086,7 +1086,12 @@
       border-color: rgba(42,138,94,.35);
       background: rgba(42,138,94,.08);
     }
-    .finance-hero-item.annual .finance-hero-value { color: #2a8a5e; }
+    .revenue-bar-col.negative .revenue-bar { background: rgba(200,80,80,.55); }
+    .revenue-bar-col.negative.selected .revenue-bar { background: #c05050; }
+    .revenue-bar-col.negative .revenue-bar-value { color: var(--red-dim); }
+    .revenue-bar-col.negative.selected .revenue-bar-value { color: #c05050; }
+    .finance-hero-item.annual .finance-hero-value.positive { color: #2a8a5e; }
+    .finance-hero-item.annual .finance-hero-value.negative { color: var(--red-dim); }
 
     .sub-list { display: flex; flex-direction: column; gap: 8px; }
     .sub-item {
@@ -1201,6 +1206,7 @@
       .finance-hero { grid-template-columns: 1fr; }
       .finance-breakdown { grid-template-columns: repeat(2, 1fr); }
       .finance-breakdown-5 { grid-template-columns: repeat(2, 1fr); }
+      .finance-breakdown-3 { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 600px) {
       .app { padding: 16px; }
@@ -1221,7 +1227,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v35</div>
+        <div class="logo-sub">Business Dashboard · v36</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -2405,16 +2411,16 @@ ${MAIL_FOOTER}`,
       return months;
     }
 
-    function getFiscalYearRevenue(fy) {
+    function getFiscalYearNetProfit(fy) {
       return getFiscalYearMonths(fy).reduce((sum, { y, m }) => {
-        return sum + getMonthFinance(y, m).revenue;
+        return sum + getMonthFinance(y, m).netProfit;
       }, 0);
     }
 
-    function getRevenueChartData(fy) {
+    function getProfitChartData(fy) {
       const months = getFiscalYearMonths(fy);
-      const values = months.map(({ y, m }) => getMonthFinance(y, m).revenue);
-      const max = Math.max(...values, 1);
+      const values = months.map(({ y, m }) => getMonthFinance(y, m).netProfit);
+      const maxAbs = Math.max(...values.map(v => Math.abs(v)), 1);
       const now = new Date();
       const curY = now.getFullYear();
       const curM = now.getMonth();
@@ -2422,8 +2428,9 @@ ${MAIL_FOOTER}`,
       return months.map(({ y, m }, i) => ({
         y, m,
         label: monthLabels[i] + '月',
-        revenue: values[i],
-        heightPct: values[i] > 0 ? Math.max(6, Math.round((values[i] / max) * 100)) : 0,
+        netProfit: values[i],
+        heightPct: values[i] !== 0 ? Math.max(6, Math.round((Math.abs(values[i]) / maxAbs) * 100)) : 0,
+        isNegative: values[i] < 0,
         isCurrent: y === curY && m === curM,
         isSelected: y === financeYear && m === financeMonth,
       }));
@@ -2563,8 +2570,9 @@ ${MAIL_FOOTER}`,
       const isCurrentMonth = financeYear === new Date().getFullYear() && financeMonth === new Date().getMonth();
       const profitClass = f.netProfit >= 0 ? 'positive' : 'negative';
       const fy = getFiscalYear(financeYear, financeMonth);
-      const fyRevenue = getFiscalYearRevenue(fy);
-      const chartData = getRevenueChartData(fy);
+      const fyProfit = getFiscalYearNetProfit(fy);
+      const fyProfitClass = fyProfit >= 0 ? 'positive' : 'negative';
+      const chartData = getProfitChartData(fy);
       const fyEnd = fy + 1;
 
       document.getElementById('financePanel').innerHTML = `
@@ -2579,15 +2587,15 @@ ${MAIL_FOOTER}`,
           <div class="finance-hero-item primary">
             <div class="finance-hero-label">今月の純利益</div>
             <div class="finance-hero-value ${profitClass}">${formatYen(f.netProfit)}</div>
-            <div class="finance-hero-sub">売上 ${formatYen(f.revenue)} − 固定費 ${formatYen(f.fixed)} − 変動費 ${formatYen(f.variable)} − 広告費 ${formatYen(f.adSpend)}</div>
+            <div class="finance-hero-sub">固定費 ${formatYen(f.fixed)} · 変動費 ${formatYen(f.variable)} · 広告費 ${formatYen(f.adSpend)}</div>
           </div>
           <div class="finance-hero-item annual">
-            <div class="finance-hero-label">${fy}年度の売上</div>
-            <div class="finance-hero-value">${formatYen(fyRevenue)}</div>
-            <div class="finance-hero-sub">${fy}年4月〜${fyEnd}年3月 · 請求ベース累計</div>
+            <div class="finance-hero-label">${fy}年度の純利益</div>
+            <div class="finance-hero-value ${fyProfitClass}">${formatYen(fyProfit)}</div>
+            <div class="finance-hero-sub">${fy}年4月〜${fyEnd}年3月 · 累計</div>
           </div>
         </div>
-        <div class="finance-breakdown finance-breakdown-5">
+        <div class="finance-breakdown finance-breakdown-3">
           <div class="finance-bd-item">
             <div class="finance-bd-label">固定費</div>
             <div class="finance-bd-value">${formatYen(f.fixed)}</div>
@@ -2600,35 +2608,27 @@ ${MAIL_FOOTER}`,
             <div class="finance-bd-label">広告費</div>
             <div class="finance-bd-value">${formatYen(f.adSpend)}</div>
           </div>
-          <div class="finance-bd-item">
-            <div class="finance-bd-label">売上</div>
-            <div class="finance-bd-value">${formatYen(f.revenue)}</div>
-          </div>
-          <div class="finance-bd-item">
-            <div class="finance-bd-label">損益分岐点</div>
-            <div class="finance-bd-value">${formatYen(f.breakEven)}</div>
-          </div>
         </div>
         <div class="revenue-chart-wrap">
           <div class="revenue-chart-header">
             <div>
-              <div class="revenue-chart-title">月別売上</div>
+              <div class="revenue-chart-title">月別純利益</div>
               <div class="revenue-chart-sub">${fy}年度（4月〜3月）· 棒をクリックで月を切替</div>
             </div>
           </div>
           <div class="revenue-chart">
             ${chartData.map(d => `
-              <div class="revenue-bar-col${d.revenue ? ' has-value' : ''}${d.isCurrent ? ' current' : ''}${d.isSelected ? ' selected' : ''}"
-                   title="${d.label} ${formatYen(d.revenue)}"
+              <div class="revenue-bar-col${d.netProfit ? ' has-value' : ''}${d.isNegative ? ' negative' : ''}${d.isCurrent ? ' current' : ''}${d.isSelected ? ' selected' : ''}"
+                   title="${d.label} ${formatYen(d.netProfit)}"
                    onclick="financeGoTo(${d.y}, ${d.m})">
-                <div class="revenue-bar-value">${formatYenCompact(d.revenue)}</div>
+                <div class="revenue-bar-value">${formatYenCompact(d.netProfit)}</div>
                 <div class="revenue-bar" style="height:${d.heightPct}%"></div>
                 <div class="revenue-bar-label">${d.label}</div>
               </div>
             `).join('')}
           </div>
         </div>
-        <div class="tax-note">請求ベース · 変動費は請求月 · 広告費は支出月 · 案件の純利益は固定費・広告費を含みません · 年度は4月始まり</div>
+        <div class="tax-note">請求ベース · 変動費は請求月 · 広告費は支出月 · 案件カードの純利益は固定費・広告費を含みません · 年度は4月始まり</div>
       `;
     }
 
