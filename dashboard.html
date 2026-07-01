@@ -1074,9 +1074,26 @@
     .revenue-bar-col.positive .revenue-bar { background: rgba(42,138,94,.55); }
     .revenue-bar-col.positive.current .revenue-bar { background: rgba(42,138,94,.85); }
     .revenue-bar-col.positive.has-value .revenue-bar-value { color: #2a8a5e; }
-    .revenue-bar-col.selected .revenue-bar { background: #d4a800; }
-    .revenue-bar-col.selected .revenue-bar-value { color: #9a7a00; font-weight: 700; }
-    .revenue-bar-col.selected .revenue-bar-label { font-weight: 700; color: #9a7a00; }
+    .revenue-bar-col.negative .revenue-bar { background: rgba(200,80,80,.55); }
+    .revenue-bar-col.negative .revenue-bar-value { color: var(--red-dim); }
+    /* 選択中は positive / negative / current より優先して黄色 */
+    .revenue-bar-col.selected .revenue-bar,
+    .revenue-bar-col.positive.selected .revenue-bar,
+    .revenue-bar-col.positive.current.selected .revenue-bar,
+    .revenue-bar-col.negative.selected .revenue-bar {
+      background: #d4a800;
+    }
+    .revenue-bar-col.selected .revenue-bar-value,
+    .revenue-bar-col.positive.selected .revenue-bar-value,
+    .revenue-bar-col.positive.has-value.selected .revenue-bar-value,
+    .revenue-bar-col.negative.selected .revenue-bar-value {
+      color: #9a7a00;
+      font-weight: 700;
+    }
+    .revenue-bar-col.selected .revenue-bar-label {
+      font-weight: 700;
+      color: #9a7a00;
+    }
     .revenue-bar-label {
       font-size: .62rem;
       color: var(--muted);
@@ -1084,12 +1101,11 @@
       line-height: 1;
     }
     .revenue-bar-col.current .revenue-bar-label { font-weight: 700; color: var(--text); }
+    .revenue-bar-col.selected .revenue-bar-label { font-weight: 700; color: #9a7a00; }
     .finance-hero-item.annual {
       border-color: rgba(42,138,94,.35);
       background: rgba(42,138,94,.08);
     }
-    .revenue-bar-col.negative .revenue-bar { background: rgba(200,80,80,.55); }
-    .revenue-bar-col.negative .revenue-bar-value { color: var(--red-dim); }
     .finance-hero-item.annual .finance-hero-value.positive { color: #2a8a5e; }
     .finance-hero-item.annual .finance-hero-value.negative { color: var(--red-dim); }
 
@@ -1228,7 +1244,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v40</div>
+        <div class="logo-sub">Business Dashboard · v41</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
