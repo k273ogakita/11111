@@ -339,6 +339,11 @@
       color: var(--red);
       border: 1px solid rgba(232,149,106,.3);
     }
+    .card-tag.video {
+      background: rgba(80,120,200,.14);
+      color: #5078c8;
+      border-color: rgba(80,120,200,.35);
+    }
     .card-tag.sns {
       background: rgba(58,53,48,.05);
       color: var(--muted);
@@ -820,6 +825,29 @@
     .cal-legend-dot.biz { background: #3278c8; }
     .cal-legend-dot.task { background: #32a078; }
     .cal-legend-dot.subscription { background: #d4a800; }
+    .cal-legend-dot.followup { background: #9b7ad0; }
+    .notice-bar {
+      margin-bottom: 16px;
+      padding: 10px 14px;
+      background: var(--red-glow);
+      border: 1px solid rgba(232,149,106,.45);
+      border-radius: 8px;
+      font-size: .82rem;
+      color: var(--red-dim);
+      line-height: 1.5;
+    }
+    .task-item-reminder {
+      background: rgba(232,149,106,.06);
+      border: 1px solid rgba(232,149,106,.25);
+      border-radius: 8px;
+      margin: 0 8px 6px;
+      padding: 8px 10px;
+    }
+    .cal-event.follow-up {
+      background: rgba(140,100,200,.14);
+      color: #7a5cb0;
+      border-left: 2px solid #9b7ad0;
+    }
     .cal-event.biz-todo {
       background: rgba(50,120,200,.12);
       color: #3278c8;
@@ -1120,7 +1148,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v32</div>
+        <div class="logo-sub">Business Dashboard · v33</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1144,6 +1172,8 @@
       <div class="backup-toast-msg" id="backupToastMsg"></div>
       <button type="button" class="btn btn-ghost" onclick="dismissBackupToast()">閉じる</button>
     </div>
+
+    <div class="notice-bar" id="noticeBar" style="display:none"></div>
 
     <div class="stats" id="stats"></div>
 
@@ -1192,10 +1222,11 @@
         <div class="calendar-grid" id="calGrid"></div>
         <div class="cal-legend">
           <div class="cal-legend-item"><div class="cal-legend-dot client"></div>クライアント案件の期日</div>
-          <div class="cal-legend-item"><div class="cal-legend-dot sns"></div>SNS投稿</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot sns"></div>自社事業整備</div>
           <div class="cal-legend-item"><div class="cal-legend-dot biz"></div>事業TODO</div>
           <div class="cal-legend-item"><div class="cal-legend-dot task"></div>予定タスク</div>
           <div class="cal-legend-item"><div class="cal-legend-dot subscription"></div>サブスク更新</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot followup"></div>アフターフォロー②</div>
         </div>
       </div>
     </section>
@@ -1295,7 +1326,7 @@
         <label>カテゴリ</label>
         <select id="projectCategory" onchange="onCategoryChange()">
           <option value="client">クライアント案件</option>
-          <option value="sns">SNS投稿</option>
+          <option value="sns">自社事業整備</option>
         </select>
       </div>
       <div class="form-group">
@@ -1316,14 +1347,14 @@
       <div class="form-group">
         <label id="projectTypeLabel">種別</label>
         <select id="projectType">
-          <option value="web">web</option>
-          <option value="video">video</option>
-          <option value="both">both</option>
+          <option value="explainer-video">説明動画</option>
+          <option value="branding-video">ブランディング動画</option>
+          <option value="ad-video">広告動画</option>
+          <option value="web">WEBページ制作</option>
+          <option value="study">勉強会</option>
+          <option value="ad-ops">広告運用</option>
           <option value="meo">MEO</option>
-          <option value="ads">広告</option>
-          <option value="doc">資料作成</option>
-          <option value="biz">事業設計</option>
-          <option value="other">その他</option>
+          <option value="doc">資料制作</option>
         </select>
       </div>
       <div class="form-group">
@@ -1363,19 +1394,21 @@
           <div class="form-group">
             <label>契約経路</label>
             <select id="projectContractRoute">
-              <option value="direct">直接契約（初年度サポートプラス込み）</option>
+              <option value="directSupport">直接契約（初年度サポートプラス込み）</option>
+              <option value="directPlain">直接契約</option>
               <option value="coconala">ココナラ経由</option>
             </select>
           </div>
           <div class="form-group">
             <label>様子見のタイミング</label>
             <select id="projectFollowTiming">
-              <option value="2week">2週間後</option>
-              <option value="1month">1ヶ月後</option>
+              <option value="none">なし</option>
+              <option value="2week">2週間後（納品日から）</option>
+              <option value="1month">1ヶ月後（納品日から）</option>
             </select>
           </div>
         </div>
-        <div class="form-hint">ボタンを押すとメールアプリが開き、件名・本文が入った状態になります</div>
+        <div class="form-hint">納品済みになると納品日を記録。様子見の日が来るとカレンダー・今日のタスク・上部にお知らせします</div>
       </div>
       <div class="finance-fields" id="financeGroup">
         <div class="finance-fields-title">収支・時間（税抜）</div>
@@ -1582,15 +1615,59 @@ nARK　緒方 和奈
 ・3本目：点眼の方法 → **¥18,900**`;
 
     const CLIENT_TYPES = [
-      { value: 'web', label: 'web' },
-      { value: 'video', label: 'video' },
-      { value: 'both', label: 'both' },
+      { value: 'explainer-video', label: '説明動画' },
+      { value: 'branding-video', label: 'ブランディング動画' },
+      { value: 'ad-video', label: '広告動画' },
+      { value: 'web', label: 'WEBページ制作' },
+      { value: 'study', label: '勉強会' },
+      { value: 'ad-ops', label: '広告運用' },
       { value: 'meo', label: 'MEO' },
-      { value: 'ads', label: '広告' },
-      { value: 'doc', label: '資料作成' },
-      { value: 'biz', label: '事業設計' },
-      { value: 'other', label: 'その他' },
+      { value: 'doc', label: '資料制作' },
     ];
+    const VIDEO_TYPE_VALUES = ['explainer-video', 'branding-video', 'ad-video', 'video', 'both'];
+    const TYPE_MIGRATION = {
+      video: 'explainer-video', both: 'explainer-video', web: 'web', meo: 'meo',
+      ads: 'ad-ops', doc: 'doc', biz: 'study', other: 'web',
+    };
+
+    function isVideoType(type) {
+      return VIDEO_TYPE_VALUES.includes(type);
+    }
+
+    function addDaysToDate(dateStr, days) {
+      const d = new Date(dateStr + 'T00:00:00');
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function addMonthsToDate(dateStr, months) {
+      const d = new Date(dateStr + 'T00:00:00');
+      d.setMonth(d.getMonth() + months);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function ensureDeliveredDate(p) {
+      if (!p.deliveredDate && (p.phase === '納品済' || p.status === 'billing' || p.status === 'done')) {
+        p.deliveredDate = p.invoiceDate || todayStr();
+      }
+    }
+
+    function getFollowUpDueDate(p) {
+      ensureProjectFinance(p);
+      ensureDeliveredDate(p);
+      if (!p.deliveredDate || p.followUpTiming === 'none') return null;
+      if (p.afterFollowDone && p.afterFollowDone.followup) return null;
+      if (p.followUpTiming === '1month') return addMonthsToDate(p.deliveredDate, 1);
+      if (p.followUpTiming === '2week') return addDaysToDate(p.deliveredDate, 14);
+      return null;
+    }
+
+    function getDueFollowUpProjects(forDate) {
+      const date = forDate || todayStr();
+      return state.projects.filter(p =>
+        p.category === 'client' && getFollowUpDueDate(p) === date
+      );
+    }
 
     const STORAGE_KEY = 'nark_dashboard_v4';
     const STORAGE_PREV_KEY = 'nark_dashboard_v4_prev';
@@ -1645,7 +1722,7 @@ nARK　緒方 和奈
     function defaultState() {
       return {
         projects: [
-          { id: uid(), category: 'client', name: 'チップオデッセイ上映会記録動画', client: '正文堂', type: 'video', status: 'done', phase: '', created: '2026-05-09', revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] },
+          { id: uid(), category: 'client', name: 'チップオデッセイ上映会記録動画', client: '正文堂', type: 'branding-video', status: 'done', phase: '', created: '2026-05-09', revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] },
           ...SNS_DEFAULTS.map(s => ({ id: uid(), category: 'sns', type: 'sns', ...s, revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] })),
         ],
         tasks: [],
@@ -1664,8 +1741,10 @@ nARK　緒方 和奈
       if (!p.timeLogs) p.timeLogs = [];
       if (p.mailClinic === undefined) p.mailClinic = '';
       if (p.mailDirector === undefined) p.mailDirector = '';
+      if (p.deliveredDate === undefined) p.deliveredDate = '';
       if (p.followUpTiming === undefined) p.followUpTiming = '2week';
       if (p.contractRoute === undefined) p.contractRoute = detectContractRoute(p);
+      ensureDeliveredDate(p);
       if (!p.afterFollowDone || typeof p.afterFollowDone !== 'object') {
         p.afterFollowDone = { thanks: false, followup: false, supportCoconala: false, supportDirect: false, portfolio: false };
       } else {
@@ -1686,11 +1765,11 @@ nARK　緒方 和奈
     function detectContractRoute(p) {
       const s = ((p.client || '') + ' ' + (p.memo || '') + ' ' + (p.name || '')).toLowerCase();
       if (s.includes('ココナラ') || s.includes('coconala')) return 'coconala';
-      return 'direct';
+      return 'directSupport';
     }
 
     function isAfterFollowEligible(p) {
-      return p.category === 'client';
+      return p.category === 'client' && (p.type === 'explainer-video' || p.type === 'video' || p.type === 'both');
     }
 
     function stopCardDrag(e) {
@@ -1706,9 +1785,20 @@ nARK　緒方 和奈
     }
 
     function buildThanksMail(p) {
-      const timingNote = p.followUpTiming === '1month'
-        ? '納品から1ヶ月後'
-        : '納品から2週間後';
+      const timingBlock = p.followUpTiming === 'none' ? '' : (
+        p.followUpTiming === '1month'
+          ? `納品から1ヶ月後に、
+「院内での使い心地」について短くお伺いするメールをお送りします。
+その際、テキストの修正なども承りますので、
+その時点で「ここを直したい」があればお気軽にお知らせください。
+
+`
+          : `納品から2週間後に、
+「院内での使い心地」について短くお伺いするメールをお送りします。
+その際、テキストの修正なども承りますので、
+その時点で「ここを直したい」があればお気軽にお知らせください。
+
+`);
       return {
         subject: '患者説明動画の納品のご連絡｜nARK 緒方',
         body: `${mailAddressBlock(p)}
@@ -1724,12 +1814,7 @@ nARK　緒方 和奈
 　スムーズに動画の活用が進むかと思います。ぜひご活用ください。
 ・テロップの内容で気になる点があれば、いつでもお知らせください。
 
-${timingNote}に、
-「院内での使い心地」について短くお伺いするメールをお送りします。
-その際、テキストの修正なども承りますので、
-その時点で「ここを直したい」があればお気軽にお知らせください。
-
-引き続きどうぞよろしくお願いいたします。
+${timingBlock}引き続きどうぞよろしくお願いいたします。
 
 ${MAIL_FOOTER}`,
       };
@@ -1895,6 +1980,8 @@ ${MAIL_FOOTER}`,
       if (!data.bizTodos) data.bizTodos = [];
       data.projects.forEach(p => {
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
+        if (TYPE_MIGRATION[p.type]) p.type = TYPE_MIGRATION[p.type];
+        if (p.contractRoute === 'direct') p.contractRoute = 'directSupport';
         if (p.phase === undefined) p.phase = '';
         if (p.deadlineDate === undefined) p.deadlineDate = '';
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
@@ -2315,6 +2402,7 @@ ${MAIL_FOOTER}`,
     /* ── Render ── */
     function render() {
       renderDateTime();
+      renderNotices();
       renderStats();
       renderFinance();
       renderSubscriptions();
@@ -2500,6 +2588,21 @@ ${MAIL_FOOTER}`,
       return state.projects;
     }
 
+    function renderNotices() {
+      const el = document.getElementById('noticeBar');
+      if (!el) return;
+      const due = getDueFollowUpProjects();
+      if (due.length === 0) {
+        el.style.display = 'none';
+        el.innerHTML = '';
+        return;
+      }
+      el.style.display = '';
+      el.innerHTML = due.map(p =>
+        `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — 2 アフターフォローの日です（納品 ${esc(p.deliveredDate || '')} から${p.followUpTiming === '1month' ? '1ヶ月' : '2週間'}）</div>`
+      ).join('');
+    }
+
     function renderStats() {
       const projects = filteredProjects();
       const todo    = projects.filter(p => p.status === 'todo').length;
@@ -2508,7 +2611,8 @@ ${MAIL_FOOTER}`,
       const today = todayStr();
       const todayTaskItems = state.tasks.filter(t => !t.done && (t.date === today || !t.date)).length;
       const todayBizItems = (state.bizTodos || []).filter(t => !t.done && t.dueDate === today).length;
-      const todayTasks = todayTaskItems + todayBizItems;
+      const todayFollowUps = getDueFollowUpProjects(today).length;
+      const todayTasks = todayTaskItems + todayBizItems + todayFollowUps;
       const openBizTodos = (state.bizTodos || []).filter(t => !t.done).length;
 
       document.getElementById('stats').innerHTML = `
@@ -2684,7 +2788,7 @@ ${MAIL_FOOTER}`,
            <span class="card-tag">${esc(typeLabel(p.type))}</span>
            ${p.created ? `<span>${p.created}</span>` : ''}`
         : `${p.client ? `<span>${esc(p.client)}</span>` : ''}
-           <span class="card-tag">${esc(typeLabel(p.type))}</span>
+           <span class="card-tag${isVideoType(p.type) ? ' video' : ''}">${esc(typeLabel(p.type))}</span>
            ${p.created ? `<span>${p.created}</span>` : ''}`;
       const path = p.folder ? `<div class="card-path">${esc(p.folder)}</div>` : '';
       const deadline = (p.status === 'todo' || p.status === 'doing') && formatDeadline(p)
@@ -2760,6 +2864,7 @@ ${MAIL_FOOTER}`,
       if (!p) return;
       p.phase = phase;
       if (phase === '納品済') {
+        if (!p.deliveredDate) p.deliveredDate = todayStr();
         p.status = 'billing';
         p.phase = '作成未';
         ensureBillingDate(p);
@@ -2886,6 +2991,9 @@ ${MAIL_FOOTER}`,
         (state.bizTodos || []).filter(t => !t.done && t.dueDate === today).forEach(t => {
           entries.push({ kind: 'bizTodo', item: t });
         });
+        getDueFollowUpProjects(today).forEach(p => {
+          entries.push({ kind: 'followUp', item: p });
+        });
       }
       entries.sort((a, b) => {
         if (a.item.done !== b.item.done) return a.item.done ? 1 : -1;
@@ -2908,6 +3016,15 @@ ${MAIL_FOOTER}`,
       }
 
       el.innerHTML = entries.map(({ kind, item: t }) => {
+        if (kind === 'followUp') {
+          const timing = t.followUpTiming === '1month' ? '1ヶ月後' : '2週間後';
+          return `
+        <div class="task-item task-item-reminder">
+          <span class="task-category 営業">AF②</span>
+          <span class="task-text">${esc(t.client || t.name)} — アフターフォロー（${timing}）</span>
+          <button type="button" class="btn btn-primary" onclick="openFollowMail('${t.id}','followup')">メールを開く</button>
+        </div>`;
+        }
         const dateLabel = kind === 'bizTodo'
           ? '事業TODO'
           : (t.date && t.date !== today ? t.date : (t.date === today ? '今日' : ''));
@@ -2935,7 +3052,7 @@ ${MAIL_FOOTER}`,
       document.getElementById('clientGroup').style.display = isSns ? 'none' : '';
       document.getElementById('platformGroup').style.display = isSns ? '' : 'none';
       document.getElementById('followUpGroup').style.display = isSns ? 'none' : '';
-      document.getElementById('projectNameLabel').textContent = isSns ? '投稿タイトル' : '案件名';
+      document.getElementById('projectNameLabel').textContent = isSns ? 'タイトル' : '案件名';
       document.getElementById('projectName').placeholder = isSns
         ? '例: 2026-06-09_夏目漱石舊居' : '例: 2026-06_○○クリニック_web';
       document.getElementById('projectTypeLabel').textContent = isSns ? '投稿形式' : '種別';
@@ -3065,7 +3182,7 @@ ${MAIL_FOOTER}`,
       editingProjectId = id || null;
       if (id) {
         const p = state.projects.find(x => x.id === id);
-        document.getElementById('modalTitle').textContent = p.category === 'sns' ? 'SNS投稿を編集' : '案件を編集';
+        document.getElementById('modalTitle').textContent = p.category === 'sns' ? '自社事業整備を編集' : '案件を編集';
         document.getElementById('projectCategory').value = p.category || 'client';
         onCategoryChange();
         document.getElementById('projectName').value = p.name;
@@ -3097,7 +3214,7 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectName').value = '';
         document.getElementById('projectClient').value = '';
         document.getElementById('projectPlatform').value = 'instagram';
-        document.getElementById('projectType').value = 'web';
+        document.getElementById('projectType').value = 'explainer-video';
         document.getElementById('projectStatus').value = 'todo';
         document.getElementById('projectDeadlineDate').value = '';
         document.getElementById('projectDeadlinePlan').value = '';
@@ -3107,7 +3224,7 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectInvoiceDate').value = '';
         document.getElementById('projectMailClinic').value = '';
         document.getElementById('projectMailDirector').value = '';
-        document.getElementById('projectContractRoute').value = 'direct';
+        document.getElementById('projectContractRoute').value = 'directSupport';
         document.getElementById('projectFollowTiming').value = '2week';
         renderVariableCostRows([]);
         renderTimeLogRows([]);
@@ -3179,16 +3296,22 @@ ${MAIL_FOOTER}`,
           if (data.status === 'done') p.phase = '';
           if (data.status === 'todo') p.phase = '';
         }
-        if (data.status === 'billing' || data.status === 'done') ensureBillingDate(p);
-        toast(category === 'sns' ? 'SNS投稿を更新しました' : '案件を更新しました');
+        if (data.status === 'billing' || data.status === 'done') {
+          ensureBillingDate(p);
+          ensureDeliveredDate(p);
+        }
+        toast(category === 'sns' ? '自社事業整備を更新しました' : '案件を更新しました');
       } else {
         const phase = data.status === 'doing' ? (category === 'sns' ? '制作中' : 'ヒアリング・構成')
           : data.status === 'billing' ? '作成未' : '';
         const newProject = { id: uid(), ...data, phase, created: todayStr() };
         ensureProjectFinance(newProject);
-        if (newProject.status === 'billing' || newProject.status === 'done') ensureBillingDate(newProject);
+        if (newProject.status === 'billing' || newProject.status === 'done') {
+          ensureBillingDate(newProject);
+          ensureDeliveredDate(newProject);
+        }
         state.projects.push(newProject);
-        toast(category === 'sns' ? 'SNS投稿を追加しました' : '案件を追加しました');
+        toast(category === 'sns' ? '自社事業整備を追加しました' : '案件を追加しました');
       }
       closeProjectModal();
       saveState();
@@ -3232,7 +3355,10 @@ ${MAIL_FOOTER}`,
         p.status = status;
         if (status === 'doing' && !p.phase) p.phase = p.category === 'sns' ? '制作中' : 'ヒアリング・構成';
         if (status === 'billing' && !p.phase) p.phase = '作成未';
-        if (status === 'billing' || status === 'done') ensureBillingDate(p);
+        if (status === 'billing' || status === 'done') {
+          ensureBillingDate(p);
+          ensureDeliveredDate(p);
+        }
         if (status === 'done') doneExpanded = true;
         if (status === 'done' || status === 'todo') p.phase = '';
         if (p.category === 'sns') p.snsStatus = statusToSnsStatus(status);
@@ -3510,7 +3636,7 @@ ${MAIL_FOOTER}`,
     let checklistProjectId = null;
 
     function getWorkflow(p) {
-      if (p.type === 'video' || p.type === 'both') return WORKFLOWS.video;
+      if (isVideoType(p.type)) return WORKFLOWS.video;
       return null;
     }
 
@@ -3719,6 +3845,18 @@ ${MAIL_FOOTER}`,
           label: `更新: ${sub.name}${soonNote}`,
           category: 'subscription',
           client: (sub.cycle === 'annual' ? '年払い' : '月払い') + ' ' + formatYen(Number(sub.amount) || 0),
+          status: '',
+        });
+      });
+      state.projects.forEach(p => {
+        if (p.category !== 'client') return;
+        const due = getFollowUpDueDate(p);
+        if (!due) return;
+        if (!events[due]) events[due] = [];
+        events[due].push({
+          label: `AF②: ${p.client || p.name}`,
+          category: 'follow-up',
+          client: p.deliveredDate ? `納品 ${p.deliveredDate}` : '',
           status: '',
         });
       });
