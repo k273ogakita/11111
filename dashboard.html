@@ -1004,7 +1004,7 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
     }
-    .finance-breakdown-3 { grid-template-columns: repeat(3, 1fr); }
+    .finance-breakdown-4 { grid-template-columns: repeat(4, 1fr); }
     .finance-bd-item {
       background: var(--surface-2);
       border: 1px solid var(--border);
@@ -1207,6 +1207,7 @@
       .finance-breakdown { grid-template-columns: repeat(2, 1fr); }
       .finance-breakdown-5 { grid-template-columns: repeat(2, 1fr); }
       .finance-breakdown-3 { grid-template-columns: repeat(2, 1fr); }
+      .finance-breakdown-4 { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 600px) {
       .app { padding: 16px; }
@@ -1227,7 +1228,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v37</div>
+        <div class="logo-sub">Business Dashboard · v38</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -2602,7 +2603,11 @@ ${MAIL_FOOTER}`,
             <div class="finance-hero-sub">${fy}年4月〜${fyEnd}年3月 · 累計</div>
           </div>
         </div>
-        <div class="finance-breakdown finance-breakdown-3">
+        <div class="finance-breakdown finance-breakdown-4">
+          <div class="finance-bd-item">
+            <div class="finance-bd-label">売上</div>
+            <div class="finance-bd-value">${formatYen(f.revenue)}</div>
+          </div>
           <div class="finance-bd-item">
             <div class="finance-bd-label">固定費</div>
             <div class="finance-bd-value">${formatYen(f.fixed)}</div>
