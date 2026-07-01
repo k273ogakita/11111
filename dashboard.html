@@ -1227,7 +1227,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v36</div>
+        <div class="logo-sub">Business Dashboard · v37</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -2417,20 +2417,27 @@ ${MAIL_FOOTER}`,
       }, 0);
     }
 
+    function monthCompareIndex(y, m) {
+      return y * 12 + m;
+    }
+
     function getProfitChartData(fy) {
       const months = getFiscalYearMonths(fy);
-      const values = months.map(({ y, m }) => getMonthFinance(y, m).netProfit);
-      const maxAbs = Math.max(...values.map(v => Math.abs(v)), 1);
-      const now = new Date();
-      const curY = now.getFullYear();
-      const curM = now.getMonth();
+      const curIndex = monthCompareIndex(new Date().getFullYear(), new Date().getMonth());
       const monthLabels = ['4','5','6','7','8','9','10','11','12','1','2','3'];
-      return months.map(({ y, m }, i) => ({
+      const visible = months
+        .map(({ y, m }, i) => ({ y, m, i }))
+        .filter(({ y, m }) => monthCompareIndex(y, m) <= curIndex);
+      const values = visible.map(({ y, m }) => getMonthFinance(y, m).netProfit);
+      const maxAbs = Math.max(...values.map(v => Math.abs(v)), 1);
+      const curY = new Date().getFullYear();
+      const curM = new Date().getMonth();
+      return visible.map(({ y, m, i }, vi) => ({
         y, m,
         label: monthLabels[i] + '月',
-        netProfit: values[i],
-        heightPct: values[i] !== 0 ? Math.max(6, Math.round((Math.abs(values[i]) / maxAbs) * 100)) : 0,
-        isNegative: values[i] < 0,
+        netProfit: values[vi],
+        heightPct: values[vi] !== 0 ? Math.max(6, Math.round((Math.abs(values[vi]) / maxAbs) * 100)) : 0,
+        isNegative: values[vi] < 0,
         isCurrent: y === curY && m === curM,
         isSelected: y === financeYear && m === financeMonth,
       }));
