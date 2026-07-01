@@ -1221,7 +1221,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v34</div>
+        <div class="logo-sub">Business Dashboard · v35</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1410,18 +1410,13 @@
         <label>クライアント</label>
         <input type="text" id="projectClient" placeholder="例: 正文堂">
       </div>
-      <div class="form-group" id="platformGroup" style="display:none">
-        <label>プラットフォーム</label>
-        <select id="projectPlatform">
-          <option value="instagram">Instagram</option>
-          <option value="youtube">YouTube</option>
-        </select>
-      </div>
-      <div class="form-group">
+      <div class="form-group" id="typeGroup">
         <label id="projectTypeLabel">種別</label>
         <select id="projectType">
           <option value="explainer-video">説明動画</option>
           <option value="branding-video">ブランディング動画</option>
+          <option value="record-video">記録動画</option>
+          <option value="instagram-post">Instagram投稿</option>
           <option value="ad-video">広告動画</option>
           <option value="web">WEBページ制作</option>
           <option value="study">勉強会</option>
@@ -1690,6 +1685,8 @@ nARK　緒方 和奈
     const CLIENT_TYPES = [
       { value: 'explainer-video', label: '説明動画' },
       { value: 'branding-video', label: 'ブランディング動画' },
+      { value: 'record-video', label: '記録動画' },
+      { value: 'instagram-post', label: 'Instagram投稿' },
       { value: 'ad-video', label: '広告動画' },
       { value: 'web', label: 'WEBページ制作' },
       { value: 'study', label: '勉強会' },
@@ -1697,7 +1694,7 @@ nARK　緒方 和奈
       { value: 'meo', label: 'MEO' },
       { value: 'doc', label: '資料制作' },
     ];
-    const VIDEO_TYPE_VALUES = ['explainer-video', 'branding-video', 'ad-video', 'video', 'both'];
+    const VIDEO_TYPE_VALUES = ['explainer-video', 'branding-video', 'record-video', 'ad-video', 'video', 'both'];
     const TYPE_MIGRATION = {
       video: 'explainer-video', both: 'explainer-video', web: 'web', meo: 'meo',
       ads: 'ad-ops', doc: 'doc', biz: 'study', other: 'web',
@@ -1795,7 +1792,7 @@ nARK　緒方 和奈
     function defaultState() {
       return {
         projects: [
-          { id: uid(), category: 'client', name: 'チップオデッセイ上映会記録動画', client: '正文堂', type: 'branding-video', status: 'done', phase: '', created: '2026-05-09', revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] },
+          { id: uid(), category: 'client', name: 'チップオデッセイ上映会記録動画', client: '正文堂', type: 'record-video', status: 'done', phase: '', created: '2026-05-09', revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] },
           ...SNS_DEFAULTS.map(s => ({ id: uid(), category: 'sns', type: 'sns', ...s, revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] })),
         ],
         tasks: [],
@@ -2943,9 +2940,7 @@ ${MAIL_FOOTER}`,
     function renderCard(p) {
       const isSns = p.category === 'sns';
       const meta = isSns
-        ? `<span class="card-tag sns">${esc(p.platform || 'instagram')}</span>
-           <span class="card-tag">${esc(typeLabel(p.type))}</span>
-           ${p.created ? `<span>${p.created}</span>` : ''}`
+        ? `${p.created ? `<span>${p.created}</span>` : ''}`
         : `${p.client ? `<span>${esc(p.client)}</span>` : ''}
            <span class="card-tag${isVideoType(p.type) ? ' video' : ''}">${esc(typeLabel(p.type))}</span>
            ${p.created ? `<span>${p.created}</span>` : ''}`;
@@ -2987,6 +2982,7 @@ ${MAIL_FOOTER}`,
     }
 
     function renderCardFinance(p) {
+      if (p.category === 'sns') return '';
       const hours = projectHoursTotal(p);
       const target = Number(p.targetHours) || 0;
       if (p.status === 'done') {
@@ -3209,22 +3205,14 @@ ${MAIL_FOOTER}`,
       const cat = document.getElementById('projectCategory').value;
       const isSns = cat === 'sns';
       document.getElementById('clientGroup').style.display = isSns ? 'none' : '';
-      document.getElementById('platformGroup').style.display = isSns ? '' : 'none';
+      document.getElementById('typeGroup').style.display = isSns ? 'none' : '';
       document.getElementById('followUpGroup').style.display = isSns ? 'none' : '';
+      document.getElementById('financeGroup').style.display = isSns ? 'none' : '';
       document.getElementById('projectNameLabel').textContent = isSns ? 'タイトル' : '案件名';
       document.getElementById('projectName').placeholder = isSns
         ? '例: 2026-06-09_夏目漱石舊居' : '例: 2026-06_○○クリニック_web';
-      document.getElementById('projectTypeLabel').textContent = isSns ? '投稿形式' : '種別';
-      const typeSel = document.getElementById('projectType');
-      if (isSns) {
-        typeSel.innerHTML = `
-          <option value="feed">フィード</option>
-          <option value="reel">リール</option>
-          <option value="story">ストーリーズ</option>
-          <option value="video">動画</option>
-          <option value="short">ショート</option>`;
-      } else {
-        typeSel.innerHTML = CLIENT_TYPES.map(t =>
+      if (!isSns) {
+        document.getElementById('projectType').innerHTML = CLIENT_TYPES.map(t =>
           `<option value="${t.value}">${t.label}</option>`
         ).join('');
       }
@@ -3346,10 +3334,7 @@ ${MAIL_FOOTER}`,
         onCategoryChange();
         document.getElementById('projectName').value = p.name;
         document.getElementById('projectClient').value = p.client || '';
-        if (p.category === 'sns') {
-          document.getElementById('projectPlatform').value = p.platform || 'instagram';
-          document.getElementById('projectType').value = p.type === 'sns' ? 'feed' : (p.type || 'feed');
-        } else {
+        if (p.category !== 'sns') {
           document.getElementById('projectType').value = p.type;
         }
         document.getElementById('projectStatus').value = p.status;
@@ -3372,7 +3357,6 @@ ${MAIL_FOOTER}`,
         onCategoryChange();
         document.getElementById('projectName').value = '';
         document.getElementById('projectClient').value = '';
-        document.getElementById('projectPlatform').value = 'instagram';
         document.getElementById('projectType').value = 'explainer-video';
         document.getElementById('projectStatus').value = 'todo';
         document.getElementById('projectDeadlineDate').value = '';
@@ -3415,7 +3399,6 @@ ${MAIL_FOOTER}`,
       const data = {
         category,
         name,
-        type: document.getElementById('projectType').value,
         status,
         deadlineDate: (status === 'todo' || status === 'doing') ? deadlineDate : '',
         deadlinePlan: (status === 'todo' || status === 'doing') ? deadlinePlan : '',
@@ -3429,22 +3412,28 @@ ${MAIL_FOOTER}`,
         timeLogs: readTimeLogsFromModal(),
       };
       if (category === 'client') {
-        financeData.mailClinic = document.getElementById('projectMailClinic').value.trim();
-        financeData.mailDirector = document.getElementById('projectMailDirector').value.trim();
-        financeData.contractRoute = document.getElementById('projectContractRoute').value;
-        financeData.followUpTiming = document.getElementById('projectFollowTiming').value;
-      }
-      if (category === 'sns') {
-        data.platform = document.getElementById('projectPlatform').value;
-        data.snsStatus = statusToSnsStatus(status);
-        data.client = '';
-      } else {
+        data.type = document.getElementById('projectType').value;
         data.client = document.getElementById('projectClient').value.trim();
         data.platform = '';
         data.snsStatus = '';
         data.folder = '';
+        Object.assign(data, financeData);
+        data.mailClinic = document.getElementById('projectMailClinic').value.trim();
+        data.mailDirector = document.getElementById('projectMailDirector').value.trim();
+        data.contractRoute = document.getElementById('projectContractRoute').value;
+        data.followUpTiming = document.getElementById('projectFollowTiming').value;
       }
-      Object.assign(data, financeData);
+      if (category === 'sns') {
+        data.snsStatus = statusToSnsStatus(status);
+        data.client = '';
+        data.platform = '';
+        if (editingProjectId) {
+          const existing = state.projects.find(x => x.id === editingProjectId);
+          data.type = existing?.type || 'sns';
+        } else {
+          data.type = 'sns';
+        }
+      }
       if (editingProjectId) {
         const p = state.projects.find(x => x.id === editingProjectId);
         const prevStatus = p.status;
