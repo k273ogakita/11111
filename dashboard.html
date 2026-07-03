@@ -1370,7 +1370,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v44</div>
+        <div class="logo-sub">Business Dashboard · v45</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1798,6 +1798,21 @@
     ];
 
     const DOING_PHASES = ['ヒアリング・構成', '撮影', '編集', '制作中', 'チェック中', '納品済'];
+    const SNS_DOING_PHASES = ['制作中', 'チェック中', '納品済'];
+
+    function doingPhaseSortIndex(p) {
+      const order = p.category === 'sns' ? SNS_DOING_PHASES : DOING_PHASES;
+      const idx = order.indexOf(p.phase);
+      return idx === -1 ? order.length : idx;
+    }
+
+    function sortDoingProjects(list) {
+      return list.slice().sort((a, b) => {
+        const byPhase = doingPhaseSortIndex(a) - doingPhaseSortIndex(b);
+        if (byPhase !== 0) return byPhase;
+        return (a.created || '').localeCompare(b.created || '');
+      });
+    }
     const BILLING_PHASES = ['作成未', '請求書作成済', '送付済', '入金済'];
     const AFTER_FOLLOW_PHASES = [
       { key: 'thanks', label: '1 お礼状の送付' },
@@ -3158,7 +3173,8 @@ ${MAIL_FOOTER}`,
     function renderKanban() {
       const projects = filteredProjects();
       document.getElementById('kanban').innerHTML = STATUSES.map(s => {
-        const cards = projects.filter(p => p.status === s.id);
+        let cards = projects.filter(p => p.status === s.id);
+        if (s.id === 'doing') cards = sortDoingProjects(cards);
         const emptyMsg = s.id === 'done' ? '' : 'empty';
         if (s.id === 'done') {
           return `
@@ -3225,7 +3241,7 @@ ${MAIL_FOOTER}`,
       }
       if (p.status === 'doing') {
         const phases = p.category === 'sns'
-          ? ['制作中', 'チェック中', '納品済']
+          ? SNS_DOING_PHASES
           : DOING_PHASES;
         return `<div class="phase-btns">${phases.map(ph => `
           <button class="phase-btn${p.phase === ph ? ' active' : ''}"
