@@ -1370,7 +1370,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v43</div>
+        <div class="logo-sub">Business Dashboard · v44</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1612,14 +1612,14 @@
         <div class="form-row-2">
           <div class="form-group">
             <label>契約経路</label>
-            <select id="projectContractRoute">
+            <select id="projectContractRoute" onchange="onContractRouteChange()">
               <option value="directSupport">直接契約（初年度サポートプラス込み）</option>
               <option value="directPlain">直接契約</option>
               <option value="coconala">ココナラ経由</option>
               <option value="mechauru">めちゃうる経由</option>
             </select>
           </div>
-          <div class="form-group">
+          <div class="form-group" id="followTimingGroup">
             <label>様子見のタイミング</label>
             <select id="projectFollowTiming">
               <option value="none">なし</option>
@@ -1628,7 +1628,8 @@
             </select>
           </div>
         </div>
-        <div class="form-hint">納品済みになると納品日を記録。様子見の日が来るとカレンダー・今日のタスク・上部にお知らせします</div>
+        <div class="form-hint" id="followMechauruHint" style="display:none">めちゃうる経由のため、様子見の予告・アフターフォロー通知・請求カードのAFボタンは自動的にオフになります</div>
+        <div class="form-hint" id="followNormalHint">納品済みになると納品日を記録。様子見の日が来るとカレンダー・今日のタスク・上部にお知らせします</div>
       </div>
       <div class="finance-fields" id="financeGroup">
         <div class="finance-fields-title">収支・時間（税抜）</div>
@@ -2067,8 +2068,33 @@ nARK　緒方 和奈
     }
 
     function isAfterFollowEligible(p) {
+      if (p.contractRoute === 'mechauru') return false;
       return p.category === 'client' && (p.type === 'explainer-video' || p.type === 'video' || p.type === 'both');
     }
+
+    function isMechauruRoute(route) {
+      return route === 'mechauru';
+    }
+
+    function onContractRouteChange() {
+      const route = document.getElementById('projectContractRoute').value;
+      const timingEl = document.getElementById('projectFollowTiming');
+      const timingGroup = document.getElementById('followTimingGroup');
+      const mechauruHint = document.getElementById('followMechauruHint');
+      const normalHint = document.getElementById('followNormalHint');
+      const isMechauru = isMechauruRoute(route);
+      if (isMechauru) {
+        timingEl.value = 'none';
+        timingEl.disabled = true;
+        timingGroup.style.opacity = '0.45';
+      } else {
+        timingEl.disabled = false;
+        timingGroup.style.opacity = '';
+      }
+      if (mechauruHint) mechauruHint.style.display = isMechauru ? '' : 'none';
+      if (normalHint) normalHint.style.display = isMechauru ? 'none' : '';
+    }
+    window.onContractRouteChange = onContractRouteChange;
 
     function stopCardDrag(e) {
       e.stopPropagation();
@@ -2281,6 +2307,7 @@ ${MAIL_FOOTER}`,
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
         if (TYPE_MIGRATION[p.type]) p.type = TYPE_MIGRATION[p.type];
         if (p.contractRoute === 'direct') p.contractRoute = 'directSupport';
+        if (p.contractRoute === 'mechauru') p.followUpTiming = 'none';
         if (p.phase === undefined) p.phase = '';
         if (p.deadlineDate === undefined) p.deadlineDate = '';
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
@@ -3660,6 +3687,7 @@ ${MAIL_FOOTER}`,
         renderTimeLogRows([]);
       }
       onStatusChange();
+      onContractRouteChange();
       updateProjectProfitPreview();
       document.getElementById('projectModal').classList.add('open');
       setTimeout(() => document.getElementById('projectName').focus(), 50);
@@ -3708,7 +3736,9 @@ ${MAIL_FOOTER}`,
         data.mailClinic = document.getElementById('projectMailClinic').value.trim();
         data.mailDirector = document.getElementById('projectMailDirector').value.trim();
         data.contractRoute = document.getElementById('projectContractRoute').value;
-        data.followUpTiming = document.getElementById('projectFollowTiming').value;
+        data.followUpTiming = isMechauruRoute(data.contractRoute)
+          ? 'none'
+          : document.getElementById('projectFollowTiming').value;
       }
       if (category === 'sns') {
         data.snsStatus = statusToSnsStatus(status);
