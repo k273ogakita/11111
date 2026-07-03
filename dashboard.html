@@ -944,6 +944,7 @@
     .checklist-tag.デザイン { background: rgba(50,160,120,.1); color: #32a078; border: 1px solid rgba(50,160,120,.25); }
     .checklist-tag.編集 { background: var(--red-glow); color: var(--red-dim); border: 1px solid rgba(232,149,106,.3); }
     .checklist-tag.納品 { background: rgba(58,53,48,.07); color: var(--muted); border: 1px solid var(--border); }
+    .checklist-tag.確認 { background: rgba(100,140,200,.1); color: #5078b0; border: 1px solid rgba(100,140,200,.25); }
     .checklist-check {
       width: 18px; height: 18px;
       accent-color: var(--red);
@@ -1370,7 +1371,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v45</div>
+        <div class="logo-sub">Business Dashboard · v46</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -4077,8 +4078,8 @@ ${MAIL_FOOTER}`,
 
     /* ── Workflow Checklists ── */
     const WORKFLOWS = {
-      video: {
-        title: 'アニメーション広告制作フロー',
+      explainer: {
+        title: '説明動画制作フロー',
         groups: [
           {
             label: '企画・台本',
@@ -4112,12 +4113,65 @@ ${MAIL_FOOTER}`,
           },
         ],
       },
+      brandingRecord: {
+        title: 'ブランディング／記録動画制作フロー',
+        groups: [
+          {
+            label: '企画・方向性',
+            steps: [
+              { id: 101, text: '動画の形式チェック（比率、サイズ、フレームレート）', tag: '企画' },
+              { id: 102, text: 'トリガー決め', tag: '企画' },
+              { id: 103, text: '方向性の確認', tag: '企画' },
+            ],
+          },
+          {
+            label: 'トンマナ・デザイン',
+            steps: [
+              { id: 104, text: 'トンマナ（カラー、デザイン、テロップ決め）', tag: 'デザイン' },
+              { id: 105, text: '①ポイントテロップ', tag: 'デザイン' },
+              { id: 106, text: '②フォローテロップ', tag: 'デザイン' },
+              { id: 107, text: '③肩テロップ', tag: 'デザイン' },
+              { id: 108, text: '④切り替え画面デザイン', tag: 'デザイン' },
+              { id: 109, text: 'BGM選定', tag: 'デザイン' },
+            ],
+          },
+          {
+            label: '素材処理',
+            steps: [
+              { id: 110, text: 'カラコレ、カラグレ（ネスト化してまとめて）', tag: '編集' },
+              { id: 111, text: '音声ノイズ除去（ネストごとに）', tag: '編集' },
+            ],
+          },
+          {
+            label: 'クライアント確認',
+            steps: [
+              { id: 112, text: '一旦クライアントチェック', tag: '確認' },
+            ],
+          },
+          {
+            label: '編集・仕上げ',
+            steps: [
+              { id: 113, text: '素材カット', tag: '編集' },
+              { id: 114, text: 'ナレーション挿入', tag: '編集' },
+              { id: 115, text: 'ざっくりBGMに合わせて尺だし、BGMとポイントのところを合わせる', tag: '編集' },
+              { id: 116, text: '実装', tag: '編集' },
+              { id: 117, text: '微調整', tag: '編集' },
+            ],
+          },
+        ],
+      },
     };
 
     let checklistProjectId = null;
 
     function getWorkflow(p) {
-      if (isVideoType(p.type)) return WORKFLOWS.video;
+      const t = p.type;
+      if (t === 'explainer-video' || t === 'video' || t === 'both') {
+        return WORKFLOWS.explainer;
+      }
+      if (t === 'branding-video' || t === 'record-video') {
+        return WORKFLOWS.brandingRecord;
+      }
       return null;
     }
 
