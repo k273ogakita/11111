@@ -1109,6 +1109,131 @@
     .finance-hero-item.annual .finance-hero-value.positive { color: #2a8a5e; }
     .finance-hero-item.annual .finance-hero-value.negative { color: var(--red-dim); }
 
+    /* ── Milestones ── */
+    .milestone-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      margin-bottom: 32px;
+    }
+    .milestone-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .milestone-heading { font-size: .95rem; font-weight: 800; letter-spacing: .04em; }
+    .milestone-period { font-size: .75rem; color: var(--muted); margin-top: 4px; }
+    .milestone-overall {
+      min-width: 140px;
+      text-align: right;
+    }
+    .milestone-overall-count {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.1;
+    }
+    .milestone-overall-label { font-size: .68rem; color: var(--muted); margin-top: 4px; }
+    .milestone-overall-bar {
+      height: 6px;
+      background: var(--surface-2);
+      border-radius: 99px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .milestone-overall-bar > div {
+      height: 100%;
+      background: linear-gradient(90deg, #2a8a5e, #4caf7a);
+      border-radius: 99px;
+      transition: width .25s;
+    }
+    .milestone-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    .milestone-month {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 14px 12px;
+    }
+    .milestone-month.current {
+      border-color: rgba(212,168,0,.55);
+      box-shadow: 0 0 0 1px rgba(212,168,0,.15);
+    }
+    .milestone-month.done-all { border-color: rgba(42,138,94,.4); }
+    .milestone-month-head {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .milestone-month-label {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .milestone-month.current .milestone-month-label { color: #9a7a00; }
+    .milestone-month-sub {
+      font-size: .68rem;
+      color: var(--muted);
+      flex: 1;
+      min-width: 0;
+    }
+    .milestone-month-count {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .milestone-month-bar {
+      height: 4px;
+      background: rgba(0,0,0,.06);
+      border-radius: 99px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .milestone-month-bar > div {
+      height: 100%;
+      background: #2a8a5e;
+      border-radius: 99px;
+      transition: width .25s;
+    }
+    .milestone-month.current .milestone-month-bar > div { background: #d4a800; }
+    .milestone-list { display: flex; flex-direction: column; gap: 6px; }
+    .milestone-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+      transition: background .12s;
+    }
+    .milestone-item:hover { background: rgba(0,0,0,.04); }
+    .milestone-item input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: #2a8a5e;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .milestone-item span {
+      font-size: .78rem;
+      line-height: 1.45;
+      color: var(--text);
+    }
+    .milestone-item.done span {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
     .sub-list { display: flex; flex-direction: column; gap: 8px; }
     .sub-item {
       display: flex;
@@ -1224,6 +1349,7 @@
       .finance-breakdown-5 { grid-template-columns: repeat(2, 1fr); }
       .finance-breakdown-3 { grid-template-columns: repeat(2, 1fr); }
       .finance-breakdown-4 { grid-template-columns: repeat(2, 1fr); }
+      .milestone-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 600px) {
       .app { padding: 16px; }
@@ -1244,7 +1370,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v41</div>
+        <div class="logo-sub">Business Dashboard · v42</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1272,6 +1398,8 @@
     <div class="notice-bar" id="noticeBar" style="display:none"></div>
 
     <div class="stats" id="stats"></div>
+
+    <section class="milestone-panel" id="milestonePanel"></section>
 
     <section class="finance-panel" id="financePanel"></section>
 
@@ -1775,6 +1903,45 @@ nARK　緒方 和奈
     let autoSaveTimer = null;
     const BIZ_TODO_CATEGORIES = ['営業', '集客', '経理', '運営', 'その他'];
 
+    const MILESTONE_PLAN = {
+      period: '2026年7月〜9月',
+      months: [
+        {
+          id: '2026-07',
+          label: '7月',
+          subtitle: '実績づくり・見える化',
+          items: [
+            { id: 'm07-1', text: '知人の医者・看護師に声がけ（実績案件）' },
+            { id: 'm07-2', text: 'サンプル動画（白内障）を公開できる状態に' },
+            { id: 'm07-3', text: '会社概要・法務対応方針を整備' },
+            { id: 'm07-4', text: '制作ワークフローを確定（月1本の型）' },
+          ],
+        },
+        {
+          id: '2026-08',
+          label: '8月',
+          subtitle: '事例・差別化',
+          items: [
+            { id: 'm08-1', text: '納品実績 1本以上（事例・許可取得）' },
+            { id: 'm08-2', text: 'Before/After（ロゴ差し替え例）作成' },
+            { id: 'm08-3', text: '固定セット設計（待合室・白内障）' },
+            { id: 'm08-4', text: '伴走の具体物（待合再生手順1枚）' },
+          ],
+        },
+        {
+          id: '2026-09',
+          label: '9月',
+          subtitle: '獲得準備',
+          items: [
+            { id: 'm09-1', text: 'LP・サンプル視聴・無料相談の入口設計' },
+            { id: 'm09-2', text: '医療・責任の安心訴求をLP化' },
+            { id: 'm09-3', text: 'フォーム営業：リスト・送信文面テンプレ' },
+            { id: 'm09-4', text: 'Google検索広告：キーワード・月1万円の運用設計' },
+          ],
+        },
+      ],
+    };
+
     const SNS_STATUS_MAP = {
       draft: 'todo', scheduled: 'doing', designing: 'doing',
       '翻訳確認中': 'doing', '修正中': 'doing', published: 'done',
@@ -1822,8 +1989,44 @@ nARK　緒方 和奈
         subscriptions: [],
         adExpenses: [],
         bizTodos: [],
+        milestoneDone: {},
       };
     }
+
+    function ensureMilestones(data) {
+      if (!data.milestoneDone || typeof data.milestoneDone !== 'object') {
+        data.milestoneDone = {};
+      }
+      return data;
+    }
+
+    function isMilestoneDone(id) {
+      return !!(state.milestoneDone && state.milestoneDone[id]);
+    }
+
+    function getMilestoneStats() {
+      let total = 0;
+      let done = 0;
+      MILESTONE_PLAN.months.forEach(month => {
+        month.items.forEach(item => {
+          total++;
+          if (isMilestoneDone(item.id)) done++;
+        });
+      });
+      return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
+    }
+
+    function getCurrentMilestoneMonthId() {
+      const t = new Date();
+      return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function toggleMilestone(id) {
+      if (!state.milestoneDone) state.milestoneDone = {};
+      state.milestoneDone[id] = !state.milestoneDone[id];
+      saveState();
+    }
+    window.toggleMilestone = toggleMilestone;
 
     function ensureProjectFinance(p) {
       if (p.revenue === undefined) p.revenue = 0;
@@ -2071,6 +2274,7 @@ ${MAIL_FOOTER}`,
       if (!data.subscriptions) data.subscriptions = [];
       if (!data.adExpenses) data.adExpenses = [];
       if (!data.bizTodos) data.bizTodos = [];
+      ensureMilestones(data);
       data.projects.forEach(p => {
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
         if (TYPE_MIGRATION[p.type]) p.type = TYPE_MIGRATION[p.type];
@@ -2555,6 +2759,7 @@ ${MAIL_FOOTER}`,
       renderDateTime();
       renderNotices();
       renderStats();
+      renderMilestones();
       renderFinance();
       renderSubscriptions();
       renderAdExpenses();
@@ -2798,6 +3003,7 @@ ${MAIL_FOOTER}`,
       const todayFollowUps = getDueFollowUpProjects(today).length;
       const todayTasks = todayTaskItems + todayBizItems + todayFollowUps;
       const openBizTodos = (state.bizTodos || []).filter(t => !t.done).length;
+      const ms = getMilestoneStats();
 
       document.getElementById('stats').innerHTML = `
         <span class="stat-chip">未着手 <strong>${todo}</strong></span>
@@ -2809,6 +3015,57 @@ ${MAIL_FOOTER}`,
         <span class="stat-chip highlight">今日のタスク <strong id="todayTaskCount">${todayTasks}</strong></span>
         <span class="stat-divider"></span>
         <span class="stat-chip">事業TODO <strong>${openBizTodos}</strong></span>
+        <span class="stat-divider"></span>
+        <span class="stat-chip highlight">マイルストーン <strong>${ms.done}/${ms.total}</strong></span>
+      `;
+    }
+
+    function renderMilestones() {
+      const el = document.getElementById('milestonePanel');
+      if (!el) return;
+      const ms = getMilestoneStats();
+      const currentMonthId = getCurrentMilestoneMonthId();
+
+      el.innerHTML = `
+        <div class="milestone-header">
+          <div>
+            <div class="milestone-heading">3ヶ月マイルストーン</div>
+            <div class="milestone-period">${MILESTONE_PLAN.period} · 患者説明動画 立ち上げ期</div>
+          </div>
+          <div class="milestone-overall">
+            <div class="milestone-overall-count">${ms.done}<span style="font-size:.85rem;color:var(--muted)"> / ${ms.total}</span></div>
+            <div class="milestone-overall-label">全体の進捗 ${ms.pct}%</div>
+            <div class="milestone-overall-bar"><div style="width:${ms.pct}%"></div></div>
+          </div>
+        </div>
+        <div class="milestone-grid">
+          ${MILESTONE_PLAN.months.map(month => {
+            const monthDone = month.items.filter(i => isMilestoneDone(i.id)).length;
+            const monthTotal = month.items.length;
+            const monthPct = monthTotal ? Math.round((monthDone / monthTotal) * 100) : 0;
+            const isCurrent = month.id === currentMonthId;
+            const allDone = monthDone === monthTotal && monthTotal > 0;
+            return `
+              <div class="milestone-month${isCurrent ? ' current' : ''}${allDone ? ' done-all' : ''}">
+                <div class="milestone-month-head">
+                  <span class="milestone-month-label">${month.label}${isCurrent ? '（今月）' : ''}</span>
+                  <span class="milestone-month-sub">${esc(month.subtitle)}</span>
+                  <span class="milestone-month-count">${monthDone}/${monthTotal}</span>
+                </div>
+                <div class="milestone-month-bar"><div style="width:${monthPct}%"></div></div>
+                <div class="milestone-list">
+                  ${month.items.map(item => {
+                    const done = isMilestoneDone(item.id);
+                    return `
+                      <label class="milestone-item${done ? ' done' : ''}">
+                        <input type="checkbox"${done ? ' checked' : ''} onchange="toggleMilestone('${item.id}')">
+                        <span>${esc(item.text)}</span>
+                      </label>`;
+                  }).join('')}
+                </div>
+              </div>`;
+          }).join('')}
+        </div>
       `;
     }
 
