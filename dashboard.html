@@ -879,7 +879,28 @@
       flex-direction: column;
     }
     .checklist-modal h3 { font-size: 1rem; margin-bottom: 4px; }
-    .checklist-subtitle { font-size: .75rem; color: var(--muted); margin-bottom: 16px; }
+    .checklist-subtitle { font-size: .75rem; color: var(--muted); margin-bottom: 8px; }
+    .checklist-workflow-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .checklist-workflow-row label {
+      font-size: .72rem;
+      color: var(--muted);
+      white-space: nowrap;
+      font-weight: 600;
+    }
+    .checklist-workflow-row select {
+      flex: 1;
+      font-size: .78rem;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+    }
     .checklist-progress {
       height: 4px;
       background: var(--surface-2);
@@ -1371,7 +1392,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v46</div>
+        <div class="logo-sub">Business Dashboard · v47</div>
       </div>
       <div class="header-right">
         <div class="header-backup-actions">
@@ -1564,7 +1585,7 @@
       </div>
       <div class="form-group" id="typeGroup">
         <label id="projectTypeLabel">種別</label>
-        <select id="projectType">
+        <select id="projectType" onchange="onProjectTypeChange()">
           <option value="explainer-video">説明動画</option>
           <option value="branding-video">ブランディング動画</option>
           <option value="record-video">記録動画</option>
@@ -1576,6 +1597,15 @@
           <option value="meo">MEO</option>
           <option value="doc">資料制作</option>
         </select>
+      </div>
+      <div class="form-group" id="workflowGroup">
+        <label>制作フロー</label>
+        <select id="projectWorkflow">
+          <option value="auto">種別から自動（説明→アニメ / ブランド・記録→実写）</option>
+          <option value="explainer">アニメーション動画制作フロー</option>
+          <option value="brandingRecord">ブランディング／記録動画制作フロー</option>
+        </select>
+        <div class="form-hint">進行中カードをクリックするとチェックリストが開きます。種別と違うフローで進める場合はここで変更</div>
       </div>
       <div class="form-group">
         <label>ステータス</label>
@@ -1768,6 +1798,14 @@
     <div class="modal checklist-modal">
       <h3 id="checklistTitle"></h3>
       <div class="checklist-subtitle" id="checklistSubtitle"></div>
+      <div class="checklist-workflow-row" id="checklistWorkflowRow">
+        <label for="checklistWorkflowSelect">制作フロー</label>
+        <select id="checklistWorkflowSelect" onchange="changeChecklistWorkflow(this.value)">
+          <option value="auto">種別から自動</option>
+          <option value="explainer">アニメーション動画制作フロー</option>
+          <option value="brandingRecord">ブランディング／記録動画制作フロー</option>
+        </select>
+      </div>
       <div class="checklist-progress"><div class="checklist-progress-bar" id="checklistBar"></div></div>
       <div class="checklist-scroll" id="checklistBody"></div>
       <div class="modal-actions">
@@ -2324,6 +2362,8 @@ ${MAIL_FOOTER}`,
         if (TYPE_MIGRATION[p.type]) p.type = TYPE_MIGRATION[p.type];
         if (p.contractRoute === 'direct') p.contractRoute = 'directSupport';
         if (p.contractRoute === 'mechauru') p.followUpTiming = 'none';
+        ensureProjectChecklists(p);
+        if (p.workflowKey === undefined) p.workflowKey = 'auto';
         if (p.phase === undefined) p.phase = '';
         if (p.deadlineDate === undefined) p.deadlineDate = '';
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
@@ -3547,6 +3587,23 @@ ${MAIL_FOOTER}`,
           `<option value="${t.value}">${t.label}</option>`
         ).join('');
       }
+      updateWorkflowGroupVisibility();
+    }
+
+    function onProjectTypeChange() {
+      updateWorkflowGroupVisibility();
+    }
+
+    function isWorkflowEligibleType(type) {
+      return ['explainer-video', 'branding-video', 'record-video', 'ad-video', 'video', 'both'].includes(type);
+    }
+
+    function updateWorkflowGroupVisibility() {
+      const group = document.getElementById('workflowGroup');
+      if (!group) return;
+      const isSns = document.getElementById('projectCategory').value === 'sns';
+      const type = document.getElementById('projectType').value;
+      group.style.display = (!isSns && isWorkflowEligibleType(type)) ? '' : 'none';
     }
 
     function onStatusChange() {
@@ -3668,6 +3725,7 @@ ${MAIL_FOOTER}`,
         if (p.category !== 'sns') {
           document.getElementById('projectType').value = p.type;
         }
+        document.getElementById('projectWorkflow').value = p.workflowKey || 'auto';
         document.getElementById('projectStatus').value = p.status;
         document.getElementById('projectDeadlineDate').value = p.deadlineDate || '';
         document.getElementById('projectDeadlinePlan').value = p.deadlinePlan || '';
@@ -3689,6 +3747,7 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectName').value = '';
         document.getElementById('projectClient').value = '';
         document.getElementById('projectType').value = 'explainer-video';
+        document.getElementById('projectWorkflow').value = 'auto';
         document.getElementById('projectStatus').value = 'todo';
         document.getElementById('projectDeadlineDate').value = '';
         document.getElementById('projectDeadlinePlan').value = '';
@@ -3705,6 +3764,7 @@ ${MAIL_FOOTER}`,
       }
       onStatusChange();
       onContractRouteChange();
+      updateWorkflowGroupVisibility();
       updateProjectProfitPreview();
       document.getElementById('projectModal').classList.add('open');
       setTimeout(() => document.getElementById('projectName').focus(), 50);
@@ -3756,6 +3816,11 @@ ${MAIL_FOOTER}`,
         data.followUpTiming = isMechauruRoute(data.contractRoute)
           ? 'none'
           : document.getElementById('projectFollowTiming').value;
+        if (isWorkflowEligibleType(data.type)) {
+          data.workflowKey = document.getElementById('projectWorkflow').value;
+        } else {
+          data.workflowKey = 'auto';
+        }
       }
       if (category === 'sns') {
         data.snsStatus = statusToSnsStatus(status);
@@ -4079,7 +4144,7 @@ ${MAIL_FOOTER}`,
     /* ── Workflow Checklists ── */
     const WORKFLOWS = {
       explainer: {
-        title: '説明動画制作フロー',
+        title: 'アニメーション動画制作フロー',
         groups: [
           {
             label: '企画・台本',
@@ -4164,15 +4229,37 @@ ${MAIL_FOOTER}`,
 
     let checklistProjectId = null;
 
-    function getWorkflow(p) {
+    function defaultWorkflowKey(p) {
       const t = p.type;
-      if (t === 'explainer-video' || t === 'video' || t === 'both') {
-        return WORKFLOWS.explainer;
-      }
-      if (t === 'branding-video' || t === 'record-video') {
-        return WORKFLOWS.brandingRecord;
-      }
+      if (t === 'explainer-video' || t === 'video' || t === 'both' || t === 'ad-video') return 'explainer';
+      if (t === 'branding-video' || t === 'record-video') return 'brandingRecord';
       return null;
+    }
+
+    function getWorkflowKey(p) {
+      if (p.workflowKey && p.workflowKey !== 'auto' && WORKFLOWS[p.workflowKey]) return p.workflowKey;
+      return defaultWorkflowKey(p);
+    }
+
+    function getWorkflow(p) {
+      const key = getWorkflowKey(p);
+      return key ? WORKFLOWS[key] : null;
+    }
+
+    function ensureProjectChecklists(p) {
+      if (!p.checklists) {
+        p.checklists = {};
+        if (p.checklist && typeof p.checklist === 'object' && Object.keys(p.checklist).length) {
+          const legacyKey = defaultWorkflowKey(p) || 'explainer';
+          p.checklists[legacyKey] = { ...p.checklist };
+        }
+      }
+    }
+
+    function getProjectChecklist(p, wfKey) {
+      ensureProjectChecklists(p);
+      if (!p.checklists[wfKey]) p.checklists[wfKey] = {};
+      return p.checklists[wfKey];
     }
 
     function openChecklist(id) {
@@ -4181,39 +4268,59 @@ ${MAIL_FOOTER}`,
       const wf = getWorkflow(p);
       if (!wf) return;
       checklistProjectId = id;
-      if (!p.checklist) p.checklist = {};
+      ensureProjectChecklists(p);
       document.getElementById('checklistTitle').textContent = p.name;
       document.getElementById('checklistSubtitle').textContent = wf.title;
+      document.getElementById('checklistWorkflowSelect').value = p.workflowKey || 'auto';
       renderChecklistBody(p, wf);
       document.getElementById('checklistModal').classList.add('open');
     }
 
+    function changeChecklistWorkflow(value) {
+      if (!checklistProjectId) return;
+      const p = state.projects.find(x => x.id === checklistProjectId);
+      if (!p) return;
+      p.workflowKey = value;
+      const wf = getWorkflow(p);
+      if (!wf) return;
+      document.getElementById('checklistSubtitle').textContent = wf.title;
+      renderChecklistBody(p, wf);
+      saveState();
+    }
+    window.changeChecklistWorkflow = changeChecklistWorkflow;
+
     function renderChecklistBody(p, wf) {
+      const wfKey = getWorkflowKey(p);
+      const checklist = getProjectChecklist(p, wfKey);
       const allSteps = wf.groups.flatMap(g => g.steps);
-      const checked = allSteps.filter(s => p.checklist[s.id]).length;
+      const checked = allSteps.filter(s => checklist[s.id]).length;
       const pct = Math.round(checked / allSteps.length * 100);
       document.getElementById('checklistBar').style.width = pct + '%';
+      let stepNum = 0;
       document.getElementById('checklistBody').innerHTML = wf.groups.map(g => `
         <div class="checklist-group">
           <div class="checklist-group-label">${esc(g.label)}</div>
-          ${g.steps.map(s => `
-            <label class="checklist-item${p.checklist[s.id] ? ' checked' : ''}">
-              <input type="checkbox" class="checklist-check" ${p.checklist[s.id] ? 'checked' : ''}
-                     onchange="toggleChecklist('${p.id}',${s.id},this.checked)">
-              <div class="checklist-num">${s.id}</div>
+          ${g.steps.map(s => {
+            stepNum++;
+            const num = stepNum;
+            return `
+            <label class="checklist-item${checklist[s.id] ? ' checked' : ''}">
+              <input type="checkbox" class="checklist-check" ${checklist[s.id] ? 'checked' : ''}
+                     onchange="toggleChecklist('${p.id}','${wfKey}',${s.id},this.checked)">
+              <div class="checklist-num">${num}</div>
               <div class="checklist-text">${esc(s.text)}</div>
               <span class="checklist-tag ${esc(s.tag)}">${esc(s.tag)}</span>
-            </label>
-          `).join('')}
+            </label>`;
+          }).join('')}
         </div>
       `).join('');
     }
 
-    function toggleChecklist(projectId, stepId, checked) {
+    function toggleChecklist(projectId, wfKey, stepId, checked) {
       const p = state.projects.find(x => x.id === projectId);
       if (!p) return;
-      if (!p.checklist) p.checklist = {};
-      p.checklist[stepId] = checked;
+      const checklist = getProjectChecklist(p, wfKey);
+      checklist[stepId] = checked;
       const wf = getWorkflow(p);
       if (wf) renderChecklistBody(p, wf);
       saveState();
