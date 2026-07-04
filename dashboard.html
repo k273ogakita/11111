@@ -1388,13 +1388,31 @@
   </style>
 </head>
 <body>
-  <div class="app">
+  <div id="loginGate" class="login-gate" style="display:none">
+    <div class="login-card">
+      <div class="logo">n<span>ARK</span></div>
+      <p class="login-sub">Business Dashboard</p>
+      <form id="loginForm" onsubmit="return submitLogin(event)">
+        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="パスワード" required autofocus>
+        <label class="login-remember">
+          <input type="checkbox" id="loginRemember" checked>
+          このPCでログイン状態を保持（90日）
+        </label>
+        <button type="submit" class="btn btn-primary login-btn" id="loginSubmitBtn">ログイン</button>
+        <p class="login-error" id="loginError"></p>
+      </form>
+      <p class="login-note">パスワードは端末に保存されません。他人のPCでは毎回入力が必要です。</p>
+    </div>
+  </div>
+
+  <div class="app" id="appRoot" style="display:none">
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v48</div>
+        <div class="logo-sub">Business Dashboard · v50</div>
       </div>
       <div class="header-right">
+        <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
         <div class="header-backup-actions">
           <span class="header-backup-label">データ</span>
           <button class="btn" onclick="exportJsonBackup()">JSONバックアップ</button>
@@ -1950,6 +1968,14 @@ nARK　緒方 和奈
     const STORAGE_PREV_KEY = 'nark_dashboard_v4_prev';
     const AUTO_BACKUP_LAST_KEY = 'nark_dashboard_auto_backup_last';
     const BACKUP_DIR_LABEL_KEY = 'nark_backup_dir_label';
+    const AUTH_SESSION_KEY = 'nark_dashboard_session';
+    const AUTH_TRUSTED_KEY = 'nark_dashboard_trusted';
+    const AUTH_TRUSTED_DAYS = 90;
+    const AUTH = {
+      salt: 'SETUP_REQUIRED',
+      hash: 'SETUP_REQUIRED',
+      iterations: 120000,
+    };
     const BACKUP_DB_NAME = 'nark_dashboard_backup';
     const BACKUP_DB_VERSION = 1;
     const BACKUP_DIR_STORE = 'settings';
@@ -1957,6 +1983,141 @@ nARK　緒方 和奈
     let backupDirHandle = null;
     let backupDirName = localStorage.getItem(BACKUP_DIR_LABEL_KEY) || '';
     let autoSaveTimer = null;
+    let dashboardBooted = false;
+
+    function isAuthConfigured() {
+      return AUTH.salt && AUTH.hash && AUTH.salt !== 'SETUP_REQUIRED';
+    }
+
+    async function hashPassword(password) {
+      const enc = new TextEncoder();
+      const salt = Uint8Array.from(atob(AUTH.salt), c => c.charCodeAt(0));
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveBits']
+      );
+      const bits = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt, iterations: AUTH.iterations, hash: 'SHA-256' },
+        keyMaterial, 256
+      );
+      return btoa(String.fromCharCode(...new Uint8Array(bits)));
+    }
+
+    async function verifyPassword(password) {
+      if (!isAuthConfigured()) return false;
+      return (await hashPassword(password)) === AUTH.hash;
+    }
+
+    function restoreTrustedSession() {
+      try {
+        const raw = localStorage.getItem(AUTH_TRUSTED_KEY);
+        if (!raw) return false;
+        const t = JSON.parse(raw);
+        if (!t || !t.token || !t.exp || t.exp <= Date.now()) {
+          localStorage.removeItem(AUTH_TRUSTED_KEY);
+          return false;
+        }
+        sessionStorage.setItem(AUTH_SESSION_KEY, t.token);
+        return true;
+      } catch (_) {
+        localStorage.removeItem(AUTH_TRUSTED_KEY);
+        return false;
+      }
+    }
+
+    function isAuthed() {
+      return !!sessionStorage.getItem(AUTH_SESSION_KEY);
+    }
+
+    function setAuthSession(remember) {
+      const token = crypto.randomUUID();
+      sessionStorage.setItem(AUTH_SESSION_KEY, token);
+      if (remember) {
+        localStorage.setItem(AUTH_TRUSTED_KEY, JSON.stringify({
+          token,
+          exp: Date.now() + AUTH_TRUSTED_DAYS * 86400000,
+        }));
+      }
+    }
+
+    function showLoginGate(message) {
+      document.getElementById('loginGate').style.display = '';
+      document.getElementById('appRoot').style.display = 'none';
+      const err = document.getElementById('loginError');
+      if (err) err.textContent = message || '';
+      setTimeout(() => document.getElementById('loginPassword')?.focus(), 50);
+    }
+
+    function showDashboardApp() {
+      document.getElementById('loginGate').style.display = 'none';
+      document.getElementById('appRoot').style.display = '';
+    }
+
+    async function submitLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginSubmitBtn');
+      const err = document.getElementById('loginError');
+      const password = document.getElementById('loginPassword').value;
+      const remember = document.getElementById('loginRemember').checked;
+      if (!isAuthConfigured()) {
+        err.textContent = 'パスワードが未設定です。scripts/set_dashboard_password.py を実行してください。';
+        return false;
+      }
+      btn.disabled = true;
+      err.textContent = '';
+      try {
+        if (!(await verifyPassword(password))) {
+          err.textContent = 'パスワードが正しくありません';
+          document.getElementById('loginPassword').value = '';
+          document.getElementById('loginPassword').focus();
+          return false;
+        }
+        setAuthSession(remember);
+        document.getElementById('loginPassword').value = '';
+        showDashboardApp();
+        bootDashboard();
+      } finally {
+        btn.disabled = false;
+      }
+      return false;
+    }
+    window.submitLogin = submitLogin;
+
+    function logoutDashboard() {
+      sessionStorage.removeItem(AUTH_SESSION_KEY);
+      localStorage.removeItem(AUTH_TRUSTED_KEY);
+      dashboardBooted = false;
+      showLoginGate('');
+    }
+    window.logoutDashboard = logoutDashboard;
+
+    function initAuthGate() {
+      if (!isAuthConfigured()) {
+        // パスワード未設定の間はログインなしで通常表示
+        const lb = document.querySelector('.btn-logout');
+        if (lb) lb.style.display = 'none';
+        showDashboardApp();
+        bootDashboard();
+        return;
+      }
+      if (isAuthed() || restoreTrustedSession()) {
+        showDashboardApp();
+        bootDashboard();
+        return;
+      }
+      showLoginGate('');
+    }
+
+    function bootDashboard() {
+      if (dashboardBooted) return;
+      dashboardBooted = true;
+      render();
+      initBackupDir().then(function() {
+        runWeeklyAutoBackupIfDue();
+      });
+      setInterval(renderDateTime, 30000);
+      setInterval(function() { runWeeklyAutoBackupIfDue(); }, 60000);
+    }
+
     const BIZ_TODO_CATEGORIES = ['営業', '集客', '経理', '運営', 'その他'];
 
     const MILESTONE_PLAN = {
@@ -4150,8 +4311,9 @@ ${MAIL_FOOTER}`,
             label: '企画・台本',
             steps: [
               { id: 1, text: '目的・ゴール設定', tag: '企画' },
+              { id: 11, text: '説明内容AI読み込み', tag: '企画' },
               { id: 2, text: 'ナレーション台本作成', tag: '企画' },
-              { id: 3, text: 'ナレーション収録・確定', tag: '企画' },
+              { id: 3, text: 'ナレーション収録・確定（大まかな尺だし）', tag: '企画' },
               { id: 4, text: '絵コンテ作成', tag: '企画' },
             ],
           },
@@ -4586,12 +4748,7 @@ ${MAIL_FOOTER}`,
       }
     });
 
-    render();
-    initBackupDir().then(function() {
-      runWeeklyAutoBackupIfDue();
-    });
-    setInterval(renderDateTime, 30000);
-    setInterval(function() { runWeeklyAutoBackupIfDue(); }, 60000);
+    initAuthGate();
   </script>
 </body>
 </html>
