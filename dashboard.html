@@ -845,6 +845,16 @@
       color: #3a5f8a;
       border-left: 2px solid #5a82c8;
     }
+    .cal-event.ad-ops-start {
+      background: rgba(232,149,106,.15);
+      color: #a05830;
+      border-left: 2px solid var(--red);
+    }
+    .cal-event.ad-ops-milestone {
+      background: rgba(90,160,120,.12);
+      color: #2e6b50;
+      border-left: 2px solid #32a078;
+    }
     .cal-day.clickable {
       cursor: pointer;
       transition: background .12s;
@@ -1391,7 +1401,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v52</div>
+        <div class="logo-sub">Business Dashboard · v53</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1474,6 +1484,7 @@
           <div class="cal-legend-item"><div class="cal-legend-dot subscription"></div>サブスク更新</div>
           <div class="cal-legend-item"><div class="cal-legend-dot followup"></div>アフターフォロー②</div>
           <div class="cal-legend-item"><div class="cal-legend-dot adops"></div>広告運用 締日</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--red)"></div>広告運用 開始</div>
         </div>
       </div>
     </section>
@@ -1679,15 +1690,16 @@
           <div class="finance-fields-title">広告運用（月次）</div>
           <div class="form-row-2">
             <div class="form-group">
-              <label>締日（毎月）</label>
-              <input type="number" id="projectClosingDay" min="1" max="28" value="25">
+              <label>広告運用開始日</label>
+              <input type="date" id="projectOpsStartDate" onchange="updateAdOpsClosingPreview()">
             </div>
             <div class="form-group">
               <label>運用月</label>
               <input type="text" id="projectOpsMonthDisplay" readonly placeholder="1ヶ月目">
             </div>
           </div>
-          <div class="form-hint">締日になると請求列へ移動します。入金後「継続」で翌月分を進行中にコピー。初回3ヶ月は月2回MT推奨。</div>
+          <div class="form-hint" id="adOpsClosingPreview">広告運用開始日から1ヶ月後が締日です。未着手〜準備中は開始日未定でもOK。</div>
+          <div class="form-hint">「広告開始」フェーズ＝運用開始日の予定。入金後「継続」で翌月分を進行中にコピー。</div>
         </div>
         <div class="form-group">
           <label>変動費</label>
@@ -1838,7 +1850,10 @@
 
     const DOING_PHASES = ['ヒアリング・構成', '撮影', '編集', '制作中', 'チェック中', '納品済'];
     const SNS_DOING_PHASES = ['制作中', 'チェック中', '納品済'];
-    const AD_OPS_DOING_PHASES = ['アカウント作成', '設定', 'キャンペーン設定', '広告開始', '分析', 'レポート作成'];
+    const AD_OPS_DOING_PHASES = [
+      '広告アカウント作成', '設定', 'キャンペーン設定', '広告開始',
+      '分析（2W）', 'レポート作成（2W）', '分析（1M）', 'レポート作成（1M）',
+    ];
     const AD_OPS_BILLING_PHASES = ['作成未', '請求書作成済', '送付済', '入金済', '継続'];
 
     function isAdOpsType(p) {
@@ -1858,7 +1873,7 @@
 
     function getDefaultDoingPhase(p) {
       if (p.category === 'sns') return '制作中';
-      if (isAdOpsType(p)) return 'アカウント作成';
+      if (isAdOpsType(p)) return '広告アカウント作成';
       return 'ヒアリング・構成';
     }
 
@@ -1882,17 +1897,45 @@
       return `${month}ヶ月目`;
     }
 
-    function getAdOpsClosingDateStr(year, monthIndex, closingDay) {
-      const day = Math.min(Math.max(Number(closingDay) || 25, 1), 28);
-      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
-      const d = Math.min(day, daysInMonth);
-      return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    function getAdOpsClosingDate(p) {
+      if (!p || !p.opsStartDate) return null;
+      return addMonthsToDate(p.opsStartDate, 1);
     }
 
-    function getCurrentAdOpsClosingDate(p) {
-      const today = todayStr();
-      const now = new Date(today + 'T00:00:00');
-      return getAdOpsClosingDateStr(now.getFullYear(), now.getMonth(), p.closingDay || 25);
+    function getAdOpsAnalysis2WDate(p) {
+      if (!p || !p.opsStartDate) return null;
+      return addDaysToDate(p.opsStartDate, 14);
+    }
+
+    function getAdOpsReport2WDate(p) {
+      if (!p || !p.opsStartDate) return null;
+      return addDaysToDate(p.opsStartDate, 14);
+    }
+
+    function getAdOpsAnalysis1MDate(p) {
+      return getAdOpsClosingDate(p);
+    }
+
+    function getAdOpsReport1MDate(p) {
+      return getAdOpsClosingDate(p);
+    }
+
+    function formatDateJa(dateStr) {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-');
+      return `${+m}/${+d}`;
+    }
+
+    function getAdOpsMilestones(p) {
+      if (!isAdOpsType(p) || !p.opsStartDate) return [];
+      return [
+        { date: p.opsStartDate, label: '広告開始', category: 'ad-ops-start' },
+        { date: getAdOpsAnalysis2WDate(p), label: '分析（2W）', category: 'ad-ops-milestone' },
+        { date: getAdOpsReport2WDate(p), label: 'レポート（2W）', category: 'ad-ops-milestone' },
+        { date: getAdOpsClosingDate(p), label: '締日', category: 'ad-ops-closing' },
+        { date: getAdOpsAnalysis1MDate(p), label: '分析（1M）', category: 'ad-ops-milestone' },
+        { date: getAdOpsReport1MDate(p), label: 'レポート（1M）', category: 'ad-ops-milestone' },
+      ].filter(m => m.date);
     }
 
     function doingPhaseSortIndex(p) {
@@ -2312,6 +2355,7 @@ nARK　緒方 和奈
         if (p.afterFollowDone.followup === undefined) p.afterFollowDone.followup = false;
       }
       if (p.closingDay === undefined) p.closingDay = 25;
+      if (p.opsStartDate === undefined) p.opsStartDate = '';
       if (p.opsMonth === undefined) p.opsMonth = isAdOpsType(p) ? (parseOpsMonthFromName(p.name) || 1) : 0;
       if (p.opsBaseName === undefined) p.opsBaseName = isAdOpsType(p) ? getOpsBaseName(p) : '';
     }
@@ -2321,13 +2365,12 @@ nARK　緒方 和奈
       let moved = 0;
       state.projects.forEach(p => {
         if (!isAdOpsType(p) || p.status !== 'doing') return;
-        const closing = getCurrentAdOpsClosingDate(p);
-        if (today >= closing) {
-          p.status = 'billing';
-          p.phase = '作成未';
-          ensureBillingDate(p);
-          moved++;
-        }
+        const closing = getAdOpsClosingDate(p);
+        if (!closing || today < closing) return;
+        p.status = 'billing';
+        p.phase = '作成未';
+        ensureBillingDate(p);
+        moved++;
       });
       return moved;
     }
@@ -2335,8 +2378,22 @@ nARK　緒方 和奈
     function getDueAdOpsClosingProjects(forDate) {
       const date = forDate || todayStr();
       return state.projects.filter(p =>
-        isAdOpsType(p) && p.status === 'doing' && getCurrentAdOpsClosingDate(p) === date
+        isAdOpsType(p) && p.status === 'doing' && getAdOpsClosingDate(p) === date
       );
+    }
+
+    function getDueAdOpsMilestones(forDate) {
+      const date = forDate || todayStr();
+      const results = [];
+      state.projects.forEach(p => {
+        if (!isAdOpsType(p) || p.status !== 'doing' || !p.opsStartDate) return;
+        getAdOpsMilestones(p).forEach(m => {
+          if (m.date === date && m.label !== '締日') {
+            results.push({ project: p, label: m.label });
+          }
+        });
+      });
+      return results;
     }
 
     function detectContractRoute(p) {
@@ -3327,7 +3384,7 @@ ${MAIL_FOOTER}`,
           `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — 2 アフターフォローの日です（納品 ${esc(p.deliveredDate || '')} から${p.followUpTiming === '1month' ? '1ヶ月' : '2週間'}）</div>`
         ),
         ...adOpsClosing.map(p =>
-          `<div class="notice-bar-inner">📅 <strong>${esc(p.client || p.name)}</strong> — 広告運用の締日です（毎月${p.closingDay || 25}日）→ 請求列へ移動しました</div>`
+          `<div class="notice-bar-inner">📅 <strong>${esc(p.client || p.name)}</strong> — 広告運用の締日です（開始 ${esc(formatDateJa(p.opsStartDate))} から1ヶ月）→ 請求列へ移動しました</div>`
         ),
       ].join('');
     }
@@ -3342,7 +3399,8 @@ ${MAIL_FOOTER}`,
       const todayBizItems = (state.bizTodos || []).filter(t => !t.done && t.dueDate === today).length;
       const todayFollowUps = getDueFollowUpProjects(today).length;
       const todayAdOpsClosing = getDueAdOpsClosingProjects(today).length;
-      const todayTasks = todayTaskItems + todayBizItems + todayFollowUps + todayAdOpsClosing;
+      const todayAdOpsMilestones = getDueAdOpsMilestones(today).length;
+      const todayTasks = todayTaskItems + todayBizItems + todayFollowUps + todayAdOpsClosing + todayAdOpsMilestones;
       const openBizTodos = (state.bizTodos || []).filter(t => !t.done).length;
       const ms = getMilestoneStats();
 
@@ -3554,7 +3612,9 @@ ${MAIL_FOOTER}`,
            ${p.created ? `<span>${p.created}</span>` : ''}`;
       const path = p.folder ? `<div class="card-path">${esc(p.folder)}</div>` : '';
       const adOpsClosingLine = isAdOpsType(p) && (p.status === 'todo' || p.status === 'doing')
-        ? `<div class="card-deadline">締日 毎月${p.closingDay || 25}日${p.status === 'doing' ? '（次回 ' + getCurrentAdOpsClosingDate(p).slice(5).replace('-', '/') + '）' : ''}</div>`
+        ? (p.opsStartDate
+          ? `<div class="card-deadline">運用開始 ${formatDateJa(p.opsStartDate)} · 締日 ${formatDateJa(getAdOpsClosingDate(p))}${p.status === 'doing' && p.phase === '広告開始' ? '（開始予定日）' : ''}</div>`
+          : `<div class="card-deadline">運用開始日 未設定（準備中）</div>`)
         : '';
       const deadline = (p.status === 'todo' || p.status === 'doing') && formatDeadline(p)
         ? `<div class="card-deadline">${esc(formatDeadline(p))}</div>` : '';
@@ -3639,6 +3699,13 @@ ${MAIL_FOOTER}`,
         toast(`「${p.name}」→ 請求・アフターフォロー`);
         return;
       }
+      if (phase === '広告開始' && isAdOpsType(p)) {
+        if (p.category === 'sns') p.snsStatus = 'scheduled';
+        saveState();
+        const startHint = p.opsStartDate ? `（予定 ${formatDateJa(p.opsStartDate)}）` : '（運用開始日を編集で設定）';
+        toast(`「${p.name}」→ 広告開始${startHint}`);
+        return;
+      }
       if (p.category === 'sns') p.snsStatus = 'scheduled';
       saveState();
       toast(`「${p.name}」→ ${phase}`);
@@ -3650,6 +3717,7 @@ ${MAIL_FOOTER}`,
       ensureProjectFinance(p);
       const baseName = getOpsBaseName(p);
       const nextMonth = getOpsMonth(p) + 1;
+      const nextStart = p.opsStartDate ? addMonthsToDate(p.opsStartDate, 1) : '';
       const copy = {
         id: uid(),
         category: 'client',
@@ -3657,7 +3725,7 @@ ${MAIL_FOOTER}`,
         name: `${baseName} 運用${nextMonth}ヶ月目`,
         client: p.client || '',
         status: 'doing',
-        phase: '分析',
+        phase: '分析（2W）',
         created: todayStr(),
         deadlineDate: '',
         deadlinePlan: '',
@@ -3667,7 +3735,7 @@ ${MAIL_FOOTER}`,
         invoiceDate: '',
         variableCosts: [],
         timeLogs: [],
-        closingDay: p.closingDay || 25,
+        opsStartDate: nextStart,
         opsMonth: nextMonth,
         opsBaseName: baseName,
         mailClinic: p.mailClinic || '',
@@ -3825,6 +3893,9 @@ ${MAIL_FOOTER}`,
         getDueAdOpsClosingProjects(today).forEach(p => {
           entries.push({ kind: 'adOpsClosing', item: p });
         });
+        getDueAdOpsMilestones(today).forEach(({ project, label }) => {
+          entries.push({ kind: 'adOpsMilestone', item: project, milestone: label });
+        });
       }
       entries.sort((a, b) => {
         if (a.item.done !== b.item.done) return a.item.done ? 1 : -1;
@@ -3846,7 +3917,7 @@ ${MAIL_FOOTER}`,
         return;
       }
 
-      el.innerHTML = entries.map(({ kind, item: t }) => {
+      el.innerHTML = entries.map(({ kind, item: t, milestone }) => {
         if (kind === 'followUp') {
           const timing = t.followUpTiming === '1month' ? '1ヶ月後' : '2週間後';
           return `
@@ -3860,7 +3931,14 @@ ${MAIL_FOOTER}`,
           return `
         <div class="task-item task-item-reminder">
           <span class="task-category 営業">締日</span>
-          <span class="task-text">${esc(t.client || t.name)} — 広告運用の請求（毎月${t.closingDay || 25}日）</span>
+          <span class="task-text">${esc(t.client || t.name)} — 広告運用の請求（開始 ${formatDateJa(t.opsStartDate)} から1ヶ月）</span>
+        </div>`;
+        }
+        if (kind === 'adOpsMilestone') {
+          return `
+        <div class="task-item task-item-reminder">
+          <span class="task-category 営業">広告運用</span>
+          <span class="task-text">${esc(t.client || t.name)} — ${esc(milestone || '')}</span>
         </div>`;
         }
         const dateLabel = kind === 'bizTodo'
@@ -3918,10 +3996,24 @@ ${MAIL_FOOTER}`,
       if (followGroup) followGroup.style.display = (isSns || isAdOps) ? 'none' : '';
       if (invoiceHint) {
         invoiceHint.textContent = isAdOps
-          ? '締日に請求列へ自動移動。請求日は請求書発行日として記録'
+          ? '締日は運用開始日から1ヶ月後。請求日は請求書発行日として記録'
           : '請求ステータスに移すと今日の日付が自動入力されます';
       }
     }
+
+    function updateAdOpsClosingPreview() {
+      const el = document.getElementById('adOpsClosingPreview');
+      if (!el) return;
+      const start = document.getElementById('projectOpsStartDate')?.value;
+      if (!start) {
+        el.textContent = '広告運用開始日から1ヶ月後が締日です。未着手〜準備中は開始日未定でもOK。';
+        return;
+      }
+      const closing = addMonthsToDate(start, 1);
+      const analysis2w = addDaysToDate(start, 14);
+      el.textContent = `締日 ${formatDateJa(closing)} · 分析/レポート（2W）${formatDateJa(analysis2w)} · 分析/レポート（1M）${formatDateJa(closing)}`;
+    }
+    window.updateAdOpsClosingPreview = updateAdOpsClosingPreview;
 
     function isWorkflowEligibleType(type) {
       return ['explainer-video', 'branding-video', 'record-video', 'ad-video', 'video', 'both'].includes(type);
@@ -4067,9 +4159,10 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectMailDirector').value = p.mailDirector || '';
         document.getElementById('projectContractRoute').value = p.contractRoute || detectContractRoute(p);
         document.getElementById('projectFollowTiming').value = p.followUpTiming || '2week';
-        document.getElementById('projectClosingDay').value = p.closingDay || 25;
+        document.getElementById('projectOpsStartDate').value = p.opsStartDate || '';
         document.getElementById('projectOpsMonthDisplay').value = isAdOpsType(p)
           ? formatOpsMonthLabel(getOpsMonth(p)) : '';
+        updateAdOpsClosingPreview();
         renderVariableCostRows(p.variableCosts.length ? p.variableCosts : []);
         renderTimeLogRows(p.timeLogs.length ? p.timeLogs : []);
       } else {
@@ -4091,8 +4184,9 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectMailDirector').value = '';
         document.getElementById('projectContractRoute').value = 'directSupport';
         document.getElementById('projectFollowTiming').value = '2week';
-        document.getElementById('projectClosingDay').value = 25;
+        document.getElementById('projectOpsStartDate').value = '';
         document.getElementById('projectOpsMonthDisplay').value = '';
+        updateAdOpsClosingPreview();
         renderVariableCostRows([]);
         renderTimeLogRows([]);
       }
@@ -4157,7 +4251,7 @@ ${MAIL_FOOTER}`,
           data.workflowKey = 'auto';
         }
         if (data.type === 'ad-ops') {
-          data.closingDay = Math.min(Math.max(Number(document.getElementById('projectClosingDay').value) || 25, 1), 28);
+          data.opsStartDate = document.getElementById('projectOpsStartDate').value;
           data.followUpTiming = 'none';
         }
       }
@@ -4851,14 +4945,16 @@ ${MAIL_FOOTER}`,
         });
       });
       state.projects.forEach(p => {
-        if (!isAdOpsType(p) || p.status !== 'doing') return;
-        const closing = getCurrentAdOpsClosingDate(p);
-        if (!events[closing]) events[closing] = [];
-        events[closing].push({
-          label: `締日: ${p.client || p.name}`,
-          category: 'ad-ops-closing',
-          client: `運用${getOpsMonth(p)}ヶ月目 · 毎月${p.closingDay || 25}日`,
-          status: '',
+        if (!isAdOpsType(p) || !p.opsStartDate) return;
+        if (p.status !== 'doing' && p.status !== 'todo') return;
+        getAdOpsMilestones(p).forEach(m => {
+          if (!events[m.date]) events[m.date] = [];
+          events[m.date].push({
+            label: `${m.label}: ${p.client || p.name}`,
+            category: m.category,
+            client: `運用${getOpsMonth(p)}ヶ月目`,
+            status: '',
+          });
         });
       });
       return events;
