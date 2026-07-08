@@ -855,6 +855,16 @@
       color: #2e6b50;
       border-left: 2px solid #32a078;
     }
+    .cal-event.ad-ops-mt {
+      background: rgba(155,122,208,.14);
+      color: #5a4088;
+      border-left: 2px solid #9b7ad0;
+    }
+    .cal-event.ad-ops-report {
+      background: rgba(90,160,120,.12);
+      color: #2e6b50;
+      border-left: 2px solid #32a078;
+    }
     .cal-day.clickable {
       cursor: pointer;
       transition: background .12s;
@@ -1401,7 +1411,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v53</div>
+        <div class="logo-sub">Business Dashboard · v54</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1483,8 +1493,9 @@
           <div class="cal-legend-item"><div class="cal-legend-dot task"></div>予定タスク</div>
           <div class="cal-legend-item"><div class="cal-legend-dot subscription"></div>サブスク更新</div>
           <div class="cal-legend-item"><div class="cal-legend-dot followup"></div>アフターフォロー②</div>
-          <div class="cal-legend-item"><div class="cal-legend-dot adops"></div>広告運用 締日</div>
-          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--red)"></div>広告運用 開始</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--red)"></div>広告開始</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot followup"></div>広告運用 MT</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot task"></div>レポート作成</div>
         </div>
       </div>
     </section>
@@ -1897,27 +1908,18 @@
       return `${month}ヶ月目`;
     }
 
-    function getAdOpsClosingDate(p) {
+    function getAdOps2WDate(p) {
+      if (!p || !p.opsStartDate) return null;
+      return addDaysToDate(p.opsStartDate, 14);
+    }
+
+    function getAdOps1MDate(p) {
       if (!p || !p.opsStartDate) return null;
       return addMonthsToDate(p.opsStartDate, 1);
     }
 
-    function getAdOpsAnalysis2WDate(p) {
-      if (!p || !p.opsStartDate) return null;
-      return addDaysToDate(p.opsStartDate, 14);
-    }
-
-    function getAdOpsReport2WDate(p) {
-      if (!p || !p.opsStartDate) return null;
-      return addDaysToDate(p.opsStartDate, 14);
-    }
-
-    function getAdOpsAnalysis1MDate(p) {
-      return getAdOpsClosingDate(p);
-    }
-
-    function getAdOpsReport1MDate(p) {
-      return getAdOpsClosingDate(p);
+    function getAdOpsClosingDate(p) {
+      return getAdOps1MDate(p);
     }
 
     function formatDateJa(dateStr) {
@@ -1928,13 +1930,14 @@
 
     function getAdOpsMilestones(p) {
       if (!isAdOpsType(p) || !p.opsStartDate) return [];
+      const at2w = getAdOps2WDate(p);
+      const at1m = getAdOps1MDate(p);
       return [
         { date: p.opsStartDate, label: '広告開始', category: 'ad-ops-start' },
-        { date: getAdOpsAnalysis2WDate(p), label: '分析（2W）', category: 'ad-ops-milestone' },
-        { date: getAdOpsReport2WDate(p), label: 'レポート（2W）', category: 'ad-ops-milestone' },
-        { date: getAdOpsClosingDate(p), label: '締日', category: 'ad-ops-closing' },
-        { date: getAdOpsAnalysis1MDate(p), label: '分析（1M）', category: 'ad-ops-milestone' },
-        { date: getAdOpsReport1MDate(p), label: 'レポート（1M）', category: 'ad-ops-milestone' },
+        { date: at2w, label: 'MT（2W）', category: 'ad-ops-mt' },
+        { date: at2w, label: 'レポート作成（2W）', category: 'ad-ops-report' },
+        { date: at1m, label: 'MT（1M）', category: 'ad-ops-mt' },
+        { date: at1m, label: 'レポート作成（1M）', category: 'ad-ops-report' },
       ].filter(m => m.date);
     }
 
@@ -2388,7 +2391,7 @@ nARK　緒方 和奈
       state.projects.forEach(p => {
         if (!isAdOpsType(p) || p.status !== 'doing' || !p.opsStartDate) return;
         getAdOpsMilestones(p).forEach(m => {
-          if (m.date === date && m.label !== '締日') {
+          if (m.date === date) {
             results.push({ project: p, label: m.label });
           }
         });
@@ -4010,8 +4013,8 @@ ${MAIL_FOOTER}`,
         return;
       }
       const closing = addMonthsToDate(start, 1);
-      const analysis2w = addDaysToDate(start, 14);
-      el.textContent = `締日 ${formatDateJa(closing)} · 分析/レポート（2W）${formatDateJa(analysis2w)} · 分析/レポート（1M）${formatDateJa(closing)}`;
+      const at2w = addDaysToDate(start, 14);
+      el.textContent = `締日 ${formatDateJa(closing)} · MT/レポート（2W）${formatDateJa(at2w)} · MT/レポート（1M）${formatDateJa(closing)}`;
     }
     window.updateAdOpsClosingPreview = updateAdOpsClosingPreview;
 
