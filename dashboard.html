@@ -707,7 +707,7 @@
     .calendar-nav {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       padding: 14px 18px;
       border-bottom: 1px solid var(--border);
     }
@@ -724,6 +724,17 @@
       transition: all .15s;
     }
     .calendar-nav-btn:hover { border-color: var(--red); color: var(--red); }
+    .calendar-month-label {
+      padding: 10px 18px 6px;
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .calendar-month-block + .calendar-month-block {
+      border-top: 1px solid var(--border);
+    }
     .calendar-grid {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
@@ -1428,7 +1439,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v56</div>
+        <div class="logo-sub">Business Dashboard · v57</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1498,11 +1509,9 @@
       </div>
       <div class="calendar-wrap">
         <div class="calendar-nav">
-          <button class="calendar-nav-btn" onclick="calPrev()">‹</button>
           <div class="calendar-nav-title" id="calTitle"></div>
-          <button class="calendar-nav-btn" onclick="calNext()">›</button>
         </div>
-        <div class="calendar-grid" id="calGrid"></div>
+        <div id="calGrid"></div>
         <div class="cal-legend">
           <div class="cal-legend-item"><div class="cal-legend-dot client"></div>クライアント案件の期日</div>
           <div class="cal-legend-item"><div class="cal-legend-dot sns"></div>自社事業整備</div>
@@ -4987,11 +4996,61 @@ ${MAIL_FOOTER}`,
     }
 
     /* ── Calendar ── */
-    let calYear = new Date().getFullYear();
-    let calMonth = new Date().getMonth();
+    function buildCalendarMonthHtml(year, monthIndex, events, today, monthLabel) {
+      const DOW = ['日', '月', '火', '水', '木', '金', '土'];
+      const firstDay = new Date(year, monthIndex, 1).getDay();
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      const daysInPrev = new Date(year, monthIndex, 0).getDate();
 
-    function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
-    function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+      let html = `<div class="calendar-month-block">`;
+      if (monthLabel) html += `<div class="calendar-month-label">${monthLabel}</div>`;
+      html += `<div class="calendar-grid">`;
+      html += DOW.map(d => `<div class="cal-dow">${d}</div>`).join('');
+
+      for (let i = 0; i < firstDay; i++) {
+        const d = daysInPrev - firstDay + 1 + i;
+        html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dow = new Date(year, monthIndex, d).getDay();
+        const isToday = dateStr === today;
+        const evs = events[dateStr] || [];
+        const dowClass = dow === 0 ? ' sun' : dow === 6 ? ' sat' : '';
+        const todayClass = isToday ? ' today' : '';
+        const hasEventClass = evs.length > 0 ? ' has-event' : '';
+        const evHtml = evs.map(e => {
+          const tip = e.client ? `${e.label} [${e.client}]` : e.label;
+          return `<div class="cal-event ${e.category}" data-tip="${esc(tip)}">${esc(e.label)}</div>`;
+        }).join('');
+        html += `<div class="cal-day clickable${dowClass}${todayClass}${hasEventClass}" onclick="scheduleTaskOnDate('${dateStr}')" title="クリックでこの日にタスクを追加">
+          <div class="cal-day-num">${d}</div>
+          ${evHtml}
+        </div>`;
+      }
+
+      const totalCells = firstDay + daysInMonth;
+      const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let d = 1; d <= remaining; d++) {
+        html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
+      }
+
+      html += `</div></div>`;
+      return html;
+    }
+
+    function getCalendarDisplayMonths() {
+      const now = new Date();
+      const y0 = now.getFullYear();
+      const m0 = now.getMonth();
+      const m1 = (m0 + 1) % 12;
+      const y1 = m0 === 11 ? y0 + 1 : y0;
+      return [
+        { year: y0, month: m0, label: `${m0 + 1}月（今月）` },
+        { year: y1, month: m1, label: `${m1 + 1}月（来月）` },
+      ];
+    }
 
     function getCalendarEvents() {
       const events = {};
@@ -5057,50 +5116,15 @@ ${MAIL_FOOTER}`,
     }
 
     function renderCalendar() {
-      const DOW = ['日', '月', '火', '水', '木', '金', '土'];
-      document.getElementById('calTitle').textContent = `${calYear}年${calMonth + 1}月`;
+      const months = getCalendarDisplayMonths();
+      document.getElementById('calTitle').textContent =
+        `${months[0].year}年${months[0].month + 1}月 · ${months[1].month + 1}月`;
 
       const events = getCalendarEvents();
       const today = todayStr();
-      const firstDay = new Date(calYear, calMonth, 1).getDay();
-      const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-      const daysInPrev = new Date(calYear, calMonth, 0).getDate();
-
-      let html = DOW.map(d => `<div class="cal-dow">${d}</div>`).join('');
-
-      // prev month padding
-      for (let i = 0; i < firstDay; i++) {
-        const d = daysInPrev - firstDay + 1 + i;
-        const dateStr = `${calYear}-${String(calMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
-      }
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const dateStr = `${calYear}-${String(calMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const dow = new Date(calYear, calMonth, d).getDay();
-        const isToday = dateStr === today;
-        const evs = events[dateStr] || [];
-        const dowClass = dow === 0 ? ' sun' : dow === 6 ? ' sat' : '';
-        const todayClass = isToday ? ' today' : '';
-        const hasEventClass = evs.length > 0 ? ' has-event' : '';
-        const evHtml = evs.map(e => {
-          const tip = e.client ? `${e.label} [${e.client}]` : e.label;
-          return `<div class="cal-event ${e.category}" data-tip="${esc(tip)}">${esc(e.label)}</div>`;
-        }).join('');
-        html += `<div class="cal-day clickable${dowClass}${todayClass}${hasEventClass}" onclick="scheduleTaskOnDate('${dateStr}')" title="クリックでこの日にタスクを追加">
-          <div class="cal-day-num">${d}</div>
-          ${evHtml}
-        </div>`;
-      }
-
-      // next month padding
-      const totalCells = firstDay + daysInMonth;
-      const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
-      for (let d = 1; d <= remaining; d++) {
-        html += `<div class="cal-day other-month"><div class="cal-day-num">${d}</div></div>`;
-      }
-
-      document.getElementById('calGrid').innerHTML = html;
+      document.getElementById('calGrid').innerHTML = months.map(m =>
+        buildCalendarMonthHtml(m.year, m.month, events, today, m.label)
+      ).join('');
     }
 
     /* ── Init ── */
