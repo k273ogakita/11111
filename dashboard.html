@@ -1411,7 +1411,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v54</div>
+        <div class="logo-sub">Business Dashboard · v55</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1709,7 +1709,7 @@
               <input type="text" id="projectOpsMonthDisplay" readonly placeholder="1ヶ月目">
             </div>
           </div>
-          <div class="form-hint" id="adOpsClosingPreview">広告運用開始日から1ヶ月後が締日です。未着手〜準備中は開始日未定でもOK。</div>
+          <div class="form-hint" id="adOpsClosingPreview">締日＝運用開始から1ヶ月後。請求日＝締日の月の月末（請求列へ移ると自動設定）。</div>
           <div class="form-hint">「広告開始」フェーズ＝運用開始日の予定。入金後「継続」で翌月分を進行中にコピー。</div>
         </div>
         <div class="form-group">
@@ -1920,6 +1920,19 @@
 
     function getAdOpsClosingDate(p) {
       return getAdOps1MDate(p);
+    }
+
+    function getEndOfMonthDate(dateStr) {
+      if (!dateStr) return null;
+      const d = new Date(dateStr + 'T00:00:00');
+      const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}-${String(last.getDate()).padStart(2, '0')}`;
+    }
+
+    function getAdOpsInvoiceDate(p) {
+      const closing = getAdOpsClosingDate(p);
+      if (!closing) return null;
+      return getEndOfMonthDate(closing);
     }
 
     function formatDateJa(dateStr) {
@@ -2372,7 +2385,7 @@ nARK　緒方 和奈
         if (!closing || today < closing) return;
         p.status = 'billing';
         p.phase = '作成未';
-        ensureBillingDate(p);
+        ensureAdOpsInvoiceDate(p, true);
         moved++;
       });
       return moved;
@@ -3131,10 +3144,19 @@ ${MAIL_FOOTER}`,
       return projectNetProfit(p) / hours;
     }
 
+    function ensureAdOpsInvoiceDate(p, force) {
+      const auto = getAdOpsInvoiceDate(p);
+      if (!auto) return;
+      if (force || !p.invoiceDate) p.invoiceDate = auto;
+    }
+
     function ensureBillingDate(p) {
-      if ((p.status === 'billing' || p.status === 'done') && !p.invoiceDate) {
-        p.invoiceDate = todayStr();
+      if (p.status !== 'billing' && p.status !== 'done') return;
+      if (isAdOpsType(p)) {
+        ensureAdOpsInvoiceDate(p, false);
+        return;
       }
+      if (!p.invoiceDate) p.invoiceDate = todayStr();
     }
 
     function daysUntil(dateStr) {
@@ -3387,7 +3409,7 @@ ${MAIL_FOOTER}`,
           `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — 2 アフターフォローの日です（納品 ${esc(p.deliveredDate || '')} から${p.followUpTiming === '1month' ? '1ヶ月' : '2週間'}）</div>`
         ),
         ...adOpsClosing.map(p =>
-          `<div class="notice-bar-inner">📅 <strong>${esc(p.client || p.name)}</strong> — 広告運用の締日です（開始 ${esc(formatDateJa(p.opsStartDate))} から1ヶ月）→ 請求列へ移動しました</div>`
+          `<div class="notice-bar-inner">📅 <strong>${esc(p.client || p.name)}</strong> — 広告運用の締日です（${esc(formatDateJa(getAdOpsClosingDate(p)))}）→ 請求列へ移動（請求日 ${esc(formatDateJa(getAdOpsInvoiceDate(p)))}）</div>`
         ),
       ].join('');
     }
@@ -3614,9 +3636,11 @@ ${MAIL_FOOTER}`,
            ${isAdOpsType(p) ? `<span class="card-tag">${esc(formatOpsMonthLabel(getOpsMonth(p)))}</span>` : ''}
            ${p.created ? `<span>${p.created}</span>` : ''}`;
       const path = p.folder ? `<div class="card-path">${esc(p.folder)}</div>` : '';
-      const adOpsClosingLine = isAdOpsType(p) && (p.status === 'todo' || p.status === 'doing')
+      const adOpsClosingLine = isAdOpsType(p) && (p.status === 'todo' || p.status === 'doing' || p.status === 'billing')
         ? (p.opsStartDate
-          ? `<div class="card-deadline">運用開始 ${formatDateJa(p.opsStartDate)} · 締日 ${formatDateJa(getAdOpsClosingDate(p))}${p.status === 'doing' && p.phase === '広告開始' ? '（開始予定日）' : ''}</div>`
+          ? `<div class="card-deadline">${p.status === 'billing' || p.status === 'done'
+            ? `締日 ${formatDateJa(getAdOpsClosingDate(p))} · 請求日 ${formatDateJa(p.invoiceDate || getAdOpsInvoiceDate(p))}`
+            : `運用開始 ${formatDateJa(p.opsStartDate)} · 締日 ${formatDateJa(getAdOpsClosingDate(p))} · 請求予定 ${formatDateJa(getAdOpsInvoiceDate(p))}`}${p.status === 'doing' && p.phase === '広告開始' ? '（開始予定日）' : ''}</div>`
           : `<div class="card-deadline">運用開始日 未設定（準備中）</div>`)
         : '';
       const deadline = (p.status === 'todo' || p.status === 'doing') && formatDeadline(p)
@@ -3934,7 +3958,7 @@ ${MAIL_FOOTER}`,
           return `
         <div class="task-item task-item-reminder">
           <span class="task-category 営業">締日</span>
-          <span class="task-text">${esc(t.client || t.name)} — 広告運用の請求（開始 ${formatDateJa(t.opsStartDate)} から1ヶ月）</span>
+          <span class="task-text">${esc(t.client || t.name)} — 広告運用の請求（締日 ${formatDateJa(getAdOpsClosingDate(t))} · 請求日 ${formatDateJa(getAdOpsInvoiceDate(t))}）</span>
         </div>`;
         }
         if (kind === 'adOpsMilestone') {
@@ -3999,7 +4023,7 @@ ${MAIL_FOOTER}`,
       if (followGroup) followGroup.style.display = (isSns || isAdOps) ? 'none' : '';
       if (invoiceHint) {
         invoiceHint.textContent = isAdOps
-          ? '締日は運用開始日から1ヶ月後。請求日は請求書発行日として記録'
+          ? '締日＝運用開始から1ヶ月後。請求日＝締日の月の月末（請求列へ移ると自動入力）'
           : '請求ステータスに移すと今日の日付が自動入力されます';
       }
     }
@@ -4009,12 +4033,13 @@ ${MAIL_FOOTER}`,
       if (!el) return;
       const start = document.getElementById('projectOpsStartDate')?.value;
       if (!start) {
-        el.textContent = '広告運用開始日から1ヶ月後が締日です。未着手〜準備中は開始日未定でもOK。';
+        el.textContent = '締日＝運用開始から1ヶ月後。請求日＝締日の月の月末。未着手〜準備中は開始日未定でもOK。';
         return;
       }
       const closing = addMonthsToDate(start, 1);
+      const invoice = getEndOfMonthDate(closing);
       const at2w = addDaysToDate(start, 14);
-      el.textContent = `締日 ${formatDateJa(closing)} · MT/レポート（2W）${formatDateJa(at2w)} · MT/レポート（1M）${formatDateJa(closing)}`;
+      el.textContent = `締日 ${formatDateJa(closing)} · 請求日 ${formatDateJa(invoice)}（締日の月の月末） · MT/レポート（2W）${formatDateJa(at2w)} · MT/レポート（1M）${formatDateJa(closing)}`;
     }
     window.updateAdOpsClosingPreview = updateAdOpsClosingPreview;
 
