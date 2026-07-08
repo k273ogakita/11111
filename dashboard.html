@@ -330,6 +330,23 @@
       gap: 4px;
       margin-top: 10px;
     }
+    .phase-btns-stack .phase-btns {
+      margin-top: 4px;
+    }
+    .phase-btns-stack .phase-row-label {
+      font-size: .62rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .04em;
+      margin-top: 8px;
+    }
+    .phase-btns-stack .phase-row-label:first-child {
+      margin-top: 0;
+    }
+    .phase-btn.locked {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
     .phase-btns.interactive {
       cursor: default;
     }
@@ -1411,7 +1428,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v55</div>
+        <div class="logo-sub">Business Dashboard · v56</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1865,6 +1882,7 @@
       '広告アカウント作成', '設定', 'キャンペーン設定', '広告開始',
       '分析（2W）', 'レポート作成（2W）', '分析（1M）', 'レポート作成（1M）',
     ];
+    const AD_OPS_PREPAY_PHASES = ['作成未', '請求書作成済', '送付済', '入金済'];
     const AD_OPS_BILLING_PHASES = ['作成未', '請求書作成済', '送付済', '入金済', '継続'];
 
     function isAdOpsType(p) {
@@ -1886,6 +1904,16 @@
       if (p.category === 'sns') return '制作中';
       if (isAdOpsType(p)) return '広告アカウント作成';
       return 'ヒアリング・構成';
+    }
+
+    function isAdOpsPhaseRequiresPrepay(phase) {
+      const gate = AD_OPS_DOING_PHASES.indexOf('広告開始');
+      const idx = AD_OPS_DOING_PHASES.indexOf(phase);
+      return gate !== -1 && idx !== -1 && idx >= gate;
+    }
+
+    function isAdOpsPrepayComplete(p) {
+      return p.prepayPhase === '入金済';
     }
 
     function parseOpsMonthFromName(name) {
@@ -2372,6 +2400,7 @@ nARK　緒方 和奈
       }
       if (p.closingDay === undefined) p.closingDay = 25;
       if (p.opsStartDate === undefined) p.opsStartDate = '';
+      if (p.prepayPhase === undefined) p.prepayPhase = isAdOpsType(p) ? '作成未' : '';
       if (p.opsMonth === undefined) p.opsMonth = isAdOpsType(p) ? (parseOpsMonthFromName(p.name) || 1) : 0;
       if (p.opsBaseName === undefined) p.opsBaseName = isAdOpsType(p) ? getOpsBaseName(p) : '';
     }
@@ -3600,6 +3629,23 @@ ${MAIL_FOOTER}`,
         </div>`;
       }
       if (p.status === 'doing') {
+        if (isAdOpsType(p)) {
+          ensureProjectFinance(p);
+          const prepayActive = p.prepayPhase || '作成未';
+          return `<div class="phase-btns-stack">
+            <div class="phase-row-label">先払い請求</div>
+            <div class="phase-btns">${AD_OPS_PREPAY_PHASES.map(ph => `
+              <button class="phase-btn${prepayActive === ph ? ' active' : ''}"
+                      onclick="event.stopPropagation();setAdOpsPrepayPhase('${p.id}','${ph}')">${ph}</button>
+            `).join('')}</div>
+            <div class="phase-row-label">運用タスク</div>
+            <div class="phase-btns">${AD_OPS_DOING_PHASES.map(ph => {
+              const locked = isAdOpsPhaseRequiresPrepay(ph) && !isAdOpsPrepayComplete(p);
+              return `<button class="phase-btn${p.phase === ph ? ' active' : ''}${locked ? ' locked' : ''}"
+                      onclick="event.stopPropagation();setDoingPhase('${p.id}','${ph}')">${ph}</button>`;
+            }).join('')}</div>
+          </div>`;
+        }
         const phases = getDoingPhases(p);
         return `<div class="phase-btns">${phases.map(ph => `
           <button class="phase-btn${p.phase === ph ? ' active' : ''}"
@@ -3648,7 +3694,7 @@ ${MAIL_FOOTER}`,
       const memoBlock = p.memo && p.memo.trim()
         ? `<div class="card-memo">${esc(p.memo.trim())}</div>` : '';
       const phaseLabel = p.phase && p.status !== 'done'
-        ? `<div class="phase-current">▸ ${esc(p.phase)}</div>` : '';
+        ? `<div class="phase-current">▸ ${isAdOpsType(p) && p.status === 'doing' && p.prepayPhase ? `先払い ${esc(p.prepayPhase)} · ` : ''}${esc(p.phase)}</div>` : '';
       const financeBlock = renderCardFinance(p);
       const actions = p.status !== 'done' ? `
           <div class="card-actions">
@@ -3708,14 +3754,32 @@ ${MAIL_FOOTER}`,
       if (!p) return;
       p.status = 'doing';
       p.phase = getDefaultDoingPhase(p);
+      if (isAdOpsType(p)) p.prepayPhase = '作成未';
       if (p.category === 'sns') p.snsStatus = 'scheduled';
       saveState();
       toast(`「${p.name}」→ 進行中`);
     }
 
+    function setAdOpsPrepayPhase(id, phase) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p || !isAdOpsType(p) || p.status !== 'doing') return;
+      p.prepayPhase = phase;
+      saveState();
+      if (phase === '入金済') {
+        toast(`「${p.name}」先払い入金済 — 広告開始以降のタスクが進められます`);
+      } else {
+        toast(`「${p.name}」先払い → ${phase}`);
+      }
+    }
+    window.setAdOpsPrepayPhase = setAdOpsPrepayPhase;
+
     function setDoingPhase(id, phase) {
       const p = state.projects.find(x => x.id === id);
       if (!p) return;
+      if (isAdOpsType(p) && isAdOpsPhaseRequiresPrepay(phase) && !isAdOpsPrepayComplete(p)) {
+        toast('先払いの入金確認（入金済）後に進められます');
+        return;
+      }
       p.phase = phase;
       if (phase === '納品済' && !isAdOpsType(p)) {
         if (!p.deliveredDate) p.deliveredDate = todayStr();
@@ -3753,6 +3817,7 @@ ${MAIL_FOOTER}`,
         client: p.client || '',
         status: 'doing',
         phase: '分析（2W）',
+        prepayPhase: '作成未',
         created: todayStr(),
         deadlineDate: '',
         deadlinePlan: '',
@@ -4304,9 +4369,10 @@ ${MAIL_FOOTER}`,
         }
         if (prevStatus !== data.status) {
           if (data.status === 'doing' && !p.phase) p.phase = getDefaultDoingPhase(p);
+          if (data.status === 'doing' && data.type === 'ad-ops' && !p.prepayPhase) p.prepayPhase = '作成未';
           if (data.status === 'billing' && !p.phase) p.phase = '作成未';
           if (data.status === 'done') p.phase = '';
-          if (data.status === 'todo') p.phase = '';
+          if (data.status === 'todo') { p.phase = ''; p.prepayPhase = ''; }
         }
         if (data.status === 'billing' || data.status === 'done') {
           ensureBillingDate(p);
@@ -4321,6 +4387,7 @@ ${MAIL_FOOTER}`,
         if (newProject.type === 'ad-ops') {
           newProject.opsMonth = parseOpsMonthFromName(newProject.name) || 1;
           newProject.opsBaseName = getOpsBaseName(newProject);
+          if (newProject.status === 'doing') newProject.prepayPhase = '作成未';
         }
         if (newProject.status === 'billing' || newProject.status === 'done') {
           ensureBillingDate(newProject);
@@ -4370,6 +4437,7 @@ ${MAIL_FOOTER}`,
       if (p && p.status !== status) {
         p.status = status;
         if (status === 'doing' && !p.phase) p.phase = getDefaultDoingPhase(p);
+        if (status === 'doing' && isAdOpsType(p) && !p.prepayPhase) p.prepayPhase = '作成未';
         if (status === 'billing' && !p.phase) p.phase = '作成未';
         if (status === 'billing' || status === 'done') {
           ensureBillingDate(p);
