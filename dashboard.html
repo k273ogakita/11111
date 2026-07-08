@@ -203,41 +203,6 @@
       border-radius: 2px;
     }
 
-    /* ── Shortcuts ── */
-    .shortcuts {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 10px;
-    }
-    .shortcut {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px;
-      color: var(--text);
-      transition: all .2s;
-      cursor: pointer;
-    }
-    .shortcut:hover {
-      border-color: var(--red);
-      background: var(--surface-2);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 20px var(--red-glow);
-    }
-    .shortcut-icon {
-      width: 30px; height: 30px;
-      border-radius: 8px;
-      background: var(--red-glow);
-      border: 1px solid rgba(232,149,106,.35);
-      display: flex; align-items: center; justify-content: center;
-      font-size: .8rem; font-weight: 800; color: var(--red);
-    }
-    .shortcut-name { font-weight: 700; font-size: .9rem; }
-    .shortcut-desc { font-size: .68rem; color: var(--muted); line-height: 1.4; }
-
     /* ── Kanban ── */
     .kanban {
       display: grid;
@@ -407,6 +372,17 @@
     .phase-btn.done.active {
       background: #43a047;
       border-color: #43a047;
+      color: #fff;
+    }
+    .phase-btn.continue {
+      border-color: #7a9fd4;
+      color: #4a6fa5;
+      font-weight: 600;
+    }
+    .phase-btn.continue:hover,
+    .phase-btn.continue.active {
+      background: #7a9fd4;
+      border-color: #7a9fd4;
       color: #fff;
     }
     .after-follow-section {
@@ -826,6 +802,7 @@
     .cal-legend-dot.task { background: #32a078; }
     .cal-legend-dot.subscription { background: #d4a800; }
     .cal-legend-dot.followup { background: #9b7ad0; }
+    .cal-legend-dot.adops { background: #5a82c8; }
     .notice-bar {
       margin-bottom: 16px;
       padding: 10px 14px;
@@ -862,6 +839,11 @@
       background: rgba(212,168,0,.18);
       color: #8a7200;
       border-left: 2px solid #d4a800;
+    }
+    .cal-event.ad-ops-closing {
+      background: rgba(90,130,200,.15);
+      color: #3a5f8a;
+      border-left: 2px solid #5a82c8;
     }
     .cal-day.clickable {
       cursor: pointer;
@@ -1409,7 +1391,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v50</div>
+        <div class="logo-sub">Business Dashboard · v52</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1491,6 +1473,7 @@
           <div class="cal-legend-item"><div class="cal-legend-dot task"></div>予定タスク</div>
           <div class="cal-legend-item"><div class="cal-legend-dot subscription"></div>サブスク更新</div>
           <div class="cal-legend-item"><div class="cal-legend-dot followup"></div>アフターフォロー②</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot adops"></div>広告運用 締日</div>
         </div>
       </div>
     </section>
@@ -1532,11 +1515,6 @@
           </div>
         </div>
         <div class="kanban" id="kanban"></div>
-
-        <div class="section-header" style="margin-top:28px">
-          <div class="section-title">フォルダ</div>
-        </div>
-        <div class="shortcuts" id="shortcuts"></div>
     </section>
   </div>
 
@@ -1695,7 +1673,21 @@
         <div class="form-group">
           <label>請求日</label>
           <input type="date" id="projectInvoiceDate">
-          <div class="form-hint">請求ステータスに移すと今日の日付が自動入力されます</div>
+          <div class="form-hint" id="invoiceDateHint">請求ステータスに移すと今日の日付が自動入力されます</div>
+        </div>
+        <div class="finance-fields" id="adOpsGroup" style="display:none">
+          <div class="finance-fields-title">広告運用（月次）</div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label>締日（毎月）</label>
+              <input type="number" id="projectClosingDay" min="1" max="28" value="25">
+            </div>
+            <div class="form-group">
+              <label>運用月</label>
+              <input type="text" id="projectOpsMonthDisplay" readonly placeholder="1ヶ月目">
+            </div>
+          </div>
+          <div class="form-hint">締日になると請求列へ移動します。入金後「継続」で翌月分を進行中にコピー。初回3ヶ月は月2回MT推奨。</div>
         </div>
         <div class="form-group">
           <label>変動費</label>
@@ -1837,16 +1829,6 @@
   <script>
     const ROOT = '/Users/ogata/Desktop/nARK';
 
-    const FOLDERS = [
-      { id: 'clients',   name: 'clients',   desc: '契約書・ブリーフ・連絡記録', icon: 'CL' },
-      { id: 'projects',  name: 'projects',  desc: '進行中・完了プロジェクト',   icon: 'PJ' },
-      { id: 'finance',   name: 'finance',   desc: '請求書・見積・経費・確定申告', icon: 'FN' },
-      { id: 'templates', name: 'templates', desc: '請求書・見積・提案テンプレ',   icon: 'TP' },
-      { id: 'marketing', name: 'marketing', desc: '営業リスト・提案・キャンペーン', icon: 'MK' },
-      { id: 'sns',       name: 'sns',       desc: 'Instagram・YouTube 管理',    icon: 'SN' },
-      { id: 'ops',       name: 'ops',       desc: '料金表・ワークフロー・運営',   icon: 'OP' },
-    ];
-
     const STATUSES = [
       { id: 'todo',    label: '未着手',  colClass: '' },
       { id: 'doing',   label: '進行中',  colClass: '' },
@@ -1856,9 +1838,65 @@
 
     const DOING_PHASES = ['ヒアリング・構成', '撮影', '編集', '制作中', 'チェック中', '納品済'];
     const SNS_DOING_PHASES = ['制作中', 'チェック中', '納品済'];
+    const AD_OPS_DOING_PHASES = ['アカウント作成', '設定', 'キャンペーン設定', '広告開始', '分析', 'レポート作成'];
+    const AD_OPS_BILLING_PHASES = ['作成未', '請求書作成済', '送付済', '入金済', '継続'];
+
+    function isAdOpsType(p) {
+      return p && p.category === 'client' && p.type === 'ad-ops';
+    }
+
+    function getDoingPhases(p) {
+      if (p.category === 'sns') return SNS_DOING_PHASES;
+      if (isAdOpsType(p)) return AD_OPS_DOING_PHASES;
+      return DOING_PHASES;
+    }
+
+    function getBillingPhases(p) {
+      if (isAdOpsType(p)) return AD_OPS_BILLING_PHASES;
+      return BILLING_PHASES;
+    }
+
+    function getDefaultDoingPhase(p) {
+      if (p.category === 'sns') return '制作中';
+      if (isAdOpsType(p)) return 'アカウント作成';
+      return 'ヒアリング・構成';
+    }
+
+    function parseOpsMonthFromName(name) {
+      const m = (name || '').match(/運用(\d+)ヶ月目/);
+      return m ? Number(m[1]) : null;
+    }
+
+    function getOpsBaseName(p) {
+      if (p.opsBaseName) return p.opsBaseName;
+      return (p.name || '').replace(/\s*運用\d+ヶ月目\s*$/, '').trim() || p.name || '';
+    }
+
+    function getOpsMonth(p) {
+      if (p.opsMonth) return p.opsMonth;
+      const fromName = parseOpsMonthFromName(p.name);
+      return fromName || 1;
+    }
+
+    function formatOpsMonthLabel(month) {
+      return `${month}ヶ月目`;
+    }
+
+    function getAdOpsClosingDateStr(year, monthIndex, closingDay) {
+      const day = Math.min(Math.max(Number(closingDay) || 25, 1), 28);
+      const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+      const d = Math.min(day, daysInMonth);
+      return `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+
+    function getCurrentAdOpsClosingDate(p) {
+      const today = todayStr();
+      const now = new Date(today + 'T00:00:00');
+      return getAdOpsClosingDateStr(now.getFullYear(), now.getMonth(), p.closingDay || 25);
+    }
 
     function doingPhaseSortIndex(p) {
-      const order = p.category === 'sns' ? SNS_DOING_PHASES : DOING_PHASES;
+      const order = getDoingPhases(p);
       const idx = order.indexOf(p.phase);
       return idx === -1 ? order.length : idx;
     }
@@ -2059,7 +2097,7 @@ nARK　緒方 和奈
       const password = document.getElementById('loginPassword').value;
       const remember = document.getElementById('loginRemember').checked;
       if (!isAuthConfigured()) {
-        err.textContent = 'パスワードが未設定です。scripts/set_dashboard_password.py を実行してください。';
+        err.textContent = 'パスワードが未設定です。ツール/ダッシュボードパスワード変更.py を実行してください。';
         return false;
       }
       btn.disabled = true;
@@ -2165,16 +2203,16 @@ nARK　緒方 和奈
     };
 
     const SNS_DEFAULTS = [
-      { name: '夏目漱石舊居', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-06-09', folder: 'sns/instagram/posts/2026-06-09_夏目漱石舊居/2026-06-09_夏目漱石舊居.md' },
-      { name: '押戸石之丘', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-06-09', folder: 'sns/instagram/posts/2026-06-09_押戸石之丘/2026-06-09_押戸石之丘.md' },
-      { name: '六月繡球花', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-05-29', folder: 'sns/instagram/posts/2026-05-29_六月繡球花/2026-05-29_六月繡球花.md' },
-      { name: '日語教室資訊', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-05-25', folder: 'sns/instagram/posts/2026-05-25_日語教室資訊/2026-05-25_日語教室資訊.md' },
-      { name: '潮井自然公園', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-23', folder: 'sns/instagram/posts/2026-05-23_潮井自然公園/2026-05-23_潮井自然公園.md' },
-      { name: '日本酒賞味期限', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-23', folder: 'sns/instagram/posts/2026-05-23_日本酒賞味期限/2026-05-23_日本酒賞味期限.md' },
-      { name: '夏目漱石来熊130周年', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-01', folder: 'sns/instagram/posts/2026-5-夏目漱石来熊130周年記念イベント続々開催/2026-5-夏目漱石来熊130周年記念イベント続々開催.md' },
-      { name: '熊本港', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-01', folder: 'sns/instagram/posts/2026-5-熊本港/2026-5-熊本港.md' },
-      { name: '日本の漢方と中医の違い', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-01', folder: 'sns/instagram/posts/2026-5-日本の漢方と中医の違い/2026-5-日本の漢方と中医の違い.md' },
-      { name: 'GO!GO! Rally in 熊本 2026', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-04-01', folder: 'sns/instagram/posts/2026-4-GO!GO! Rally in 熊本 2026/2026-4-GO!GO! Rally in 熊本 2026.md' },
+      { name: '夏目漱石舊居', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-06-09', folder: 'SNS/Instagram/投稿/2026-06-09_夏目漱石舊居/2026-06-09_夏目漱石舊居.md' },
+      { name: '押戸石之丘', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-06-09', folder: 'SNS/Instagram/投稿/2026-06-09_押戸石之丘/2026-06-09_押戸石之丘.md' },
+      { name: '六月繡球花', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-05-29', folder: 'SNS/Instagram/投稿/2026-05-29_六月繡球花/2026-05-29_六月繡球花.md' },
+      { name: '日語教室資訊', platform: 'instagram', snsStatus: 'draft', status: 'todo', created: '2026-05-25', folder: 'SNS/Instagram/投稿/2026-05-25_日語教室資訊/2026-05-25_日語教室資訊.md' },
+      { name: '潮井自然公園', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-23', folder: 'SNS/Instagram/投稿/2026-05-23_潮井自然公園/2026-05-23_潮井自然公園.md' },
+      { name: '日本酒賞味期限', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-23', folder: 'SNS/Instagram/投稿/2026-05-23_日本酒賞味期限/2026-05-23_日本酒賞味期限.md' },
+      { name: '夏目漱石来熊130周年', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-01', folder: 'SNS/Instagram/投稿/2026-5-夏目漱石来熊130周年記念イベント続々開催/2026-5-夏目漱石来熊130周年記念イベント続々開催.md' },
+      { name: '熊本港', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-01', folder: 'SNS/Instagram/投稿/2026-5-熊本港/2026-5-熊本港.md' },
+      { name: '日本の漢方と中医の違い', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-05-01', folder: 'SNS/Instagram/投稿/2026-5-日本の漢方と中医の違い/2026-5-日本の漢方と中医の違い.md' },
+      { name: 'GO!GO! Rally in 熊本 2026', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-04-01', folder: 'SNS/Instagram/投稿/2026-4-GO!GO! Rally in 熊本 2026/2026-4-GO!GO! Rally in 熊本 2026.md' },
     ];
 
     let state = loadState();
@@ -2273,6 +2311,32 @@ nARK　緒方 和奈
         if (p.afterFollowDone.thanks === undefined) p.afterFollowDone.thanks = false;
         if (p.afterFollowDone.followup === undefined) p.afterFollowDone.followup = false;
       }
+      if (p.closingDay === undefined) p.closingDay = 25;
+      if (p.opsMonth === undefined) p.opsMonth = isAdOpsType(p) ? (parseOpsMonthFromName(p.name) || 1) : 0;
+      if (p.opsBaseName === undefined) p.opsBaseName = isAdOpsType(p) ? getOpsBaseName(p) : '';
+    }
+
+    function checkAdOpsClosingDates() {
+      const today = todayStr();
+      let moved = 0;
+      state.projects.forEach(p => {
+        if (!isAdOpsType(p) || p.status !== 'doing') return;
+        const closing = getCurrentAdOpsClosingDate(p);
+        if (today >= closing) {
+          p.status = 'billing';
+          p.phase = '作成未';
+          ensureBillingDate(p);
+          moved++;
+        }
+      });
+      return moved;
+    }
+
+    function getDueAdOpsClosingProjects(forDate) {
+      const date = forDate || todayStr();
+      return state.projects.filter(p =>
+        isAdOpsType(p) && p.status === 'doing' && getCurrentAdOpsClosingDate(p) === date
+      );
     }
 
     function detectContractRoute(p) {
@@ -2552,12 +2616,32 @@ ${MAIL_FOOTER}`,
       return defaultState();
     }
 
+    const undoStack = [];
+    const UNDO_STACK_MAX = 50;
+
     function saveState() {
       const current = localStorage.getItem(STORAGE_KEY);
-      if (current) localStorage.setItem(STORAGE_PREV_KEY, current);
+      if (current) {
+        localStorage.setItem(STORAGE_PREV_KEY, current);
+        undoStack.push(current);
+        if (undoStack.length > UNDO_STACK_MAX) undoStack.shift();
+      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       scheduleAutoSaveToFolder();
       render();
+    }
+
+    function undoLastAction() {
+      if (!undoStack.length) {
+        showBackupToast('戻せる操作がありません。');
+        return;
+      }
+      const prev = undoStack.pop();
+      state = migrateState(JSON.parse(prev));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      scheduleAutoSaveToFolder();
+      render();
+      showBackupToast('<strong>直前の操作</strong>を取り消しました。（あと' + undoStack.length + '回戻せます）');
     }
 
     function scheduleAutoSaveToFolder() {
@@ -3002,6 +3086,11 @@ ${MAIL_FOOTER}`,
 
     /* ── Render ── */
     function render() {
+      const adOpsMoved = checkAdOpsClosingDates();
+      if (adOpsMoved > 0) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        toast(`広告運用 ${adOpsMoved}件 — 締日のため請求列へ移動しました`);
+      }
       renderDateTime();
       renderNotices();
       renderStats();
@@ -3012,7 +3101,6 @@ ${MAIL_FOOTER}`,
       renderBizTodos();
       renderCalendar();
       renderKanban();
-      renderShortcuts();
       renderTasks();
     }
 
@@ -3227,15 +3315,21 @@ ${MAIL_FOOTER}`,
       const el = document.getElementById('noticeBar');
       if (!el) return;
       const due = getDueFollowUpProjects();
-      if (due.length === 0) {
+      const adOpsClosing = getDueAdOpsClosingProjects();
+      if (due.length === 0 && adOpsClosing.length === 0) {
         el.style.display = 'none';
         el.innerHTML = '';
         return;
       }
       el.style.display = '';
-      el.innerHTML = due.map(p =>
-        `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — 2 アフターフォローの日です（納品 ${esc(p.deliveredDate || '')} から${p.followUpTiming === '1month' ? '1ヶ月' : '2週間'}）</div>`
-      ).join('');
+      el.innerHTML = [
+        ...due.map(p =>
+          `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — 2 アフターフォローの日です（納品 ${esc(p.deliveredDate || '')} から${p.followUpTiming === '1month' ? '1ヶ月' : '2週間'}）</div>`
+        ),
+        ...adOpsClosing.map(p =>
+          `<div class="notice-bar-inner">📅 <strong>${esc(p.client || p.name)}</strong> — 広告運用の締日です（毎月${p.closingDay || 25}日）→ 請求列へ移動しました</div>`
+        ),
+      ].join('');
     }
 
     function renderStats() {
@@ -3247,7 +3341,8 @@ ${MAIL_FOOTER}`,
       const todayTaskItems = state.tasks.filter(t => !t.done && (t.date === today || !t.date)).length;
       const todayBizItems = (state.bizTodos || []).filter(t => !t.done && t.dueDate === today).length;
       const todayFollowUps = getDueFollowUpProjects(today).length;
-      const todayTasks = todayTaskItems + todayBizItems + todayFollowUps;
+      const todayAdOpsClosing = getDueAdOpsClosingProjects(today).length;
+      const todayTasks = todayTaskItems + todayBizItems + todayFollowUps + todayAdOpsClosing;
       const openBizTodos = (state.bizTodos || []).filter(t => !t.done).length;
       const ms = getMilestoneStats();
 
@@ -3313,26 +3408,6 @@ ${MAIL_FOOTER}`,
           }).join('')}
         </div>
       `;
-    }
-
-    function renderShortcuts() {
-      document.getElementById('shortcuts').innerHTML = FOLDERS.map(f => `
-        <div class="shortcut" role="button" tabindex="0"
-             onclick="openFolder('${f.id}', '${f.name}')"
-             onkeydown="if(event.key==='Enter'||event.key===' ')openFolder('${f.id}','${f.name}')">
-          <div class="shortcut-icon">${f.icon}</div>
-          <div class="shortcut-name">${f.name}</div>
-          <div class="shortcut-desc">${f.desc}</div>
-        </div>
-      `).join('');
-    }
-
-    const FOLDER_NOTES = {
-      projects: '案件ファイル（契約書・素材など）を置くフォルダです。ダッシュボード上の案件データはブラウザに保存されています。',
-    };
-
-    function openFolder(folderId, folderName) {
-      showPathModal(`${ROOT}/${folderId}`, `${folderName} フォルダ`, FOLDER_NOTES[folderId] || '');
     }
 
     function openPath(relativePath, label) {
@@ -3442,19 +3517,19 @@ ${MAIL_FOOTER}`,
         </div>`;
       }
       if (p.status === 'doing') {
-        const phases = p.category === 'sns'
-          ? SNS_DOING_PHASES
-          : DOING_PHASES;
+        const phases = getDoingPhases(p);
         return `<div class="phase-btns">${phases.map(ph => `
           <button class="phase-btn${p.phase === ph ? ' active' : ''}"
                   onclick="event.stopPropagation();setDoingPhase('${p.id}','${ph}')">${ph}</button>
         `).join('')}</div>`;
       }
       if (p.status === 'billing') {
-        const billing = `<div class="phase-btns">${BILLING_PHASES.map(ph => `
-          <button class="phase-btn${p.phase === ph ? ' active' : ''}"
-                  onclick="event.stopPropagation();setBillingPhase('${p.id}','${ph}')">${ph}</button>
-        `).join('')}</div>`;
+        const billingPhases = getBillingPhases(p);
+        const billing = `<div class="phase-btns">${billingPhases.map(ph => {
+          const isContinue = ph === '継続';
+          return `<button class="phase-btn${isContinue ? ' continue' : ''}${p.phase === ph ? ' active' : ''}"
+                    onclick="event.stopPropagation();setBillingPhase('${p.id}','${ph}')">${ph}</button>`;
+        }).join('')}</div>`;
         const afterFollow = isAfterFollowEligible(p) ? renderAfterFollowButtons(p) : '';
         return billing + afterFollow;
       }
@@ -3475,8 +3550,12 @@ ${MAIL_FOOTER}`,
         ? `${p.created ? `<span>${p.created}</span>` : ''}`
         : `${p.client ? `<span>${esc(p.client)}</span>` : ''}
            <span class="card-tag${isVideoType(p.type) ? ' video' : ''}">${esc(typeLabel(p.type))}</span>
+           ${isAdOpsType(p) ? `<span class="card-tag">${esc(formatOpsMonthLabel(getOpsMonth(p)))}</span>` : ''}
            ${p.created ? `<span>${p.created}</span>` : ''}`;
       const path = p.folder ? `<div class="card-path">${esc(p.folder)}</div>` : '';
+      const adOpsClosingLine = isAdOpsType(p) && (p.status === 'todo' || p.status === 'doing')
+        ? `<div class="card-deadline">締日 毎月${p.closingDay || 25}日${p.status === 'doing' ? '（次回 ' + getCurrentAdOpsClosingDate(p).slice(5).replace('-', '/') + '）' : ''}</div>`
+        : '';
       const deadline = (p.status === 'todo' || p.status === 'doing') && formatDeadline(p)
         ? `<div class="card-deadline">${esc(formatDeadline(p))}</div>` : '';
       const memoBlock = p.memo && p.memo.trim()
@@ -3504,6 +3583,7 @@ ${MAIL_FOOTER}`,
           </div>
           <div class="card-meta">${meta}</div>
           ${deadline}
+          ${adOpsClosingLine}
           ${memoBlock}
           ${phaseLabel}
           ${financeBlock}
@@ -3540,7 +3620,7 @@ ${MAIL_FOOTER}`,
       const p = state.projects.find(x => x.id === id);
       if (!p) return;
       p.status = 'doing';
-      p.phase = p.category === 'sns' ? '制作中' : 'ヒアリング・構成';
+      p.phase = getDefaultDoingPhase(p);
       if (p.category === 'sns') p.snsStatus = 'scheduled';
       saveState();
       toast(`「${p.name}」→ 進行中`);
@@ -3550,7 +3630,7 @@ ${MAIL_FOOTER}`,
       const p = state.projects.find(x => x.id === id);
       if (!p) return;
       p.phase = phase;
-      if (phase === '納品済') {
+      if (phase === '納品済' && !isAdOpsType(p)) {
         if (!p.deliveredDate) p.deliveredDate = todayStr();
         p.status = 'billing';
         p.phase = '作成未';
@@ -3564,11 +3644,72 @@ ${MAIL_FOOTER}`,
       toast(`「${p.name}」→ ${phase}`);
     }
 
+    function continueAdOpsProject(id) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p || !isAdOpsType(p)) return;
+      ensureProjectFinance(p);
+      const baseName = getOpsBaseName(p);
+      const nextMonth = getOpsMonth(p) + 1;
+      const copy = {
+        id: uid(),
+        category: 'client',
+        type: 'ad-ops',
+        name: `${baseName} 運用${nextMonth}ヶ月目`,
+        client: p.client || '',
+        status: 'doing',
+        phase: '分析',
+        created: todayStr(),
+        deadlineDate: '',
+        deadlinePlan: '',
+        memo: p.memo || '',
+        revenue: p.revenue || 0,
+        targetHours: p.targetHours || 0,
+        invoiceDate: '',
+        variableCosts: [],
+        timeLogs: [],
+        closingDay: p.closingDay || 25,
+        opsMonth: nextMonth,
+        opsBaseName: baseName,
+        mailClinic: p.mailClinic || '',
+        mailDirector: p.mailDirector || '',
+        contractRoute: p.contractRoute || detectContractRoute(p),
+        followUpTiming: 'none',
+        workflowKey: 'auto',
+        platform: '',
+        snsStatus: '',
+        folder: '',
+        deliveredDate: '',
+        afterFollowDone: { thanks: false, followup: false, supportCoconala: false, supportDirect: false, portfolio: false },
+      };
+      p.status = 'done';
+      p.phase = '';
+      state.projects.push(copy);
+      saveState();
+      toast(`「${copy.name}」→ 進行中（継続）`);
+    }
+
     function setBillingPhase(id, phase) {
       const p = state.projects.find(x => x.id === id);
       if (!p) return;
+      if (phase === '継続') {
+        if (!isAdOpsType(p)) {
+          toast('継続は広告運用案件のみ利用できます');
+          return;
+        }
+        if (p.phase !== '入金済') {
+          toast('入金済にしてから継続してください');
+          return;
+        }
+        continueAdOpsProject(id);
+        return;
+      }
       p.phase = phase;
       if (phase === '入金済') {
+        if (isAdOpsType(p)) {
+          saveState();
+          toast(`「${p.name}」→ 入金済（継続で翌月分を作成）`);
+          return;
+        }
         p.status = 'done';
         p.phase = '';
         doneExpanded = true;
@@ -3681,6 +3822,9 @@ ${MAIL_FOOTER}`,
         getDueFollowUpProjects(today).forEach(p => {
           entries.push({ kind: 'followUp', item: p });
         });
+        getDueAdOpsClosingProjects(today).forEach(p => {
+          entries.push({ kind: 'adOpsClosing', item: p });
+        });
       }
       entries.sort((a, b) => {
         if (a.item.done !== b.item.done) return a.item.done ? 1 : -1;
@@ -3712,6 +3856,13 @@ ${MAIL_FOOTER}`,
           <button type="button" class="btn btn-primary" onclick="openFollowMail('${t.id}','followup')">メールを開く</button>
         </div>`;
         }
+        if (kind === 'adOpsClosing') {
+          return `
+        <div class="task-item task-item-reminder">
+          <span class="task-category 営業">締日</span>
+          <span class="task-text">${esc(t.client || t.name)} — 広告運用の請求（毎月${t.closingDay || 25}日）</span>
+        </div>`;
+        }
         const dateLabel = kind === 'bizTodo'
           ? '事業TODO'
           : (t.date && t.date !== today ? t.date : (t.date === today ? '今日' : ''));
@@ -3738,7 +3889,6 @@ ${MAIL_FOOTER}`,
       const isSns = cat === 'sns';
       document.getElementById('clientGroup').style.display = isSns ? 'none' : '';
       document.getElementById('typeGroup').style.display = isSns ? 'none' : '';
-      document.getElementById('followUpGroup').style.display = isSns ? 'none' : '';
       document.getElementById('financeGroup').style.display = isSns ? 'none' : '';
       document.getElementById('projectNameLabel').textContent = isSns ? 'タイトル' : '案件名';
       document.getElementById('projectName').placeholder = isSns
@@ -3749,10 +3899,28 @@ ${MAIL_FOOTER}`,
         ).join('');
       }
       updateWorkflowGroupVisibility();
+      updateAdOpsGroupVisibility();
     }
 
     function onProjectTypeChange() {
       updateWorkflowGroupVisibility();
+      updateAdOpsGroupVisibility();
+    }
+
+    function updateAdOpsGroupVisibility() {
+      const isSns = document.getElementById('projectCategory').value === 'sns';
+      const type = document.getElementById('projectType').value;
+      const isAdOps = type === 'ad-ops';
+      const adOpsGroup = document.getElementById('adOpsGroup');
+      const followGroup = document.getElementById('followUpGroup');
+      const invoiceHint = document.getElementById('invoiceDateHint');
+      if (adOpsGroup) adOpsGroup.style.display = (!isSns && isAdOps) ? '' : 'none';
+      if (followGroup) followGroup.style.display = (isSns || isAdOps) ? 'none' : '';
+      if (invoiceHint) {
+        invoiceHint.textContent = isAdOps
+          ? '締日に請求列へ自動移動。請求日は請求書発行日として記録'
+          : '請求ステータスに移すと今日の日付が自動入力されます';
+      }
     }
 
     function isWorkflowEligibleType(type) {
@@ -3790,7 +3958,7 @@ ${MAIL_FOOTER}`,
       document.getElementById('timeLogRows').innerHTML = logs.map(t => `
         <div class="dynamic-row time-row" data-time-id="${t.id}">
           <input type="date" class="time-date" value="${t.date || todayStr()}">
-          <input type="number" class="time-hours" min="1" step="1" value="${Number(t.hours) || 1}" placeholder="3">
+          <input type="number" class="time-hours" min="0.5" step="0.5" value="${Number(t.hours) || 1}" placeholder="3">
           <input type="text" class="time-note" value="${attr(t.note || '')}" placeholder="メモ（任意）">
           <button type="button" class="row-del-btn" onclick="removeTimeLogRow('${t.id}')">×</button>
         </div>
@@ -3829,7 +3997,7 @@ ${MAIL_FOOTER}`,
       div.dataset.timeId = id;
       div.innerHTML = `
         <input type="date" class="time-date" value="${todayStr()}">
-        <input type="number" class="time-hours" min="1" step="1" value="1">
+        <input type="number" class="time-hours" min="0.5" step="0.5" value="1">
         <input type="text" class="time-note" placeholder="メモ（任意）">
         <button type="button" class="row-del-btn" onclick="removeTimeLogRow('${id}')">×</button>
       `;
@@ -3899,6 +4067,9 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectMailDirector').value = p.mailDirector || '';
         document.getElementById('projectContractRoute').value = p.contractRoute || detectContractRoute(p);
         document.getElementById('projectFollowTiming').value = p.followUpTiming || '2week';
+        document.getElementById('projectClosingDay').value = p.closingDay || 25;
+        document.getElementById('projectOpsMonthDisplay').value = isAdOpsType(p)
+          ? formatOpsMonthLabel(getOpsMonth(p)) : '';
         renderVariableCostRows(p.variableCosts.length ? p.variableCosts : []);
         renderTimeLogRows(p.timeLogs.length ? p.timeLogs : []);
       } else {
@@ -3920,12 +4091,15 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectMailDirector').value = '';
         document.getElementById('projectContractRoute').value = 'directSupport';
         document.getElementById('projectFollowTiming').value = '2week';
+        document.getElementById('projectClosingDay').value = 25;
+        document.getElementById('projectOpsMonthDisplay').value = '';
         renderVariableCostRows([]);
         renderTimeLogRows([]);
       }
       onStatusChange();
       onContractRouteChange();
       updateWorkflowGroupVisibility();
+      updateAdOpsGroupVisibility();
       updateProjectProfitPreview();
       document.getElementById('projectModal').classList.add('open');
       setTimeout(() => document.getElementById('projectName').focus(), 50);
@@ -3982,6 +4156,10 @@ ${MAIL_FOOTER}`,
         } else {
           data.workflowKey = 'auto';
         }
+        if (data.type === 'ad-ops') {
+          data.closingDay = Math.min(Math.max(Number(document.getElementById('projectClosingDay').value) || 25, 1), 28);
+          data.followUpTiming = 'none';
+        }
       }
       if (category === 'sns') {
         data.snsStatus = statusToSnsStatus(status);
@@ -3998,25 +4176,33 @@ ${MAIL_FOOTER}`,
         const p = state.projects.find(x => x.id === editingProjectId);
         const prevStatus = p.status;
         Object.assign(p, data);
+        if (data.type === 'ad-ops') {
+          if (!p.opsBaseName) p.opsBaseName = getOpsBaseName(p);
+          if (!p.opsMonth) p.opsMonth = getOpsMonth(p);
+        }
         if (prevStatus !== data.status) {
-          if (data.status === 'doing' && !p.phase) p.phase = 'ヒアリング・構成';
+          if (data.status === 'doing' && !p.phase) p.phase = getDefaultDoingPhase(p);
           if (data.status === 'billing' && !p.phase) p.phase = '作成未';
           if (data.status === 'done') p.phase = '';
           if (data.status === 'todo') p.phase = '';
         }
         if (data.status === 'billing' || data.status === 'done') {
           ensureBillingDate(p);
-          ensureDeliveredDate(p);
+          if (!isAdOpsType(p)) ensureDeliveredDate(p);
         }
         toast(category === 'sns' ? '自社事業整備を更新しました' : '案件を更新しました');
       } else {
-        const phase = data.status === 'doing' ? (category === 'sns' ? '制作中' : 'ヒアリング・構成')
+        const phase = data.status === 'doing' ? getDefaultDoingPhase({ ...data, category })
           : data.status === 'billing' ? '作成未' : '';
         const newProject = { id: uid(), ...data, phase, created: todayStr() };
         ensureProjectFinance(newProject);
+        if (newProject.type === 'ad-ops') {
+          newProject.opsMonth = parseOpsMonthFromName(newProject.name) || 1;
+          newProject.opsBaseName = getOpsBaseName(newProject);
+        }
         if (newProject.status === 'billing' || newProject.status === 'done') {
           ensureBillingDate(newProject);
-          ensureDeliveredDate(newProject);
+          if (!isAdOpsType(newProject)) ensureDeliveredDate(newProject);
         }
         state.projects.push(newProject);
         toast(category === 'sns' ? '自社事業整備を追加しました' : '案件を追加しました');
@@ -4061,11 +4247,11 @@ ${MAIL_FOOTER}`,
       const p = state.projects.find(x => x.id === draggedId);
       if (p && p.status !== status) {
         p.status = status;
-        if (status === 'doing' && !p.phase) p.phase = p.category === 'sns' ? '制作中' : 'ヒアリング・構成';
+        if (status === 'doing' && !p.phase) p.phase = getDefaultDoingPhase(p);
         if (status === 'billing' && !p.phase) p.phase = '作成未';
         if (status === 'billing' || status === 'done') {
           ensureBillingDate(p);
-          ensureDeliveredDate(p);
+          if (!isAdOpsType(p)) ensureDeliveredDate(p);
         }
         if (status === 'done') doneExpanded = true;
         if (status === 'done' || status === 'todo') p.phase = '';
@@ -4664,6 +4850,17 @@ ${MAIL_FOOTER}`,
           status: '',
         });
       });
+      state.projects.forEach(p => {
+        if (!isAdOpsType(p) || p.status !== 'doing') return;
+        const closing = getCurrentAdOpsClosingDate(p);
+        if (!events[closing]) events[closing] = [];
+        events[closing].push({
+          label: `締日: ${p.client || p.name}`,
+          category: 'ad-ops-closing',
+          client: `運用${getOpsMonth(p)}ヶ月目 · 毎月${p.closingDay || 25}日`,
+          status: '',
+        });
+      });
       return events;
     }
 
@@ -4745,6 +4942,14 @@ ${MAIL_FOOTER}`,
       if (e.key === 'Escape') {
         closeProjectModal(); closePathModal(); closeChecklistModal();
         closeSubModal(); closeAdModal(); closeBizTodoModal();
+      }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z') {
+        const t = e.target;
+        const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
+        const modalOpen = document.querySelector('.modal-overlay.open');
+        if (typing || modalOpen) return; // 入力中・モーダル表示中はブラウザ標準の動作を優先
+        e.preventDefault();
+        undoLastAction();
       }
     });
 
