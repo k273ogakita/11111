@@ -402,6 +402,17 @@
       border-color: #7a9fd4;
       color: #fff;
     }
+    .phase-btn.end-contract {
+      border-color: #b0a898;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .phase-btn.end-contract:hover,
+    .phase-btn.end-contract.active {
+      background: #8c8278;
+      border-color: #8c8278;
+      color: #fff;
+    }
     .after-follow-section {
       margin-top: 8px;
       padding-top: 8px;
@@ -1439,7 +1450,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v57</div>
+        <div class="logo-sub">Business Dashboard · v58</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1892,7 +1903,7 @@
       '分析（2W）', 'レポート作成（2W）', '分析（1M）', 'レポート作成（1M）',
     ];
     const AD_OPS_PREPAY_PHASES = ['作成未', '請求書作成済', '送付済', '入金済'];
-    const AD_OPS_BILLING_PHASES = ['作成未', '請求書作成済', '送付済', '入金済', '継続'];
+    const AD_OPS_CLOSEOUT_PHASES = ['継続', '契約終了'];
 
     function isAdOpsType(p) {
       return p && p.category === 'client' && p.type === 'ad-ops';
@@ -1905,7 +1916,7 @@
     }
 
     function getBillingPhases(p) {
-      if (isAdOpsType(p)) return AD_OPS_BILLING_PHASES;
+      if (isAdOpsType(p)) return AD_OPS_CLOSEOUT_PHASES;
       return BILLING_PHASES;
     }
 
@@ -2422,7 +2433,7 @@ nARK　緒方 和奈
         const closing = getAdOpsClosingDate(p);
         if (!closing || today < closing) return;
         p.status = 'billing';
-        p.phase = '作成未';
+        p.phase = '';
         ensureAdOpsInvoiceDate(p, true);
         moved++;
       });
@@ -3662,12 +3673,22 @@ ${MAIL_FOOTER}`,
         `).join('')}</div>`;
       }
       if (p.status === 'billing') {
+        if (isAdOpsType(p)) {
+          return `<div class="phase-btns-stack">
+            <div class="phase-row-label">月次締め</div>
+            <div class="phase-btns">${AD_OPS_CLOSEOUT_PHASES.map(ph => {
+              const isContinue = ph === '継続';
+              const isEnd = ph === '契約終了';
+              return `<button class="phase-btn${isContinue ? ' continue' : ''}${isEnd ? ' end-contract' : ''}"
+                        onclick="event.stopPropagation();setBillingPhase('${p.id}','${ph}')">${ph}</button>`;
+            }).join('')}</div>
+          </div>`;
+        }
         const billingPhases = getBillingPhases(p);
-        const billing = `<div class="phase-btns">${billingPhases.map(ph => {
-          const isContinue = ph === '継続';
-          return `<button class="phase-btn${isContinue ? ' continue' : ''}${p.phase === ph ? ' active' : ''}"
-                    onclick="event.stopPropagation();setBillingPhase('${p.id}','${ph}')">${ph}</button>`;
-        }).join('')}</div>`;
+        const billing = `<div class="phase-btns">${billingPhases.map(ph => `
+          <button class="phase-btn${p.phase === ph ? ' active' : ''}"
+                    onclick="event.stopPropagation();setBillingPhase('${p.id}','${ph}')">${ph}</button>
+        `).join('')}</div>`;
         const afterFollow = isAfterFollowEligible(p) ? renderAfterFollowButtons(p) : '';
         return billing + afterFollow;
       }
@@ -3703,7 +3724,10 @@ ${MAIL_FOOTER}`,
       const memoBlock = p.memo && p.memo.trim()
         ? `<div class="card-memo">${esc(p.memo.trim())}</div>` : '';
       const phaseLabel = p.phase && p.status !== 'done'
-        ? `<div class="phase-current">▸ ${isAdOpsType(p) && p.status === 'doing' && p.prepayPhase ? `先払い ${esc(p.prepayPhase)} · ` : ''}${esc(p.phase)}</div>` : '';
+        ? `<div class="phase-current">▸ ${isAdOpsType(p) && p.status === 'doing' && p.prepayPhase ? `先払い ${esc(p.prepayPhase)} · ` : ''}${esc(p.phase)}</div>`
+        : (isAdOpsType(p) && p.status === 'billing'
+          ? `<div class="phase-current">▸ ${esc(formatOpsMonthLabel(getOpsMonth(p)))} 締め — 継続または契約終了</div>`
+          : '');
       const financeBlock = renderCardFinance(p);
       const actions = p.status !== 'done' ? `
           <div class="card-actions">
@@ -3857,6 +3881,16 @@ ${MAIL_FOOTER}`,
       toast(`「${copy.name}」→ 進行中（継続）`);
     }
 
+    function endAdOpsContract(id) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p || !isAdOpsType(p)) return;
+      p.status = 'done';
+      p.phase = '';
+      doneExpanded = true;
+      saveState();
+      toast(`「${p.name}」→ 完了（契約終了）`);
+    }
+
     function setBillingPhase(id, phase) {
       const p = state.projects.find(x => x.id === id);
       if (!p) return;
@@ -3865,20 +3899,16 @@ ${MAIL_FOOTER}`,
           toast('継続は広告運用案件のみ利用できます');
           return;
         }
-        if (p.phase !== '入金済') {
-          toast('入金済にしてから継続してください');
-          return;
-        }
         continueAdOpsProject(id);
+        return;
+      }
+      if (phase === '契約終了') {
+        if (!isAdOpsType(p)) return;
+        endAdOpsContract(id);
         return;
       }
       p.phase = phase;
       if (phase === '入金済') {
-        if (isAdOpsType(p)) {
-          saveState();
-          toast(`「${p.name}」→ 入金済（継続で翌月分を作成）`);
-          return;
-        }
         p.status = 'done';
         p.phase = '';
         doneExpanded = true;
@@ -4379,7 +4409,7 @@ ${MAIL_FOOTER}`,
         if (prevStatus !== data.status) {
           if (data.status === 'doing' && !p.phase) p.phase = getDefaultDoingPhase(p);
           if (data.status === 'doing' && data.type === 'ad-ops' && !p.prepayPhase) p.prepayPhase = '作成未';
-          if (data.status === 'billing' && !p.phase) p.phase = '作成未';
+          if (data.status === 'billing' && !p.phase) p.phase = data.type === 'ad-ops' ? '' : '作成未';
           if (data.status === 'done') p.phase = '';
           if (data.status === 'todo') { p.phase = ''; p.prepayPhase = ''; }
         }
@@ -4390,7 +4420,7 @@ ${MAIL_FOOTER}`,
         toast(category === 'sns' ? '自社事業整備を更新しました' : '案件を更新しました');
       } else {
         const phase = data.status === 'doing' ? getDefaultDoingPhase({ ...data, category })
-          : data.status === 'billing' ? '作成未' : '';
+          : data.status === 'billing' ? (data.type === 'ad-ops' ? '' : '作成未') : '';
         const newProject = { id: uid(), ...data, phase, created: todayStr() };
         ensureProjectFinance(newProject);
         if (newProject.type === 'ad-ops') {
@@ -4447,7 +4477,7 @@ ${MAIL_FOOTER}`,
         p.status = status;
         if (status === 'doing' && !p.phase) p.phase = getDefaultDoingPhase(p);
         if (status === 'doing' && isAdOpsType(p) && !p.prepayPhase) p.prepayPhase = '作成未';
-        if (status === 'billing' && !p.phase) p.phase = '作成未';
+        if (status === 'billing' && !p.phase) p.phase = isAdOpsType(p) ? '' : '作成未';
         if (status === 'billing' || status === 'done') {
           ensureBillingDate(p);
           if (!isAdOpsType(p)) ensureDeliveredDate(p);
