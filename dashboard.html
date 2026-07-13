@@ -492,6 +492,22 @@
       flex-shrink: 0;
     }
     .card-actions .btn-ghost { padding: 2px 6px; font-size: .68rem; }
+    .card-actions .btn-time {
+      color: var(--red-dim);
+      font-weight: 700;
+    }
+    .card-actions .btn-time:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: var(--red-glow);
+    }
+    #projectTimeLogSection.time-log-focus {
+      background: var(--red-glow);
+      border-radius: 8px;
+      padding: 10px;
+      margin: -4px -10px 8px;
+      outline: 1px solid rgba(232,149,106,.35);
+    }
 
     /* ── Tasks ── */
     .tasks-panel {
@@ -648,6 +664,11 @@
       box-shadow: 0 20px 60px rgba(58,53,48,.15);
     }
     .modal h3 { font-size: 1rem; margin-bottom: 16px; }
+    #projectModal .modal {
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: .72rem; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
     .form-group input, .form-group select, .form-group input[type="month"] { width: 100%; }
@@ -1450,7 +1471,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v58</div>
+        <div class="logo-sub">Business Dashboard · v59</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1754,7 +1775,7 @@
           <div class="dynamic-rows" id="variableCostRows"></div>
           <button type="button" class="btn add-row-btn" onclick="addVariableCostRow()">+ 変動費を追加</button>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="projectTimeLogSection">
           <label>時間ログ</label>
           <div class="dynamic-rows" id="timeLogRows"></div>
           <button type="button" class="btn add-row-btn" onclick="addTimeLogRow()">+ 時間を記録</button>
@@ -3729,8 +3750,10 @@ ${MAIL_FOOTER}`,
           ? `<div class="phase-current">▸ ${esc(formatOpsMonthLabel(getOpsMonth(p)))} 締め — 継続または契約終了</div>`
           : '');
       const financeBlock = renderCardFinance(p);
+      const showTimeLogBtn = p.status === 'doing' && p.category !== 'sns';
       const actions = p.status !== 'done' ? `
           <div class="card-actions">
+            ${showTimeLogBtn ? `<button class="btn btn-ghost btn-time" onclick="event.stopPropagation();openProjectTimeLog('${p.id}')">所要時間</button>` : ''}
             <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
             <button class="btn btn-ghost btn-danger" onclick="event.stopPropagation();deleteProject('${p.id}')">削除</button>
           </div>` : `
@@ -4212,7 +4235,7 @@ ${MAIL_FOOTER}`,
       updateProjectProfitPreview();
     }
 
-    function addTimeLogRow() {
+    function addTimeLogRow(note) {
       const id = uid();
       modalTimeIds.push(id);
       const container = document.getElementById('timeLogRows');
@@ -4222,11 +4245,12 @@ ${MAIL_FOOTER}`,
       div.innerHTML = `
         <input type="date" class="time-date" value="${todayStr()}">
         <input type="number" class="time-hours" min="0.5" step="0.5" value="1">
-        <input type="text" class="time-note" placeholder="メモ（任意）">
+        <input type="text" class="time-note" value="${attr(note || '')}" placeholder="メモ（任意）">
         <button type="button" class="row-del-btn" onclick="removeTimeLogRow('${id}')">×</button>
       `;
       container.appendChild(div);
       updateProjectProfitPreview();
+      return id;
     }
 
     function removeTimeLogRow(id) {
@@ -4266,7 +4290,25 @@ ${MAIL_FOOTER}`,
       el.innerHTML = `純利益 ${formatYen(profit)} · 合計 ${hours}h${hourly !== null ? ' · 利益時給 ' + formatYen(hourly) + '/h' : ''}`;
     }
 
-    function openProjectModal(id) {
+    function focusProjectTimeLogSection(timeLogNote) {
+      const section = document.getElementById('projectTimeLogSection');
+      const modal = document.querySelector('#projectModal .modal');
+      if (!section || !modal) return;
+      section.classList.add('time-log-focus');
+      addTimeLogRow(timeLogNote || '');
+      setTimeout(() => {
+        section.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        modal.scrollTop = Math.max(0, section.offsetTop - 24);
+        const hoursInput = section.querySelector('#timeLogRows .time-row:last-child .time-hours');
+        if (hoursInput) {
+          hoursInput.focus();
+          hoursInput.select();
+        }
+      }, 60);
+    }
+
+    function openProjectModal(id, options) {
+      const opts = options || {};
       editingProjectId = id || null;
       if (id) {
         const p = state.projects.find(x => x.id === id);
@@ -4328,11 +4370,24 @@ ${MAIL_FOOTER}`,
       updateAdOpsGroupVisibility();
       updateProjectProfitPreview();
       document.getElementById('projectModal').classList.add('open');
-      setTimeout(() => document.getElementById('projectName').focus(), 50);
+      if (opts.focusTimeLog && id) {
+        focusProjectTimeLogSection(opts.timeLogNote || '');
+      } else {
+        document.getElementById('projectTimeLogSection')?.classList.remove('time-log-focus');
+        setTimeout(() => document.getElementById('projectName').focus(), 50);
+      }
     }
+
+    function openProjectTimeLog(id) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p || p.category === 'sns') return;
+      openProjectModal(id, { focusTimeLog: true, timeLogNote: p.phase || '' });
+    }
+    window.openProjectTimeLog = openProjectTimeLog;
 
     function closeProjectModal() {
       document.getElementById('projectModal').classList.remove('open');
+      document.getElementById('projectTimeLogSection')?.classList.remove('time-log-focus');
       editingProjectId = null;
       modalCostIds = [];
       modalTimeIds = [];
