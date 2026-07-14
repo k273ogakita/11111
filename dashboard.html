@@ -543,6 +543,18 @@
     .task-text { flex: 1; font-size: .88rem; }
     .task-date { font-size: .72rem; color: var(--muted); }
     .task-date.today { color: var(--red); font-weight: 600; }
+    .task-date-input {
+      font-size: .72rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 6px;
+      background: var(--card, #fff);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .task-date-input:hover { border-color: var(--red); color: var(--red); }
+    .task-date-input:focus { outline: none; border-color: var(--red); }
     .task-empty {
       text-align: center;
       padding: 32px;
@@ -895,6 +907,10 @@
       color: #32a078;
       border-left: 2px solid #32a078;
     }
+    .cal-event.draggable-task { cursor: grab; }
+    .cal-event.draggable-task:active { cursor: grabbing; }
+    .cal-event.cal-event-dragging { opacity: .4; }
+    .cal-day.cal-drag-over { background: var(--red-glow); outline: 2px dashed var(--red); outline-offset: -2px; }
     .cal-event.subscription {
       background: rgba(212,168,0,.18);
       color: #8a7200;
@@ -1471,7 +1487,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v59</div>
+        <div class="logo-sub">Business Dashboard · v60</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1581,7 +1597,7 @@
         <input type="date" id="taskScheduleDate" title="予定日">
         <input type="text" id="taskInputTop" placeholder="タスクを入力してから「追加」を押す" autocomplete="off">
       </div>
-      <div class="task-add-hint">予定日を選ぶとカレンダーに表示。当日になると下の「今日のタスク」に出ます。カレンダーの日付クリックでも予定日をセットできます。</div>
+      <div class="task-add-hint">予定日を選ぶとカレンダーに表示。当日になると下の「今日のタスク」に出ます。カレンダーの日付クリックでも予定日をセットできます。<br>入れた予定は、タスクの日付欄で変更するか、カレンダー上でドラッグして別日にずらせます。</div>
       <div class="tasks-panel">
         <div class="task-list" id="taskList"></div>
       </div>
@@ -4104,12 +4120,15 @@ ${MAIL_FOOTER}`,
         const actions = kind === 'bizTodo'
           ? `<button class="btn btn-ghost" onclick="openBizTodoModal('${t.id}')">編集</button>`
           : `<button class="btn btn-ghost btn-danger" onclick="deleteTask('${t.id}')">×</button>`;
+        const dateControl = kind === 'task'
+          ? `<input type="date" class="task-date-input" value="${t.date || today}" onchange="rescheduleTask('${t.id}', this.value)" title="予定日を変更（別日にずらせます）">`
+          : (dateLabel ? `<span class="task-date${dateLabel === '今日' || dateLabel === '事業TODO' ? ' today' : ''}">${esc(dateLabel)}</span>` : '');
         return `
         <div class="task-item${t.done ? ' done' : ''}">
           <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} onchange="toggleTodayTask('${kind}','${t.id}')">
           ${categoryBadge}
           <span class="task-text">${esc(t.text)}</span>
-          ${dateLabel ? `<span class="task-date${dateLabel === '今日' || dateLabel === '事業TODO' ? ' today' : ''}">${esc(dateLabel)}</span>` : ''}
+          ${dateControl}
           ${actions}
         </div>`;
       }).join('');
@@ -4590,6 +4609,47 @@ ${MAIL_FOOTER}`,
     function deleteTask(id) {
       state.tasks = state.tasks.filter(t => t.id !== id);
       saveState();
+    }
+
+    function rescheduleTask(id, newDate) {
+      const t = state.tasks.find(x => x.id === id);
+      if (!t) return;
+      const target = newDate || todayStr();
+      if (t.date === target) return;
+      t.date = target;
+      saveState();
+      const [y, m, d] = target.split('-');
+      toast(`「${t.text}」を ${+m}月${+d}日 に移動しました`);
+    }
+
+    /* カレンダー上で予定タスクをドラッグして別日へ移動 */
+    let calDraggedTaskId = null;
+    function onCalTaskDragStart(e, id) {
+      calDraggedTaskId = id;
+      e.dataTransfer.effectAllowed = 'move';
+      e.stopPropagation();
+      e.target.classList.add('cal-event-dragging');
+    }
+    function onCalTaskDragEnd(e) {
+      e.target.classList.remove('cal-event-dragging');
+      calDraggedTaskId = null;
+      document.querySelectorAll('.cal-day.cal-drag-over').forEach(c => c.classList.remove('cal-drag-over'));
+    }
+    function onCalDayDragOver(e) {
+      if (!calDraggedTaskId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      e.currentTarget.classList.add('cal-drag-over');
+    }
+    function onCalDayDragLeave(e) {
+      e.currentTarget.classList.remove('cal-drag-over');
+    }
+    function onCalDayDrop(e, dateStr) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('cal-drag-over');
+      if (!calDraggedTaskId) return;
+      rescheduleTask(calDraggedTaskId, dateStr);
+      calDraggedTaskId = null;
     }
 
     function showAllTasks() {
@@ -5107,9 +5167,12 @@ ${MAIL_FOOTER}`,
         const hasEventClass = evs.length > 0 ? ' has-event' : '';
         const evHtml = evs.map(e => {
           const tip = e.client ? `${e.label} [${e.client}]` : e.label;
+          if (e.category === 'scheduled-task' && e.taskId) {
+            return `<div class="cal-event ${e.category} draggable-task" draggable="true" data-tip="${esc(tip)} — ドラッグで別日に移動" ondragstart="onCalTaskDragStart(event,'${e.taskId}')" ondragend="onCalTaskDragEnd(event)">${esc(e.label)}</div>`;
+          }
           return `<div class="cal-event ${e.category}" data-tip="${esc(tip)}">${esc(e.label)}</div>`;
         }).join('');
-        html += `<div class="cal-day clickable${dowClass}${todayClass}${hasEventClass}" onclick="scheduleTaskOnDate('${dateStr}')" title="クリックでこの日にタスクを追加">
+        html += `<div class="cal-day clickable${dowClass}${todayClass}${hasEventClass}" onclick="scheduleTaskOnDate('${dateStr}')" ondragover="onCalDayDragOver(event)" ondragleave="onCalDayDragLeave(event)" ondrop="onCalDayDrop(event,'${dateStr}')" title="クリックでこの日にタスクを追加／予定タスクをドラッグで移動">
           <div class="cal-day-num">${d}</div>
           ${evHtml}
         </div>`;
@@ -5156,7 +5219,7 @@ ${MAIL_FOOTER}`,
       state.tasks.forEach(t => {
         if (t.date && !t.done) {
           if (!events[t.date]) events[t.date] = [];
-          events[t.date].push({ label: t.text, category: 'scheduled-task', client: '', status: '' });
+          events[t.date].push({ label: t.text, category: 'scheduled-task', client: '', status: '', taskId: t.id });
         }
       });
       (state.subscriptions || []).forEach(sub => {
