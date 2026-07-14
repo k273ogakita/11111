@@ -1050,6 +1050,46 @@
       cursor: pointer;
       flex-shrink: 0;
     }
+    .checklist-del {
+      flex-shrink: 0;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: .9rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }
+    .checklist-del:hover { border-color: var(--red); color: var(--red); background: var(--red-glow); }
+    .checklist-add-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      align-items: center;
+    }
+    .checklist-add-input {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px dashed var(--border);
+      border-radius: 7px;
+      background: var(--surface-2);
+      font-size: .85rem;
+      font-family: inherit;
+    }
+    .checklist-add-input:focus { outline: none; border-color: var(--red); border-style: solid; }
+    .checklist-add-tag {
+      padding: 8px 6px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--surface);
+      font-size: .78rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .checklist-add-btn { flex-shrink: 0; }
 
     /* ── Finance ── */
     .finance-panel {
@@ -1487,7 +1527,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v61</div>
+        <div class="logo-sub">Business Dashboard · v62</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4958,6 +4998,52 @@ ${MAIL_FOOTER}`,
       return p.checklists[wfKey];
     }
 
+    function getProjectCustomSteps(p, wfKey) {
+      if (!p.customSteps) p.customSteps = {};
+      if (!p.customSteps[wfKey]) p.customSteps[wfKey] = [];
+      return p.customSteps[wfKey];
+    }
+
+    function addCustomStep() {
+      if (!checklistProjectId) return;
+      const p = state.projects.find(x => x.id === checklistProjectId);
+      if (!p) return;
+      const input = document.getElementById('customStepInput');
+      const text = input ? input.value.trim() : '';
+      if (!text) {
+        toast('追加する作業を入力してください');
+        if (input) input.focus();
+        return;
+      }
+      const tag = document.getElementById('customStepTag')?.value || '編集';
+      const wfKey = getWorkflowKey(p);
+      getProjectCustomSteps(p, wfKey).push({ id: 'c' + uid(), text, tag });
+      const wf = getWorkflow(p);
+      if (wf) renderChecklistBody(p, wf);
+      saveState();
+      const fresh = document.getElementById('customStepInput');
+      if (fresh) fresh.focus();
+      toast('ステップを追加しました');
+    }
+    window.addCustomStep = addCustomStep;
+
+    function deleteCustomStep(stepId) {
+      if (!checklistProjectId) return;
+      const p = state.projects.find(x => x.id === checklistProjectId);
+      if (!p) return;
+      const wfKey = getWorkflowKey(p);
+      const steps = getProjectCustomSteps(p, wfKey);
+      const idx = steps.findIndex(s => String(s.id) === String(stepId));
+      if (idx === -1) return;
+      steps.splice(idx, 1);
+      delete getProjectChecklist(p, wfKey)[stepId];
+      const wf = getWorkflow(p);
+      if (wf) renderChecklistBody(p, wf);
+      saveState();
+      toast('ステップを削除しました');
+    }
+    window.deleteCustomStep = deleteCustomStep;
+
     function openChecklist(id) {
       const p = state.projects.find(x => x.id === id);
       if (!p) return;
@@ -4988,12 +5074,13 @@ ${MAIL_FOOTER}`,
     function renderChecklistBody(p, wf) {
       const wfKey = getWorkflowKey(p);
       const checklist = getProjectChecklist(p, wfKey);
-      const allSteps = wf.groups.flatMap(g => g.steps);
+      const customSteps = getProjectCustomSteps(p, wfKey);
+      const allSteps = wf.groups.flatMap(g => g.steps).concat(customSteps);
       const checked = allSteps.filter(s => checklist[s.id]).length;
-      const pct = Math.round(checked / allSteps.length * 100);
+      const pct = allSteps.length ? Math.round(checked / allSteps.length * 100) : 0;
       document.getElementById('checklistBar').style.width = pct + '%';
       let stepNum = 0;
-      document.getElementById('checklistBody').innerHTML = wf.groups.map(g => `
+      const groupsHtml = wf.groups.map(g => `
         <div class="checklist-group">
           <div class="checklist-group-label">${esc(g.label)}</div>
           ${g.steps.map(s => {
@@ -5010,6 +5097,38 @@ ${MAIL_FOOTER}`,
           }).join('')}
         </div>
       `).join('');
+
+      const customHtml = `
+        <div class="checklist-group">
+          <div class="checklist-group-label">この案件だけの追加ステップ</div>
+          ${customSteps.map(s => {
+            stepNum++;
+            const num = stepNum;
+            return `
+            <div class="checklist-item checklist-item-custom${checklist[s.id] ? ' checked' : ''}">
+              <input type="checkbox" class="checklist-check" ${checklist[s.id] ? 'checked' : ''}
+                     onchange="toggleChecklist('${p.id}','${wfKey}','${s.id}',this.checked)">
+              <div class="checklist-num">${num}</div>
+              <div class="checklist-text">${esc(s.text)}</div>
+              <span class="checklist-tag ${esc(s.tag)}">${esc(s.tag)}</span>
+              <button type="button" class="checklist-del" onclick="deleteCustomStep('${s.id}')" title="このステップを削除">×</button>
+            </div>`;
+          }).join('')}
+          <div class="checklist-add-row">
+            <input type="text" id="customStepInput" class="checklist-add-input" placeholder="この案件だけの作業を入力"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomStep();}">
+            <select id="customStepTag" class="checklist-add-tag">
+              <option value="編集">編集</option>
+              <option value="企画">企画</option>
+              <option value="デザイン">デザイン</option>
+              <option value="確認">確認</option>
+              <option value="納品">納品</option>
+            </select>
+            <button type="button" class="btn btn-primary checklist-add-btn" onclick="addCustomStep()">追加</button>
+          </div>
+        </div>`;
+
+      document.getElementById('checklistBody').innerHTML = groupsHtml + customHtml;
     }
 
     function toggleChecklist(projectId, wfKey, stepId, checked) {
