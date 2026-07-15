@@ -575,6 +575,23 @@
     .task-category.集客 { background: rgba(50,120,200,.08); color: #3278c8; border-color: rgba(50,120,200,.25); }
     .task-category.経理 { background: rgba(50,160,120,.1); color: #32a078; border-color: rgba(50,160,120,.25); }
     .task-category.運営 { background: rgba(58,53,48,.07); color: var(--muted); border-color: var(--border); }
+    .task-category.イベント { background: rgba(107,63,160,.12); color: #6b3fa0; border-color: rgba(107,63,160,.3); }
+    .task-type-select {
+      flex: 0 0 auto;
+      padding: 9px 8px;
+      font-size: .82rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      cursor: pointer;
+    }
+    .task-item-draggable { cursor: grab; }
+    .task-item-draggable:active { cursor: grabbing; }
+    .task-item.task-dragging { opacity: .4; }
+    .task-item.task-item-event { background: rgba(107,63,160,.05); }
+    .task-list.task-drop-over { outline: 2px dashed var(--red); outline-offset: -4px; background: var(--red-glow); }
+    .task-list { min-height: 48px; }
     .task-item.overdue .task-date { color: var(--red-dim); font-weight: 700; }
     .task-item.overdue .task-text { color: var(--red-dim); }
     .task-project {
@@ -874,6 +891,7 @@
     .cal-legend-dot.task { background: #32a078; }
     .cal-legend-dot.subscription { background: #d4a800; }
     .cal-legend-dot.followup { background: #9b7ad0; }
+    .cal-legend-dot.event { background: #6b3fa0; }
     .cal-legend-dot.adops { background: #5a82c8; }
     .notice-bar {
       margin-bottom: 16px;
@@ -911,6 +929,23 @@
     .cal-event.draggable-task:active { cursor: grabbing; }
     .cal-event.cal-event-dragging { opacity: .4; }
     .cal-day.cal-drag-over { background: var(--red-glow); outline: 2px dashed var(--red); outline-offset: -2px; }
+    /* イベント（現場・撮影・勉強会・打ち合わせ） — 強調表示 */
+    .cal-event.scheduled-event {
+      background: #6b3fa0;
+      color: #fff;
+      border-left: 3px solid #4a2670;
+      font-weight: 800;
+      box-shadow: 0 1px 3px rgba(107,63,160,.35);
+    }
+    .cal-event.scheduled-event:hover::after { background: #4a2670; }
+    /* 案件の期日（初稿提出など） — 強調表示 */
+    .cal-event.cal-event-deadline {
+      font-weight: 800;
+      border-left-width: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.12);
+      outline: 1px solid rgba(232,149,106,.5);
+    }
+    .cal-event.cal-event-strong { letter-spacing: .01em; }
     .cal-event.subscription {
       background: rgba(212,168,0,.18);
       color: #8a7200;
@@ -1527,7 +1562,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v62</div>
+        <div class="logo-sub">Business Dashboard · v63</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1601,7 +1636,8 @@
         </div>
         <div id="calGrid"></div>
         <div class="cal-legend">
-          <div class="cal-legend-item"><div class="cal-legend-dot client"></div>クライアント案件の期日</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot client"></div>📌 案件の期日（初稿提出など）</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot event"></div>📍 イベント・現場（撮影/勉強会/打合せ）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot sns"></div>自社事業整備</div>
           <div class="cal-legend-item"><div class="cal-legend-dot biz"></div>事業TODO</div>
           <div class="cal-legend-item"><div class="cal-legend-dot task"></div>予定タスク</div>
@@ -1630,16 +1666,38 @@
     <section class="section tasks-section">
       <div class="section-header">
         <div class="section-title">今日のタスク</div>
-        <button class="btn btn-ghost" onclick="showAllTasks()">すべて表示</button>
       </div>
       <div class="task-add-row">
         <button class="btn btn-primary task-add-btn" type="button" onclick="addTask()">追加</button>
-        <input type="date" id="taskScheduleDate" title="予定日">
-        <input type="text" id="taskInputTop" placeholder="タスクを入力してから「追加」を押す" autocomplete="off">
+        <input type="date" id="taskScheduleDate" title="予定日（空欄なら今日）">
+        <select id="taskTypeSelect" class="task-type-select" title="種類">
+          <option value="task">通常</option>
+          <option value="event">イベント・現場</option>
+        </select>
+        <input type="text" id="taskInputTop" placeholder="今日やること／予定を入力" autocomplete="off"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();addTask();}">
       </div>
-      <div class="task-add-hint">予定日を選ぶとカレンダーに表示。当日になると下の「今日のタスク」に出ます。カレンダーの日付クリックでも予定日をセットできます。<br>入れた予定は、タスクの日付欄で変更するか、カレンダー上でドラッグして別日にずらせます。</div>
+      <div class="task-add-hint">空欄なら今日のタスクに追加。予定日を選ぶとカレンダーに入り、その日になるとここに出ます。「イベント・現場」（撮影・勉強会・打ち合わせなど）はカレンダーで目立つ表示になります。<br>下の「案件タスク」からドラッグして今日のタスクに移せます。予定日はカレンダー上でもドラッグでずらせます。</div>
       <div class="tasks-panel">
-        <div class="task-list" id="taskList"></div>
+        <div class="task-list" id="taskList"
+             ondragover="onTaskListDragOver(event)" ondragleave="onTaskListDragLeave(event)" ondrop="onTaskListDrop(event,'today')"></div>
+      </div>
+    </section>
+
+    <section class="section tasks-section">
+      <div class="section-header">
+        <div class="section-title">案件タスク</div>
+        <button class="btn btn-ghost" onclick="showAllTasks()">予定も表示</button>
+      </div>
+      <div class="task-add-row">
+        <button class="btn btn-primary task-add-btn" type="button" onclick="addProjectTask()">追加</button>
+        <input type="text" id="projectTaskInput" placeholder="案件のタスク（いつやるかは後で）を入力" autocomplete="off"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();addProjectTask();}">
+      </div>
+      <div class="task-add-hint">日付なしのタスク置き場。ドラッグで「今日のタスク」へ移動、日付欄で予定日を設定するとカレンダーに予定として入ります。</div>
+      <div class="tasks-panel">
+        <div class="task-list" id="projectTaskList"
+             ondragover="onTaskListDragOver(event)" ondragleave="onTaskListDragLeave(event)" ondrop="onTaskListDrop(event,'backlog')"></div>
       </div>
     </section>
 
@@ -4086,47 +4144,75 @@ ${MAIL_FOOTER}`,
     function getTodayTaskEntries() {
       const today = todayStr();
       const entries = [];
-      if (showAllTasksMode) {
-        state.tasks.filter(t => !t.done).forEach(t => {
-          entries.push({ kind: 'task', item: t });
-        });
-      } else {
-        state.tasks.filter(t => !t.done && (t.date === today || !t.date)).forEach(t => {
-          entries.push({ kind: 'task', item: t });
-        });
-        (state.bizTodos || []).filter(t => !t.done && t.dueDate === today).forEach(t => {
-          entries.push({ kind: 'bizTodo', item: t });
-        });
-        getDueFollowUpProjects(today).forEach(p => {
-          entries.push({ kind: 'followUp', item: p });
-        });
-        getDueAdOpsClosingProjects(today).forEach(p => {
-          entries.push({ kind: 'adOpsClosing', item: p });
-        });
-        getDueAdOpsMilestones(today).forEach(({ project, label }) => {
-          entries.push({ kind: 'adOpsMilestone', item: project, milestone: label });
-        });
-      }
+      state.tasks.filter(t => !t.done && t.date === today).forEach(t => {
+        entries.push({ kind: 'task', item: t });
+      });
+      (state.bizTodos || []).filter(t => !t.done && t.dueDate === today).forEach(t => {
+        entries.push({ kind: 'bizTodo', item: t });
+      });
+      getDueFollowUpProjects(today).forEach(p => {
+        entries.push({ kind: 'followUp', item: p });
+      });
+      getDueAdOpsClosingProjects(today).forEach(p => {
+        entries.push({ kind: 'adOpsClosing', item: p });
+      });
+      getDueAdOpsMilestones(today).forEach(({ project, label }) => {
+        entries.push({ kind: 'adOpsMilestone', item: project, milestone: label });
+      });
       entries.sort((a, b) => {
         if (a.item.done !== b.item.done) return a.item.done ? 1 : -1;
-        const ad = a.item.date || a.item.dueDate || '';
-        const bd = b.item.date || b.item.dueDate || '';
-        if (ad !== bd) return ad.localeCompare(bd);
-        return 0;
+        const ao = a.item.type === 'event' ? 0 : 1;
+        const bo = b.item.type === 'event' ? 0 : 1;
+        return ao - bo;
       });
       return entries;
     }
 
-    function renderTasks() {
+    function getProjectTaskEntries() {
       const today = todayStr();
-      const entries = getTodayTaskEntries();
+      const tasks = state.tasks.filter(t => {
+        if (t.done) return false;
+        if (!t.date) return true;                 // 日付なし＝案件タスク（置き場）
+        if (showAllTasksMode && t.date > today) return true; // 「予定も表示」で未来の予定も
+        return false;
+      });
+      tasks.sort((a, b) => {
+        const ad = a.date || '';
+        const bd = b.date || '';
+        if (ad !== bd) return ad.localeCompare(bd); // 日付なしが先、その後は日付順
+        return 0;
+      });
+      return tasks;
+    }
 
+    function taskItemHtml(t, opts) {
+      const today = todayStr();
+      const isEvent = t.type === 'event';
+      const badge = isEvent ? `<span class="task-category イベント">現場</span>` : '';
+      const dateControl = `<input type="date" class="task-date-input" value="${t.date || ''}" onchange="rescheduleTask('${t.id}', this.value)" title="予定日を変更（空欄で案件タスクへ）">`;
+      return `
+        <div class="task-item task-item-draggable${t.done ? ' done' : ''}${isEvent ? ' task-item-event' : ''}"
+             draggable="true" ondragstart="onTaskDragStart(event,'${t.id}')" ondragend="onTaskDragEnd(event)">
+          <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} onchange="toggleTask('${t.id}')">
+          ${badge}
+          <span class="task-text">${esc(t.text)}</span>
+          ${dateControl}
+          <button class="btn btn-ghost btn-danger" onclick="deleteTask('${t.id}')">×</button>
+        </div>`;
+    }
+
+    function renderTasks() {
+      renderTodayTasks();
+      renderProjectTasks();
+    }
+
+    function renderTodayTasks() {
+      const entries = getTodayTaskEntries();
       const el = document.getElementById('taskList');
       if (entries.length === 0) {
-        el.innerHTML = `<div class="task-empty">${showAllTasksMode ? '未完了のタスクはありません' : '今日のタスクはありません'}</div>`;
+        el.innerHTML = `<div class="task-empty">今日のタスクはありません（案件タスクからドラッグ、または上で追加）</div>`;
         return;
       }
-
       el.innerHTML = entries.map(({ kind, item: t, milestone }) => {
         if (kind === 'followUp') {
           const timing = t.followUpTiming === '1month' ? '1ヶ月後' : '2週間後';
@@ -4151,27 +4237,29 @@ ${MAIL_FOOTER}`,
           <span class="task-text">${esc(t.client || t.name)} — ${esc(milestone || '')}</span>
         </div>`;
         }
-        const dateLabel = kind === 'bizTodo'
-          ? '事業TODO'
-          : (t.date && t.date !== today ? t.date : (t.date === today ? '今日' : ''));
-        const categoryBadge = kind === 'bizTodo'
-          ? `<span class="task-category ${esc(t.category || 'その他')}">${esc(t.category || 'その他')}</span>`
-          : '';
-        const actions = kind === 'bizTodo'
-          ? `<button class="btn btn-ghost" onclick="openBizTodoModal('${t.id}')">編集</button>`
-          : `<button class="btn btn-ghost btn-danger" onclick="deleteTask('${t.id}')">×</button>`;
-        const dateControl = kind === 'task'
-          ? `<input type="date" class="task-date-input" value="${t.date || today}" onchange="rescheduleTask('${t.id}', this.value)" title="予定日を変更（別日にずらせます）">`
-          : (dateLabel ? `<span class="task-date${dateLabel === '今日' || dateLabel === '事業TODO' ? ' today' : ''}">${esc(dateLabel)}</span>` : '');
-        return `
+        if (kind === 'bizTodo') {
+          return `
         <div class="task-item${t.done ? ' done' : ''}">
-          <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} onchange="toggleTodayTask('${kind}','${t.id}')">
-          ${categoryBadge}
+          <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} onchange="toggleTodayTask('bizTodo','${t.id}')">
+          <span class="task-category ${esc(t.category || 'その他')}">${esc(t.category || 'その他')}</span>
           <span class="task-text">${esc(t.text)}</span>
-          ${dateControl}
-          ${actions}
+          <span class="task-date today">事業TODO</span>
+          <button class="btn btn-ghost" onclick="openBizTodoModal('${t.id}')">編集</button>
         </div>`;
+        }
+        return taskItemHtml(t);
       }).join('');
+    }
+
+    function renderProjectTasks() {
+      const tasks = getProjectTaskEntries();
+      const el = document.getElementById('projectTaskList');
+      if (!el) return;
+      if (tasks.length === 0) {
+        el.innerHTML = `<div class="task-empty">${showAllTasksMode ? '未完了の案件タスク・予定はありません' : '案件タスクはありません'}</div>`;
+        return;
+      }
+      el.innerHTML = tasks.map(t => taskItemHtml(t)).join('');
     }
 
     /* ── Projects ── */
@@ -4616,15 +4704,33 @@ ${MAIL_FOOTER}`,
       }
       const today = todayStr();
       const scheduleDate = document.getElementById('taskScheduleDate').value || today;
-      state.tasks.unshift({ id: uid(), text, date: scheduleDate, done: false });
+      const type = document.getElementById('taskTypeSelect')?.value || 'task';
+      state.tasks.unshift({ id: uid(), text, date: scheduleDate, done: false, type });
       input.value = '';
       document.getElementById('taskScheduleDate').value = '';
+      document.getElementById('taskTypeSelect').value = 'task';
       saveState();
+      const kindLabel = type === 'event' ? 'イベント' : 'タスク';
       if (scheduleDate === today) {
-        toast('タスクを追加しました');
+        toast(`今日の${kindLabel}を追加しました`);
       } else {
-        toast(`${scheduleDate.slice(5).replace('-', '/')} の予定として追加しました`);
+        toast(`${scheduleDate.slice(5).replace('-', '/')} の予定として追加しました（当日に今日のタスクへ表示）`);
       }
+      input.focus();
+    }
+
+    function addProjectTask() {
+      const input = document.getElementById('projectTaskInput');
+      const text = input.value.trim();
+      if (!text) {
+        toast('タスクを入力してください');
+        input.focus();
+        return;
+      }
+      state.tasks.unshift({ id: uid(), text, date: '', done: false, type: 'task' });
+      input.value = '';
+      saveState();
+      toast('案件タスクに追加しました');
       input.focus();
     }
 
@@ -4654,12 +4760,57 @@ ${MAIL_FOOTER}`,
     function rescheduleTask(id, newDate) {
       const t = state.tasks.find(x => x.id === id);
       if (!t) return;
-      const target = newDate || todayStr();
+      const target = newDate || '';
       if (t.date === target) return;
       t.date = target;
       saveState();
-      const [y, m, d] = target.split('-');
-      toast(`「${t.text}」を ${+m}月${+d}日 に移動しました`);
+      if (!target) {
+        toast(`「${t.text}」を案件タスクへ移動しました`);
+      } else {
+        const [y, m, d] = target.split('-');
+        toast(`「${t.text}」を ${+m}月${+d}日 に移動しました`);
+      }
+    }
+
+    /* 今日のタスク ⇄ 案件タスク のドラッグ&ドロップ */
+    let taskDnDId = null;
+    function onTaskDragStart(e, id) {
+      taskDnDId = id;
+      e.dataTransfer.effectAllowed = 'move';
+      e.currentTarget.classList.add('task-dragging');
+    }
+    function onTaskDragEnd(e) {
+      e.currentTarget.classList.remove('task-dragging');
+      taskDnDId = null;
+      document.querySelectorAll('.task-list.task-drop-over').forEach(x => x.classList.remove('task-drop-over'));
+    }
+    function onTaskListDragOver(e) {
+      if (!taskDnDId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      e.currentTarget.classList.add('task-drop-over');
+    }
+    function onTaskListDragLeave(e) {
+      e.currentTarget.classList.remove('task-drop-over');
+    }
+    function onTaskListDrop(e, target) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('task-drop-over');
+      if (!taskDnDId) return;
+      const t = state.tasks.find(x => x.id === taskDnDId);
+      taskDnDId = null;
+      if (!t) return;
+      if (target === 'today') {
+        if (t.date === todayStr()) return;
+        t.date = todayStr();
+        saveState();
+        toast(`「${t.text}」を今日のタスクへ`);
+      } else {
+        if (!t.date) return;
+        t.date = '';
+        saveState();
+        toast(`「${t.text}」を案件タスクへ`);
+      }
     }
 
     /* カレンダー上で予定タスクをドラッグして別日へ移動 */
@@ -5290,10 +5441,15 @@ ${MAIL_FOOTER}`,
         const hasEventClass = evs.length > 0 ? ' has-event' : '';
         const evHtml = evs.map(e => {
           const tip = e.client ? `${e.label} [${e.client}]` : e.label;
-          if (e.category === 'scheduled-task' && e.taskId) {
-            return `<div class="cal-event ${e.category} draggable-task" draggable="true" data-tip="${esc(tip)} — ドラッグで別日に移動" ondragstart="onCalTaskDragStart(event,'${e.taskId}')" ondragend="onCalTaskDragEnd(event)">${esc(e.label)}</div>`;
+          const isSchedTask = (e.category === 'scheduled-task' || e.category === 'scheduled-event') && e.taskId;
+          let cls = `cal-event ${e.category}`;
+          let prefix = '';
+          if (e.deadline) { cls += ' cal-event-deadline'; prefix = '📌 '; }
+          if (e.isEvent) { cls += ' cal-event-strong'; prefix = '📍 '; }
+          if (isSchedTask) {
+            return `<div class="${cls} draggable-task" draggable="true" data-tip="${esc(tip)} — ドラッグで別日に移動" ondragstart="onCalTaskDragStart(event,'${e.taskId}')" ondragend="onCalTaskDragEnd(event)">${prefix}${esc(e.label)}</div>`;
           }
-          return `<div class="cal-event ${e.category}" data-tip="${esc(tip)}">${esc(e.label)}</div>`;
+          return `<div class="${cls}" data-tip="${esc(tip)}">${prefix}${esc(e.label)}</div>`;
         }).join('');
         html += `<div class="cal-day clickable${dowClass}${todayClass}${hasEventClass}" onclick="scheduleTaskOnDate('${dateStr}')" ondragover="onCalDayDragOver(event)" ondragleave="onCalDayDragLeave(event)" ondrop="onCalDayDrop(event,'${dateStr}')" title="クリックでこの日にタスクを追加／予定タスクをドラッグで移動">
           <div class="cal-day-num">${d}</div>
@@ -5330,7 +5486,7 @@ ${MAIL_FOOTER}`,
         if (p.deadlineDate) {
           if (!events[p.deadlineDate]) events[p.deadlineDate] = [];
           const label = p.deadlinePlan ? `${p.name}（${p.deadlinePlan}）` : p.name;
-          events[p.deadlineDate].push({ label, category: p.category, client: p.client, status: p.status });
+          events[p.deadlineDate].push({ label, category: p.category, client: p.client, status: p.status, deadline: true });
         }
       });
       (state.bizTodos || []).forEach(t => {
@@ -5342,7 +5498,12 @@ ${MAIL_FOOTER}`,
       state.tasks.forEach(t => {
         if (t.date && !t.done) {
           if (!events[t.date]) events[t.date] = [];
-          events[t.date].push({ label: t.text, category: 'scheduled-task', client: '', status: '', taskId: t.id });
+          const isEvent = t.type === 'event';
+          events[t.date].push({
+            label: t.text,
+            category: isEvent ? 'scheduled-event' : 'scheduled-task',
+            client: '', status: '', taskId: t.id, isEvent,
+          });
         }
       });
       (state.subscriptions || []).forEach(sub => {
