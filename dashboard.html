@@ -1047,6 +1047,17 @@
       margin-bottom: 8px;
       padding-left: 2px;
     }
+    .checklist-step-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .checklist-step-row .checklist-item {
+      flex: 1 1 180px;
+      margin-bottom: 0;
+      min-width: 0;
+    }
     .checklist-item {
       display: flex;
       align-items: center;
@@ -1571,7 +1582,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v64</div>
+        <div class="logo-sub">Business Dashboard · v65</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2188,13 +2199,13 @@ nARK　緒方 和奈
 　（外来担当表の変更、季節に応じた変更、情勢に合わせた変更・追加 など）
 ※大幅な変更は別途お見積り
 
-【サポートプラス加入中の割引（2本目以降の説明動画）】
+【サポートプラス加入中の割引（説明動画の複数本）】
+・1本目：15%OFF（¥30,000 → ¥25,500）
 ・2本目：25%OFF（¥30,000 → ¥22,500）
 ・3本目：37%OFF（¥30,000 → ¥18,900）
-・4本目以降：45%OFF（¥30,000 → ¥16,500）
 
 【イメージしやすい例】
-・1本目：白内障の説明動画（¥30,000）← 今回
+・1本目：白内障の説明動画 → **¥25,500**
 ・2本目：手術当日の流れ → **¥22,500**
 ・3本目：点眼の方法 → **¥18,900**`;
 
@@ -2739,7 +2750,7 @@ ${MAIL_FOOTER}`,
 サポートプラスプランをご用意しております。
 
 【サポートプラスとは】
-年額¥5,800（税別）の年間サポートプランです。
+年額¥8,800（税別）の年間サポートプランです。
 「動画をいつでも最新の状態に保てる安心感」のためのもので、
 作った後に「こう直したい」「この部分を最新の情報にしたい」といった
 ご要望にも、安心してご相談いただけます。
@@ -2752,13 +2763,13 @@ ${MAIL_FOOTER}`,
 　（外来担当表の変更、季節に応じた変更、情勢に合わせた変更・追加 など）
 ※大幅な変更は別途お見積り
 
-【サポートプラス加入中の割引（2本目以降の説明動画）】
+【サポートプラス加入中の割引（説明動画の複数本）】
+・1本目：15%OFF（¥30,000 → ¥25,500）
 ・2本目：25%OFF（¥30,000 → ¥22,500）
 ・3本目：37%OFF（¥30,000 → ¥18,900）
-・4本目以降：45%OFF（¥30,000 → ¥16,500）
 
 【イメージしやすい例】
-・1本目：白内障の説明動画（¥30,000）← 今回
+・1本目：白内障の説明動画 → ¥25,500
 ・2本目：手術当日の流れ → ¥22,500
 ・3本目：点眼の方法 → ¥18,900
 
@@ -2793,7 +2804,7 @@ ${SUPPORT_PERIOD_BLOCK}
 ${SUPPORT_PLUS_SHARED}
 
 2年目以降も同様のサポートを継続される場合は、
-年額¥5,800（税別）の任意更新となります。
+年額¥8,800（税別）の任意更新となります。
 更新しなくても、お届け済みの動画は永続してお使いいただけます。
 
 ほかの説明動画の追加や、待合・Webまわりの整備など、
@@ -3918,6 +3929,17 @@ ${MAIL_FOOTER}`,
         return `<div class="card-finance profit">
           <strong>純利益 ${formatYen(profit)}</strong> · 利益時給 ${hourlyStr}<br>
           ${hours}h${target ? ' / 目標' + target + 'h' : ''} · 変動費 ${formatYen(projectVariableTotal(p))}
+        </div>`;
+      }
+      if (p.status === 'doing' || p.status === 'billing') {
+        const hourly = projectHourlyProfit(p);
+        const hourlyStr = hourly !== null ? formatYen(Math.round(hourly)) + '/h' : '—';
+        const timeStr = `${hours}h / 目標${target}h`;
+        const parts = [];
+        if (Number(p.revenue) || 0) parts.push('受注 ' + formatYen(p.revenue));
+        if (projectVariableTotal(p)) parts.push('変動費 ' + formatYen(projectVariableTotal(p)));
+        return `<div class="card-finance">
+          ${timeStr} · 利益時給 ${hourlyStr}${parts.length ? '<br>' + parts.join(' · ') : ''}
         </div>`;
       }
       if (hours > 0 || target > 0 || (Number(p.revenue) || 0) > 0) {
@@ -5048,8 +5070,11 @@ ${MAIL_FOOTER}`,
               { id: 1, text: '目的・ゴール設定', tag: '企画' },
               { id: 11, text: '説明内容AI読み込み', tag: '企画' },
               { id: 2, text: 'ナレーション台本作成', tag: '企画' },
+              { id: 12, text: 'クライアントに文字数と動画尺の提示', tag: '企画' },
+              { id: 4, text: '絵コンテ作成', tag: '企画', row: 'storyboard' },
+              { id: 13, text: 'BGM候補選定', tag: '企画', row: 'storyboard' },
+              { id: 14, text: 'AIナレーション候補選定', tag: '企画', row: 'storyboard' },
               { id: 3, text: 'ナレーション収録・確定（大まかな尺だし）', tag: '企画' },
-              { id: 4, text: '絵コンテ作成', tag: '企画' },
             ],
           },
           {
@@ -5057,6 +5082,12 @@ ${MAIL_FOOTER}`,
             steps: [
               { id: 5, text: 'トンマナ・デザイン設計（Canva）', tag: 'デザイン' },
               { id: 6, text: '素材収集・準備', tag: 'デザイン' },
+            ],
+          },
+          {
+            label: 'クライアント確認',
+            steps: [
+              { id: 15, text: 'クライアントにチェックしてもらう', tag: '確認' },
             ],
           },
           {
@@ -5245,13 +5276,10 @@ ${MAIL_FOOTER}`,
       const pct = allSteps.length ? Math.round(checked / allSteps.length * 100) : 0;
       document.getElementById('checklistBar').style.width = pct + '%';
       let stepNum = 0;
-      const groupsHtml = wf.groups.map(g => `
-        <div class="checklist-group">
-          <div class="checklist-group-label">${esc(g.label)}</div>
-          ${g.steps.map(s => {
-            stepNum++;
-            const num = stepNum;
-            return `
+      function renderStepItem(s) {
+        stepNum++;
+        const num = stepNum;
+        return `
             <label class="checklist-item${checklist[s.id] ? ' checked' : ''}">
               <input type="checkbox" class="checklist-check" ${checklist[s.id] ? 'checked' : ''}
                      onchange="toggleChecklist('${p.id}','${wfKey}',${s.id},this.checked)">
@@ -5259,7 +5287,31 @@ ${MAIL_FOOTER}`,
               <div class="checklist-text">${esc(s.text)}</div>
               <span class="checklist-tag ${esc(s.tag)}">${esc(s.tag)}</span>
             </label>`;
-          }).join('')}
+      }
+      function renderStepsWithRows(steps) {
+        let html = '';
+        let i = 0;
+        while (i < steps.length) {
+          const s = steps[i];
+          if (s.row) {
+            const rowKey = s.row;
+            const rowSteps = [];
+            while (i < steps.length && steps[i].row === rowKey) {
+              rowSteps.push(steps[i]);
+              i++;
+            }
+            html += `<div class="checklist-step-row">${rowSteps.map(renderStepItem).join('')}</div>`;
+          } else {
+            html += renderStepItem(s);
+            i++;
+          }
+        }
+        return html;
+      }
+      const groupsHtml = wf.groups.map(g => `
+        <div class="checklist-group">
+          <div class="checklist-group-label">${esc(g.label)}</div>
+          ${renderStepsWithRows(g.steps)}
         </div>
       `).join('');
 
