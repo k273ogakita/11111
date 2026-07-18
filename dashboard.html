@@ -577,6 +577,7 @@
     .task-category.運営 { background: rgba(58,53,48,.07); color: var(--muted); border-color: var(--border); }
     .task-category.イベント { background: rgba(107,63,160,.12); color: #6b3fa0; border-color: rgba(107,63,160,.3); }
     .task-category.在宅 { background: rgba(50,120,200,.1); color: #2f6bb0; border-color: rgba(50,120,200,.25); }
+    .task-category.未完了 { background: var(--red-glow); color: var(--red-dim); border-color: rgba(232,149,106,.35); }
     .task-type-select {
       flex: 0 0 auto;
       padding: 9px 8px;
@@ -1571,7 +1572,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v66</div>
+        <div class="logo-sub">Business Dashboard · v67</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1688,7 +1689,7 @@
         <input type="text" id="taskInputTop" placeholder="今日やること／予定を入力" autocomplete="off"
                onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();addTask();}">
       </div>
-      <div class="task-add-hint">空欄なら今日のタスクに追加。予定日を選ぶとカレンダーに入り、その日になるとここに出ます。「イベント・現場」（撮影・勉強会・打ち合わせなど）はカレンダーで目立つ表示になります。<br>下の「案件タスク」からドラッグして今日のタスクに移せます。予定日はカレンダー上でもドラッグでずらせます。</div>
+      <div class="task-add-hint">空欄なら今日のタスクに追加。予定日を選ぶとカレンダーに入り、その日になるとここに出ます。完了しなかったものは翌日以降も「未完了」としてここに残ります。「イベント・現場」（撮影・勉強会・打ち合わせなど）はカレンダーで目立つ表示になります。<br>下の「案件タスク」からドラッグして今日のタスクに移せます。予定日はカレンダー上でもドラッグでずらせます。</div>
       <div class="tasks-panel">
         <div class="task-list" id="taskList"
              ondragover="onTaskListDragOver(event)" ondragleave="onTaskListDragLeave(event)" ondrop="onTaskListDrop(event,'today')"></div>
@@ -3614,13 +3615,7 @@ ${MAIL_FOOTER}`,
       const todo    = projects.filter(p => p.status === 'todo').length;
       const doing   = projects.filter(p => p.status === 'doing').length;
       const billing = projects.filter(p => p.status === 'billing').length;
-      const today = todayStr();
-      const todayTaskItems = state.tasks.filter(t => !t.done && (t.date === today || !t.date)).length;
-      const todayBizItems = (state.bizTodos || []).filter(t => !t.done && t.dueDate === today).length;
-      const todayFollowUps = getDueFollowUpProjects(today).length;
-      const todayAdOpsClosing = getDueAdOpsClosingProjects(today).length;
-      const todayAdOpsMilestones = getDueAdOpsMilestones(today).length;
-      const todayTasks = todayTaskItems + todayBizItems + todayFollowUps + todayAdOpsClosing + todayAdOpsMilestones;
+      const todayTasks = getTodayTaskEntries().length;
       const openBizTodos = (state.bizTodos || []).filter(t => !t.done).length;
       const ms = getMilestoneStats();
 
@@ -4163,13 +4158,18 @@ ${MAIL_FOOTER}`,
       });
     }
 
+    function entryDate(entry) {
+      return entry.item.date || entry.item.dueDate || '';
+    }
+
     function getTodayTaskEntries() {
       const today = todayStr();
       const entries = [];
-      state.tasks.filter(t => !t.done && t.date === today).forEach(t => {
+      // 今日分＋過去に完了しなかった分を「今日のタスク」に残す
+      state.tasks.filter(t => !t.done && t.date && t.date <= today).forEach(t => {
         entries.push({ kind: 'task', item: t });
       });
-      (state.bizTodos || []).filter(t => !t.done && t.dueDate === today).forEach(t => {
+      (state.bizTodos || []).filter(t => !t.done && t.dueDate && t.dueDate <= today).forEach(t => {
         entries.push({ kind: 'bizTodo', item: t });
       });
       getDueFollowUpProjects(today).forEach(p => {
@@ -4183,6 +4183,12 @@ ${MAIL_FOOTER}`,
       });
       entries.sort((a, b) => {
         if (a.item.done !== b.item.done) return a.item.done ? 1 : -1;
+        const aDate = entryDate(a);
+        const bDate = entryDate(b);
+        const aOver = !!(aDate && aDate < today);
+        const bOver = !!(bDate && bDate < today);
+        if (aOver !== bOver) return aOver ? -1 : 1;
+        if (aOver && bOver && aDate !== bDate) return aDate.localeCompare(bDate);
         const ao = a.item.type === 'event' ? 0 : 1;
         const bo = b.item.type === 'event' ? 0 : 1;
         return ao - bo;
@@ -4211,15 +4217,17 @@ ${MAIL_FOOTER}`,
       const today = todayStr();
       const isEvent = t.type === 'event';
       const isRemote = t.type === 'remote';
+      const overdue = !t.done && t.date && t.date < today;
       const badge = isEvent
         ? `<span class="task-category イベント">現場</span>`
         : (isRemote ? `<span class="task-category 在宅">在宅</span>` : '');
+      const overdueBadge = overdue ? `<span class="task-category 未完了">未完了</span>` : '';
       const dateControl = `<input type="date" class="task-date-input" value="${t.date || ''}" onchange="rescheduleTask('${t.id}', this.value)" title="予定日を変更（空欄で案件タスクへ）">`;
       return `
-        <div class="task-item task-item-draggable${t.done ? ' done' : ''}${isEvent ? ' task-item-event' : ''}${isRemote ? ' task-item-remote' : ''}"
+        <div class="task-item task-item-draggable${t.done ? ' done' : ''}${overdue ? ' overdue' : ''}${isEvent ? ' task-item-event' : ''}${isRemote ? ' task-item-remote' : ''}"
              draggable="true" ondragstart="onTaskDragStart(event,'${t.id}')" ondragend="onTaskDragEnd(event)">
           <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} onchange="toggleTask('${t.id}')">
-          ${badge}
+          ${overdueBadge}${badge}
           <span class="task-text">${esc(t.text)}</span>
           ${dateControl}
           <button class="btn btn-ghost btn-danger" onclick="deleteTask('${t.id}')">×</button>
@@ -4263,12 +4271,14 @@ ${MAIL_FOOTER}`,
         </div>`;
         }
         if (kind === 'bizTodo') {
+          const overdue = !t.done && t.dueDate && t.dueDate < todayStr();
           return `
-        <div class="task-item${t.done ? ' done' : ''}">
+        <div class="task-item${t.done ? ' done' : ''}${overdue ? ' overdue' : ''}">
           <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} onchange="toggleTodayTask('bizTodo','${t.id}')">
+          ${overdue ? `<span class="task-category 未完了">未完了</span>` : ''}
           <span class="task-category ${esc(t.category || 'その他')}">${esc(t.category || 'その他')}</span>
           <span class="task-text">${esc(t.text)}</span>
-          <span class="task-date today">事業TODO</span>
+          <span class="task-date${overdue ? '' : ' today'}">${overdue ? formatDueLabel(t.dueDate) : '事業TODO'}</span>
           <button class="btn btn-ghost" onclick="openBizTodoModal('${t.id}')">編集</button>
         </div>`;
         }
