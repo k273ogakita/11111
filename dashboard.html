@@ -1640,7 +1640,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v70</div>
+        <div class="logo-sub">Business Dashboard · v71</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2226,9 +2226,20 @@
     }
 
     function doingPhaseSortIndex(p) {
-      const order = getDoingPhases(p);
-      const idx = order.indexOf(p.phase);
-      return idx === -1 ? order.length : idx;
+      // 案件ごとの表示フェーズではなく、共通順で並べる（提出待ち < チェック中）
+      if (isAdOpsType(p)) {
+        const order = AD_OPS_DOING_PHASES;
+        const idx = order.indexOf(p.phase);
+        return idx === -1 ? order.length : idx;
+      }
+      if (p.category === 'sns') {
+        const order = SNS_DOING_PHASES;
+        const idx = order.indexOf(p.phase);
+        return idx === -1 ? order.length : idx;
+      }
+      const phase = p.phase === '編集' ? '制作中' : p.phase;
+      const idx = DOING_PHASES_EDITOR.indexOf(phase);
+      return idx === -1 ? DOING_PHASES_EDITOR.length : idx;
     }
 
     function sortDoingProjects(list) {
