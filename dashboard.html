@@ -1647,7 +1647,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v74</div>
+        <div class="logo-sub">Business Dashboard · v75</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1733,7 +1733,7 @@
           <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--red)"></div>広告開始</div>
           <div class="cal-legend-item"><div class="cal-legend-dot followup"></div>広告運用 MT</div>
           <div class="cal-legend-item"><div class="cal-legend-dot task"></div>レポート作成</div>
-          <div class="cal-legend-item"><div class="cal-legend-dot invoice"></div>🧾 請求書作成（毎月〜25日の平日）</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot invoice"></div>🧾 請求書作成（毎月25日・土日祝は前倒し）</div>
         </div>
       </div>
     </section>
@@ -3298,37 +3298,107 @@ ${MAIL_FOOTER}`,
       return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     }
 
-    function isWeekdayDate(y, m, d) {
-      const dow = new Date(y, m - 1, d).getDay();
-      return dow !== 0 && dow !== 6;
+    function nthMondayOfMonth(year, month, n) {
+      const first = new Date(year, month - 1, 1);
+      const firstMonday = 1 + ((8 - first.getDay()) % 7);
+      return firstMonday + (n - 1) * 7;
     }
 
-    /** 毎月25日（土日なら直前の平日）を請求書発行の締切とする */
-    function getMonthlyInvoiceDeadline(year, monthIndex) {
+    function springEquinoxDay(year) {
+      return Math.floor(20.8431 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+    }
+
+    function autumnEquinoxDay(year) {
+      return Math.floor(23.2488 + 0.242194 * (year - 1980) - Math.floor((year - 1980) / 4));
+    }
+
+    /** 国民の祝日・振替休日・国民の休日（1980年代以降の近似式） */
+    function getJapaneseHolidays(year) {
+      const set = new Set();
+      const add = (m, d) => set.add(toDateStr(year, m, d));
+      add(1, 1);
+      add(1, nthMondayOfMonth(year, 1, 2)); // 成人の日
+      add(2, 11);
+      add(2, 23);
+      add(3, springEquinoxDay(year));
+      add(4, 29);
+      add(5, 3); add(5, 4); add(5, 5);
+      add(7, nthMondayOfMonth(year, 7, 3)); // 海の日
+      add(8, 11);
+      add(9, nthMondayOfMonth(year, 9, 3)); // 敬老の日
+      add(9, autumnEquinoxDay(year));
+      add(10, nthMondayOfMonth(year, 10, 2)); // スポーツの日
+      add(11, 3);
+      add(11, 23);
+      // 振替休日: 日曜の祝日 → 直後の平日
+      [...set].forEach(ds => {
+        const [y, m, d] = ds.split('-').map(Number);
+        if (new Date(y, m - 1, d).getDay() !== 0) return;
+        let next = d + 1;
+        while (set.has(toDateStr(y, m, next))) next += 1;
+        add(m, next);
+      });
+      // 国民の休日: 祝日に挟まれた平日
+      const sorted = [...set].sort();
+      for (let i = 0; i < sorted.length - 1; i++) {
+        const a = new Date(sorted[i] + 'T00:00:00');
+        const b = new Date(sorted[i + 1] + 'T00:00:00');
+        if ((b - a) / 86400000 !== 2) continue;
+        const mid = new Date(a);
+        mid.setDate(mid.getDate() + 1);
+        if (mid.getDay() === 0 || mid.getDay() === 6) continue;
+        set.add(toDateStr(mid.getFullYear(), mid.getMonth() + 1, mid.getDate()));
+      }
+      return set;
+    }
+
+    const jpHolidayCache = {};
+    function isJapaneseHoliday(dateStr) {
+      if (!dateStr) return false;
+      const y = +dateStr.slice(0, 4);
+      if (!jpHolidayCache[y]) jpHolidayCache[y] = getJapaneseHolidays(y);
+      return jpHolidayCache[y].has(dateStr);
+    }
+
+    function isNonBusinessDay(dateStr) {
+      if (!dateStr) return true;
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dow = new Date(y, m - 1, d).getDay();
+      if (dow === 0 || dow === 6) return true;
+      return isJapaneseHoliday(dateStr);
+    }
+
+    /**
+     * 毎月25日に請求書発行。25日が土日祝なら直前の営業日へ前倒し。
+     * 例: 25日=土曜 → 24日（金）、25日=日曜 → 23日（金）
+     */
+    function getMonthlyInvoiceIssueDate(year, monthIndex) {
       const y = year;
       const m = monthIndex + 1;
-      let d = Math.min(25, new Date(y, m, 0).getDate());
-      while (d >= 1 && !isWeekdayDate(y, m, d)) d -= 1;
-      if (d < 1) return null;
-      return { year: y, month: m, day: d, dateStr: toDateStr(y, m, d) };
-    }
-
-    /** 月初〜請求締切までの平日（請求書作成ウィンドウ） */
-    function getMonthlyInvoiceCreationDates(year, monthIndex) {
-      const deadline = getMonthlyInvoiceDeadline(year, monthIndex);
-      if (!deadline) return [];
-      const dates = [];
-      for (let d = 1; d <= deadline.day; d++) {
-        if (!isWeekdayDate(deadline.year, deadline.month, d)) continue;
-        dates.push(toDateStr(deadline.year, deadline.month, d));
+      const targetDay = Math.min(25, new Date(y, m, 0).getDate());
+      const targetStr = toDateStr(y, m, targetDay);
+      let d = targetDay;
+      let dateStr = targetStr;
+      while (d >= 1 && isNonBusinessDay(dateStr)) {
+        d -= 1;
+        dateStr = toDateStr(y, m, d);
       }
-      return dates;
+      if (d < 1) return null;
+      return {
+        year: y,
+        month: m,
+        day: d,
+        dateStr,
+        targetDateStr: targetStr,
+        shifted: dateStr !== targetStr,
+      };
     }
 
     function isInvoiceCreationDay(dateStr) {
       if (!dateStr) return false;
       const [y, m] = dateStr.split('-').map(Number);
-      return getMonthlyInvoiceCreationDates(y, m - 1).includes(dateStr);
+      const issue = getMonthlyInvoiceIssueDate(y, m - 1);
+      return !!(issue && issue.dateStr === dateStr);
     }
 
     function formatDateJP(iso) {
@@ -3741,11 +3811,13 @@ ${MAIL_FOOTER}`,
         (p.status === 'doing' || p.status === 'todo')
       );
       const invoiceDay = isInvoiceCreationDay(today);
-      let invoiceDeadlineLabel = '';
+      let invoiceNotice = '';
       if (invoiceDay) {
         const [y, m] = today.split('-').map(Number);
-        const deadline = getMonthlyInvoiceDeadline(y, m - 1);
-        invoiceDeadlineLabel = deadline ? formatDateJa(deadline.dateStr) : '25日';
+        const issue = getMonthlyInvoiceIssueDate(y, m - 1);
+        invoiceNotice = issue && issue.shifted
+          ? `<div class="notice-bar-inner">🧾 <strong>請求書作成</strong> — 25日が土日祝のため、本日（${esc(formatDateJa(issue.dateStr))}）が発行日です</div>`
+          : `<div class="notice-bar-inner">🧾 <strong>請求書作成</strong> — 本日は毎月25日の請求書発行日です</div>`;
       }
       if (due.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && !invoiceDay) {
         el.style.display = 'none';
@@ -3763,9 +3835,7 @@ ${MAIL_FOOTER}`,
         ...editorDrafts.map(p =>
           `<div class="notice-bar-inner">🎬 <strong>${esc(p.client || p.name)}</strong> — 編集者からの初稿提出日です（${esc(formatDateJa(p.editorDraftDueDate))}）</div>`
         ),
-        invoiceDay
-          ? `<div class="notice-bar-inner">🧾 <strong>請求書作成</strong> — 今月は〜${esc(invoiceDeadlineLabel)}の平日が発行ウィンドウです</div>`
-          : '',
+        invoiceNotice,
       ].filter(Boolean).join('');
     }
 
@@ -4349,12 +4419,11 @@ ${MAIL_FOOTER}`,
       });
       if (isInvoiceCreationDay(today)) {
         const [y, m] = today.split('-').map(Number);
-        const deadline = getMonthlyInvoiceDeadline(y, m - 1);
+        const issue = getMonthlyInvoiceIssueDate(y, m - 1);
         entries.push({
           kind: 'invoiceTask',
           item: { date: today, done: false },
-          deadline: deadline ? deadline.dateStr : '',
-          isDeadline: deadline ? deadline.dateStr === today : false,
+          shifted: !!(issue && issue.shifted),
         });
       }
       entries.sort((a, b) => {
@@ -4422,7 +4491,7 @@ ${MAIL_FOOTER}`,
         el.innerHTML = `<div class="task-empty">今日のタスクはありません（案件タスクからドラッグ、または上で追加）</div>`;
         return;
       }
-      el.innerHTML = entries.map(({ kind, item: t, milestone, isDeadline, deadline }) => {
+      el.innerHTML = entries.map(({ kind, item: t, milestone, shifted }) => {
         if (kind === 'followUp') {
           const timing = t.followUpTiming === '1month' ? '1ヶ月後' : '2週間後';
           return `
@@ -4457,11 +4526,10 @@ ${MAIL_FOOTER}`,
         </div>`;
         }
         if (kind === 'invoiceTask') {
-          const dueLabel = deadline ? formatDateJa(deadline) : '25日';
           return `
         <div class="task-item task-item-reminder">
-          <span class="task-category 営業">${isDeadline ? '締切' : '請求'}</span>
-          <span class="task-text">請求書作成${isDeadline ? '（今月の締切日）' : `（〜${dueLabel}の平日）`}</span>
+          <span class="task-category 営業">請求</span>
+          <span class="task-text">請求書作成${shifted ? '（25日が土日祝のため前倒し）' : '（毎月25日）'}</span>
         </div>`;
         }
         if (kind === 'bizTodo') {
@@ -5943,20 +6011,19 @@ ${MAIL_FOOTER}`,
           deadline: true,
         });
       });
-      // 毎月〜25日（土日なら直前平日）までの平日に請求書作成リマインダー
+      // 毎月25日に請求書作成（土日祝なら直前の営業日へ前倒し）
       getCalendarDisplayMonths().forEach(({ year, month }) => {
-        const deadline = getMonthlyInvoiceDeadline(year, month);
-        if (!deadline) return;
-        getMonthlyInvoiceCreationDates(year, month).forEach(dateStr => {
-          if (!events[dateStr]) events[dateStr] = [];
-          const isDeadline = dateStr === deadline.dateStr;
-          events[dateStr].push({
-            label: isDeadline ? '請求書作成（締切）' : '請求書作成',
-            category: 'invoice-task',
-            client: `毎月〜${deadline.day}日の平日`,
-            status: '',
-            deadline: isDeadline,
-          });
+        const issue = getMonthlyInvoiceIssueDate(year, month);
+        if (!issue) return;
+        if (!events[issue.dateStr]) events[issue.dateStr] = [];
+        events[issue.dateStr].push({
+          label: issue.shifted ? '請求書作成（25日→前倒し）' : '請求書作成',
+          category: 'invoice-task',
+          client: issue.shifted
+            ? `本来 ${formatDateJa(issue.targetDateStr)}（土日祝）→ ${formatDateJa(issue.dateStr)}`
+            : '毎月25日',
+          status: '',
+          deadline: true,
         });
       });
       return events;
