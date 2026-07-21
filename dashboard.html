@@ -205,10 +205,11 @@
 
     /* ── Kanban ── */
     .kanban {
-      display: grid;
-      grid-template-columns: 1fr 1.5fr 1fr 0.55fr;
-      gap: 12px;
-      align-items: start;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 680px;
+      align-items: stretch;
     }
     .column {
       background: var(--surface);
@@ -216,7 +217,7 @@
       border-radius: var(--radius);
       display: flex;
       flex-direction: column;
-      min-height: 280px;
+      min-height: auto;
     }
     .column.col-done { min-height: auto; }
     .column.col-done.collapsed { min-height: 0; }
@@ -1596,7 +1597,6 @@
     .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
     @media (max-width: 1024px) {
-      .kanban { grid-template-columns: 1fr; }
       .finance-hero { grid-template-columns: 1fr; }
       .finance-breakdown { grid-template-columns: repeat(2, 1fr); }
       .finance-breakdown-5 { grid-template-columns: repeat(2, 1fr); }
@@ -1640,7 +1640,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v69</div>
+        <div class="logo-sub">Business Dashboard · v70</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2112,8 +2112,8 @@
       { id: 'done',    label: '完了',    colClass: 'col-done' },
     ];
 
-    const DOING_PHASES = ['ヒアリング・構成', '撮影', '編集', '制作中', 'チェック中', '納品済'];
-    const DOING_PHASES_EDITOR = ['ヒアリング・構成', '撮影', '編集', '制作中', 'FB未', 'チェック中', '提出待ち', '納品済'];
+    const DOING_PHASES = ['ヒアリング・構成', '撮影', '制作中', 'チェック中', '納品済'];
+    const DOING_PHASES_EDITOR = ['ヒアリング・構成', '撮影', '制作中', 'FB未', '提出待ち', 'チェック中', '納品済'];
     const SNS_DOING_PHASES = ['制作中', 'チェック中', '納品済'];
     const AD_OPS_DOING_PHASES = [
       '広告アカウント作成', '設定', 'キャンペーン設定', '広告開始',
@@ -2935,6 +2935,7 @@ ${MAIL_FOOTER}`,
         ensureProjectChecklists(p);
         if (p.workflowKey === undefined) p.workflowKey = 'auto';
         if (p.phase === undefined) p.phase = '';
+        if (p.phase === '編集') p.phase = '制作中'; // 編集は制作中に統合
         if (p.deadlineDate === undefined) p.deadlineDate = '';
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
         if (p.editorOutsource === undefined) p.editorOutsource = false;
