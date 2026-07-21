@@ -1640,7 +1640,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v71</div>
+        <div class="logo-sub">Business Dashboard · v72</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2112,9 +2112,9 @@
       { id: 'done',    label: '完了',    colClass: 'col-done' },
     ];
 
-    const DOING_PHASES = ['ヒアリング・構成', '撮影', '制作中', 'チェック中', '納品済'];
-    const DOING_PHASES_EDITOR = ['ヒアリング・構成', '撮影', '制作中', 'FB未', '提出待ち', 'チェック中', '納品済'];
-    const SNS_DOING_PHASES = ['制作中', 'チェック中', '納品済'];
+    const DOING_PHASES = ['ヒアリング・構成', '撮影', '制作中', 'クライアントチェック中', '納品済'];
+    const DOING_PHASES_EDITOR = ['ヒアリング・構成', '撮影', '制作中', 'FB未', '提出待ち', 'クライアントチェック中', '納品済'];
+    const SNS_DOING_PHASES = ['制作中', 'クライアントチェック中', '納品済'];
     const AD_OPS_DOING_PHASES = [
       '広告アカウント作成', '設定', 'キャンペーン設定', '広告開始',
       '分析（2W）', 'レポート作成（2W）', '分析（1M）', 'レポート作成（1M）',
@@ -2226,7 +2226,7 @@
     }
 
     function doingPhaseSortIndex(p) {
-      // 案件ごとの表示フェーズではなく、共通順で並べる（提出待ち < チェック中）
+      // 案件ごとの表示フェーズではなく、共通順で並べる（提出待ち < クライアントチェック中）
       if (isAdOpsType(p)) {
         const order = AD_OPS_DOING_PHASES;
         const idx = order.indexOf(p.phase);
@@ -2237,7 +2237,8 @@
         const idx = order.indexOf(p.phase);
         return idx === -1 ? order.length : idx;
       }
-      const phase = p.phase === '編集' ? '制作中' : p.phase;
+      const phase = p.phase === '編集' ? '制作中'
+        : (p.phase === 'チェック中' ? 'クライアントチェック中' : p.phase);
       const idx = DOING_PHASES_EDITOR.indexOf(phase);
       return idx === -1 ? DOING_PHASES_EDITOR.length : idx;
     }
@@ -2947,6 +2948,7 @@ ${MAIL_FOOTER}`,
         if (p.workflowKey === undefined) p.workflowKey = 'auto';
         if (p.phase === undefined) p.phase = '';
         if (p.phase === '編集') p.phase = '制作中'; // 編集は制作中に統合
+        if (p.phase === 'チェック中') p.phase = 'クライアントチェック中';
         if (p.deadlineDate === undefined) p.deadlineDate = '';
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
         if (p.editorOutsource === undefined) p.editorOutsource = false;
