@@ -578,6 +578,7 @@
     .task-category.イベント { background: rgba(107,63,160,.12); color: #6b3fa0; border-color: rgba(107,63,160,.3); }
     .task-category.在宅 { background: rgba(50,120,200,.1); color: #2f6bb0; border-color: rgba(50,120,200,.25); }
     .task-category.未完了 { background: var(--red-glow); color: var(--red-dim); border-color: rgba(232,149,106,.35); }
+    .task-category.依頼 { background: rgba(107,63,160,.1); color: #6b3fa0; border-color: rgba(107,63,160,.3); }
     .task-type-select {
       flex: 0 0 auto;
       padding: 9px 8px;
@@ -896,7 +897,7 @@
     .cal-legend-dot.followup { background: #9b7ad0; }
     .cal-legend-dot.event { background: #6b3fa0; }
     .cal-legend-dot.remote { background: #3b82c4; }
-    .cal-legend-dot.adops { background: #5a82c8; }
+    .cal-legend-dot.editor-draft { background: #c45c8a; }
     .notice-bar {
       margin-bottom: 16px;
       padding: 10px 14px;
@@ -986,6 +987,12 @@
       color: #2e6b50;
       border-left: 2px solid #32a078;
     }
+    .cal-event.editor-draft {
+      background: rgba(196,92,138,.14);
+      color: #8a3a5e;
+      border-left: 2px solid #c45c8a;
+      font-weight: 700;
+    }
     .cal-day.clickable {
       cursor: pointer;
       transition: background .12s;
@@ -1048,6 +1055,66 @@
       margin-bottom: 8px;
       padding-left: 2px;
     }
+    .checklist-group-gate {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      user-select: none;
+    }
+    .checklist-group-gate input { accent-color: var(--red); width: 15px; height: 15px; cursor: pointer; }
+    .checklist-group-gate-label {
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: var(--text);
+    }
+    .checklist-group-gate-hint {
+      font-size: .68rem;
+      color: var(--muted);
+      margin-left: auto;
+    }
+    .checklist-group.gated-off .checklist-group-steps { display: none; }
+    .checklist-editor-deadline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 10px;
+      margin: 0 0 6px 34px;
+      padding: 8px 10px;
+      border-radius: 7px;
+      border: 1px dashed rgba(232,149,106,.45);
+      background: var(--red-glow);
+      font-size: .78rem;
+    }
+    .checklist-editor-deadline label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .checklist-editor-deadline input[type="number"] {
+      width: 56px;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: .78rem;
+      font-family: inherit;
+    }
+    .checklist-editor-deadline input[type="date"] {
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: .78rem;
+      font-family: inherit;
+    }
+    .checklist-editor-deadline-note { color: var(--muted); font-size: .7rem; width: 100%; }
     .checklist-item {
       display: flex;
       align-items: center;
@@ -1089,6 +1156,7 @@
     .checklist-tag.編集 { background: var(--red-glow); color: var(--red-dim); border: 1px solid rgba(232,149,106,.3); }
     .checklist-tag.納品 { background: rgba(58,53,48,.07); color: var(--muted); border: 1px solid var(--border); }
     .checklist-tag.確認 { background: rgba(100,140,200,.1); color: #5078b0; border: 1px solid rgba(100,140,200,.25); }
+    .checklist-tag.依頼 { background: rgba(107,63,160,.1); color: #6b3fa0; border: 1px solid rgba(107,63,160,.28); }
     .checklist-check {
       width: 18px; height: 18px;
       accent-color: var(--red);
@@ -1572,7 +1640,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v67</div>
+        <div class="logo-sub">Business Dashboard · v68</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1647,6 +1715,7 @@
         <div id="calGrid"></div>
         <div class="cal-legend">
           <div class="cal-legend-item"><div class="cal-legend-dot client"></div>📌 案件の期日（初稿提出など）</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot editor-draft"></div>🎬 編集者からの初稿提出</div>
           <div class="cal-legend-item"><div class="cal-legend-dot event"></div>📍 イベント・現場（撮影/勉強会/打合せ）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot remote"></div>🏠 在宅ワーク</div>
           <div class="cal-legend-item"><div class="cal-legend-dot sns"></div>自社事業整備</div>
@@ -2044,6 +2113,7 @@
     ];
 
     const DOING_PHASES = ['ヒアリング・構成', '撮影', '編集', '制作中', 'チェック中', '納品済'];
+    const DOING_PHASES_EDITOR = ['ヒアリング・構成', '撮影', '編集', '制作中', 'FB未', 'チェック中', '提出待ち', '納品済'];
     const SNS_DOING_PHASES = ['制作中', 'チェック中', '納品済'];
     const AD_OPS_DOING_PHASES = [
       '広告アカウント作成', '設定', 'キャンペーン設定', '広告開始',
@@ -2051,15 +2121,21 @@
     ];
     const AD_OPS_PREPAY_PHASES = ['作成未', '請求書作成済', '送付済', '入金済'];
     const AD_OPS_CLOSEOUT_PHASES = ['継続', '契約終了'];
+    const EDITOR_OUTSOURCE_GATE = 'editorOutsource';
+    const EDITOR_DEADLINE_STEP_IDS = new Set([19, 219]);
 
     function isAdOpsType(p) {
       return p && p.category === 'client' && p.type === 'ad-ops';
     }
 
+    function isEditorOutsourceEnabled(p) {
+      return !!(p && p.editorOutsource);
+    }
+
     function getDoingPhases(p) {
       if (p.category === 'sns') return SNS_DOING_PHASES;
       if (isAdOpsType(p)) return AD_OPS_DOING_PHASES;
-      return DOING_PHASES;
+      return isEditorOutsourceEnabled(p) ? DOING_PHASES_EDITOR : DOING_PHASES;
     }
 
     function getBillingPhases(p) {
@@ -2861,6 +2937,10 @@ ${MAIL_FOOTER}`,
         if (p.phase === undefined) p.phase = '';
         if (p.deadlineDate === undefined) p.deadlineDate = '';
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
+        if (p.editorOutsource === undefined) p.editorOutsource = false;
+        if (p.editorDraftDueDate === undefined) p.editorDraftDueDate = '';
+        if (p.editorDraftDays === undefined) p.editorDraftDays = '';
+        if (p.editorRequestDate === undefined) p.editorRequestDate = '';
         if (p.status === 'done' && p.category === 'client' && !p.phase) p.phase = '';
         ensureProjectFinance(p);
       });
@@ -3594,7 +3674,14 @@ ${MAIL_FOOTER}`,
       if (!el) return;
       const due = getDueFollowUpProjects();
       const adOpsClosing = getDueAdOpsClosingProjects();
-      if (due.length === 0 && adOpsClosing.length === 0) {
+      const today = todayStr();
+      const editorDrafts = state.projects.filter(p =>
+        isEditorOutsourceEnabled(p) &&
+        p.editorDraftDueDate &&
+        p.editorDraftDueDate <= today &&
+        (p.status === 'doing' || p.status === 'todo')
+      );
+      if (due.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0) {
         el.style.display = 'none';
         el.innerHTML = '';
         return;
@@ -3606,6 +3693,9 @@ ${MAIL_FOOTER}`,
         ),
         ...adOpsClosing.map(p =>
           `<div class="notice-bar-inner">📅 <strong>${esc(p.client || p.name)}</strong> — 広告運用の締日です（${esc(formatDateJa(getAdOpsClosingDate(p)))}）→ 請求列へ移動（請求日 ${esc(formatDateJa(getAdOpsInvoiceDate(p)))}）</div>`
+        ),
+        ...editorDrafts.map(p =>
+          `<div class="notice-bar-inner">🎬 <strong>${esc(p.client || p.name)}</strong> — 編集者からの初稿提出日です（${esc(formatDateJa(p.editorDraftDueDate))}）</div>`
         ),
       ].join('');
     }
@@ -4159,6 +4249,7 @@ ${MAIL_FOOTER}`,
     }
 
     function entryDate(entry) {
+      if (entry.kind === 'editorDraft') return entry.date || entry.item.editorDraftDueDate || '';
       return entry.item.date || entry.item.dueDate || '';
     }
 
@@ -4180,6 +4271,12 @@ ${MAIL_FOOTER}`,
       });
       getDueAdOpsMilestones(today).forEach(({ project, label }) => {
         entries.push({ kind: 'adOpsMilestone', item: project, milestone: label });
+      });
+      state.projects.forEach(p => {
+        if (!isEditorOutsourceEnabled(p)) return;
+        if (!p.editorDraftDueDate || p.editorDraftDueDate > today) return;
+        if (p.status !== 'doing' && p.status !== 'todo') return;
+        entries.push({ kind: 'editorDraft', item: p, date: p.editorDraftDueDate });
       });
       entries.sort((a, b) => {
         if (a.item.done !== b.item.done) return a.item.done ? 1 : -1;
@@ -4268,6 +4365,16 @@ ${MAIL_FOOTER}`,
         <div class="task-item task-item-reminder">
           <span class="task-category 営業">広告運用</span>
           <span class="task-text">${esc(t.client || t.name)} — ${esc(milestone || '')}</span>
+        </div>`;
+        }
+        if (kind === 'editorDraft') {
+          const overdue = t.editorDraftDueDate < todayStr();
+          return `
+        <div class="task-item task-item-reminder${overdue ? ' overdue' : ''}">
+          <span class="task-category 未完了">${overdue ? '未完了' : '今日'}</span>
+          <span class="task-category 依頼">編集者初稿</span>
+          <span class="task-text">${esc(t.client || t.name)} — 編集者からの初稿提出（${formatDateJa(t.editorDraftDueDate)}）</span>
+          <button type="button" class="btn btn-ghost" onclick="openChecklist('${t.id}')">チェックリスト</button>
         </div>`;
         }
         if (kind === 'bizTodo') {
@@ -4658,7 +4765,10 @@ ${MAIL_FOOTER}`,
       } else {
         const phase = data.status === 'doing' ? getDefaultDoingPhase({ ...data, category })
           : data.status === 'billing' ? (data.type === 'ad-ops' ? '' : '作成未') : '';
-        const newProject = { id: uid(), ...data, phase, created: todayStr() };
+        const newProject = {
+          id: uid(), ...data, phase, created: todayStr(),
+          editorOutsource: false, editorDraftDueDate: '', editorDraftDays: '', editorRequestDate: '',
+        };
         ensureProjectFinance(newProject);
         if (newProject.type === 'ad-ops') {
           newProject.opsMonth = parseOpsMonthFromName(newProject.name) || 1;
@@ -5090,6 +5200,17 @@ ${MAIL_FOOTER}`,
             ],
           },
           {
+            label: '編集者依頼',
+            optional: true,
+            gateKey: EDITOR_OUTSOURCE_GATE,
+            steps: [
+              { id: 16, text: '編集者用画コンテ作成', tag: '依頼' },
+              { id: 17, text: '素材まとめ', tag: '依頼' },
+              { id: 18, text: 'CANVAデータ送付', tag: '依頼' },
+              { id: 19, text: '納期設定、依頼', tag: '依頼', type: 'editorDeadline' },
+            ],
+          },
+          {
             label: '編集',
             steps: [
               { id: 7, text: 'Canvaで粗編集', tag: '編集' },
@@ -5138,6 +5259,17 @@ ${MAIL_FOOTER}`,
             label: 'クライアント確認',
             steps: [
               { id: 112, text: '一旦クライアントチェック', tag: '確認' },
+            ],
+          },
+          {
+            label: '編集者依頼',
+            optional: true,
+            gateKey: EDITOR_OUTSOURCE_GATE,
+            steps: [
+              { id: 216, text: '編集者用画コンテ作成', tag: '依頼' },
+              { id: 217, text: '素材まとめ', tag: '依頼' },
+              { id: 218, text: 'CANVAデータ送付', tag: '依頼' },
+              { id: 219, text: '納期設定、依頼', tag: '依頼', type: 'editorDeadline' },
             ],
           },
           {
@@ -5270,18 +5402,20 @@ ${MAIL_FOOTER}`,
       const wfKey = getWorkflowKey(p);
       const checklist = getProjectChecklist(p, wfKey);
       const customSteps = getProjectCustomSteps(p, wfKey);
-      const allSteps = wf.groups.flatMap(g => g.steps).concat(customSteps);
-      const checked = allSteps.filter(s => checklist[s.id]).length;
-      const pct = allSteps.length ? Math.round(checked / allSteps.length * 100) : 0;
+      const countedSteps = wf.groups.flatMap(g => {
+        if (g.optional && g.gateKey === EDITOR_OUTSOURCE_GATE && !isEditorOutsourceEnabled(p)) return [];
+        return g.steps;
+      }).concat(customSteps);
+      const checked = countedSteps.filter(s => checklist[s.id]).length;
+      const pct = countedSteps.length ? Math.round(checked / countedSteps.length * 100) : 0;
       document.getElementById('checklistBar').style.width = pct + '%';
       let stepNum = 0;
-      const groupsHtml = wf.groups.map(g => `
-        <div class="checklist-group">
-          <div class="checklist-group-label">${esc(g.label)}</div>
-          ${g.steps.map(s => {
-            stepNum++;
-            const num = stepNum;
-            return `
+
+      function renderStepItem(s) {
+        stepNum++;
+        const num = stepNum;
+        const isDeadline = s.type === 'editorDeadline';
+        const item = `
             <label class="checklist-item${checklist[s.id] ? ' checked' : ''}">
               <input type="checkbox" class="checklist-check" ${checklist[s.id] ? 'checked' : ''}
                      onchange="toggleChecklist('${p.id}','${wfKey}',${s.id},this.checked)">
@@ -5289,9 +5423,47 @@ ${MAIL_FOOTER}`,
               <div class="checklist-text">${esc(s.text)}</div>
               <span class="checklist-tag ${esc(s.tag)}">${esc(s.tag)}</span>
             </label>`;
-          }).join('')}
-        </div>
-      `).join('');
+        if (!isDeadline) return item;
+        const days = Number(p.editorDraftDays) || '';
+        const due = p.editorDraftDueDate || '';
+        return item + `
+            <div class="checklist-editor-deadline" onclick="event.stopPropagation()">
+              <label>依頼から
+                <input type="number" min="1" max="365" placeholder="日数"
+                       value="${days}"
+                       onchange="setEditorDraftDays('${p.id}', this.value)">
+                日後
+              </label>
+              <label>初稿提出日
+                <input type="date" value="${due}"
+                       onchange="setEditorDraftDueDate('${p.id}', this.value)">
+              </label>
+              <div class="checklist-editor-deadline-note">編集者から初稿をもらう日。カレンダーと今日のタスクに表示されます</div>
+            </div>`;
+      }
+
+      const groupsHtml = wf.groups.map(g => {
+        if (g.optional && g.gateKey === EDITOR_OUTSOURCE_GATE) {
+          const on = isEditorOutsourceEnabled(p);
+          return `
+        <div class="checklist-group${on ? '' : ' gated-off'}">
+          <label class="checklist-group-gate">
+            <input type="checkbox" ${on ? 'checked' : ''}
+                   onchange="toggleEditorOutsource('${p.id}', this.checked)">
+            <span class="checklist-group-gate-label">${esc(g.label)}</span>
+            <span class="checklist-group-gate-hint">${on ? '外注フローを使用中' : 'チェックで項目を表示（自分で編集するときはオフのまま）'}</span>
+          </label>
+          <div class="checklist-group-steps">
+            ${on ? g.steps.map(renderStepItem).join('') : ''}
+          </div>
+        </div>`;
+        }
+        return `
+        <div class="checklist-group">
+          <div class="checklist-group-label">${esc(g.label)}</div>
+          ${g.steps.map(renderStepItem).join('')}
+        </div>`;
+      }).join('');
 
       const customHtml = `
         <div class="checklist-group">
@@ -5317,6 +5489,7 @@ ${MAIL_FOOTER}`,
               <option value="企画">企画</option>
               <option value="デザイン">デザイン</option>
               <option value="確認">確認</option>
+              <option value="依頼">依頼</option>
               <option value="納品">納品</option>
             </select>
             <button type="button" class="btn btn-primary checklist-add-btn" onclick="addCustomStep()">追加</button>
@@ -5324,6 +5497,69 @@ ${MAIL_FOOTER}`,
         </div>`;
 
       document.getElementById('checklistBody').innerHTML = groupsHtml + customHtml;
+    }
+
+    function toggleEditorOutsource(projectId, enabled) {
+      const p = state.projects.find(x => x.id === projectId);
+      if (!p) return;
+      p.editorOutsource = !!enabled;
+      if (!enabled) {
+        if (p.phase === 'FB未' || p.phase === '提出待ち') {
+          p.phase = '制作中';
+        }
+      }
+      const wf = getWorkflow(p);
+      if (wf) renderChecklistBody(p, wf);
+      saveState();
+      toast(enabled
+        ? `「${p.name}」編集者依頼オン — FB未・提出待ちを表示`
+        : `「${p.name}」編集者依頼オフ（自分で編集）`);
+    }
+    window.toggleEditorOutsource = toggleEditorOutsource;
+
+    function setEditorDraftDays(projectId, daysVal) {
+      const p = state.projects.find(x => x.id === projectId);
+      if (!p) return;
+      const days = Math.max(1, Math.min(365, Number(daysVal) || 0));
+      if (!days) {
+        toast('日数を入力してください');
+        return;
+      }
+      p.editorDraftDays = days;
+      if (!p.editorRequestDate) p.editorRequestDate = todayStr();
+      p.editorDraftDueDate = addDaysToDate(p.editorRequestDate, days);
+      markEditorDeadlineStep(p, true);
+      const wf = getWorkflow(p);
+      if (wf) renderChecklistBody(p, wf);
+      saveState();
+      toast(`初稿提出日を ${formatDateJa(p.editorDraftDueDate)} に設定（カレンダーに表示）`);
+    }
+    window.setEditorDraftDays = setEditorDraftDays;
+
+    function setEditorDraftDueDate(projectId, dateVal) {
+      const p = state.projects.find(x => x.id === projectId);
+      if (!p) return;
+      p.editorDraftDueDate = dateVal || '';
+      if (dateVal) {
+        if (!p.editorRequestDate) p.editorRequestDate = todayStr();
+        const req = new Date(p.editorRequestDate + 'T00:00:00');
+        const due = new Date(dateVal + 'T00:00:00');
+        const diff = Math.round((due - req) / 86400000);
+        if (diff >= 1) p.editorDraftDays = diff;
+        markEditorDeadlineStep(p, true);
+      }
+      const wf = getWorkflow(p);
+      if (wf) renderChecklistBody(p, wf);
+      saveState();
+      if (dateVal) toast(`初稿提出日を ${formatDateJa(dateVal)} に設定（カレンダーに表示）`);
+    }
+    window.setEditorDraftDueDate = setEditorDraftDueDate;
+
+    function markEditorDeadlineStep(p, checked) {
+      const wfKey = getWorkflowKey(p);
+      if (!wfKey) return;
+      const checklist = getProjectChecklist(p, wfKey);
+      EDITOR_DEADLINE_STEP_IDS.forEach(id => { checklist[id] = !!checked; });
     }
 
     function toggleChecklist(projectId, wfKey, stepId, checked) {
@@ -5591,10 +5827,20 @@ ${MAIL_FOOTER}`,
           });
         });
       });
+      state.projects.forEach(p => {
+        if (!isEditorOutsourceEnabled(p) || !p.editorDraftDueDate) return;
+        if (p.status === 'done') return;
+        if (!events[p.editorDraftDueDate]) events[p.editorDraftDueDate] = [];
+        events[p.editorDraftDueDate].push({
+          label: `編集者初稿: ${p.name}`,
+          category: 'editor-draft',
+          client: p.client || '',
+          status: p.status,
+          deadline: true,
+        });
+      });
       return events;
     }
-
-    function renderCalendar() {
       const months = getCalendarDisplayMonths();
       document.getElementById('calTitle').textContent =
         `${months[0].year}年${months[0].month + 1}月 · ${months[1].month + 1}月`;
