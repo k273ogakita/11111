@@ -1640,7 +1640,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v68</div>
+        <div class="logo-sub">Business Dashboard · v69</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -5841,6 +5841,8 @@ ${MAIL_FOOTER}`,
       });
       return events;
     }
+
+    function renderCalendar() {
       const months = getCalendarDisplayMonths();
       document.getElementById('calTitle').textContent =
         `${months[0].year}年${months[0].month + 1}月 · ${months[1].month + 1}月`;
