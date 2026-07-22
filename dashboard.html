@@ -1647,7 +1647,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v75</div>
+        <div class="logo-sub">Business Dashboard · v76</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4104,10 +4104,12 @@ ${MAIL_FOOTER}`,
           <div class="card-actions">
             ${showTimeLogBtn ? `<button class="btn btn-ghost btn-time" onclick="event.stopPropagation();openProjectTimeLog('${p.id}')">所要時間</button>` : ''}
             <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
+            <button class="btn btn-ghost" onclick="event.stopPropagation();duplicateProject('${p.id}')">複製</button>
             <button class="btn btn-ghost btn-danger" onclick="event.stopPropagation();deleteProject('${p.id}')">削除</button>
           </div>` : `
           <div class="card-actions has-edit">
             <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
+            <button class="btn btn-ghost" onclick="event.stopPropagation();duplicateProject('${p.id}')">複製</button>
           </div>`;
       const hasWf = !isSns && getWorkflow(p) && p.status === 'doing';
       return `
@@ -4942,6 +4944,59 @@ ${MAIL_FOOTER}`,
     }
 
     function editProject(id) { openProjectModal(id); }
+
+    function duplicateProject(id) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p) return;
+      ensureProjectFinance(p);
+      const copy = {
+        id: uid(),
+        category: p.category || 'client',
+        name: `${p.name} (コピー)`,
+        client: p.client || '',
+        type: p.type,
+        status: 'todo',
+        phase: '',
+        created: todayStr(),
+        deadlineDate: '',
+        deadlinePlan: '',
+        memo: p.memo || '',
+        revenue: p.revenue || 0,
+        targetHours: p.targetHours || 0,
+        invoiceDate: '',
+        variableCosts: (p.variableCosts || []).map(c => ({
+          id: uid(),
+          label: c.label || '',
+          amount: Number(c.amount) || 0,
+        })),
+        timeLogs: [],
+        mailClinic: p.mailClinic || '',
+        mailDirector: p.mailDirector || '',
+        contractRoute: p.contractRoute || detectContractRoute(p),
+        followUpTiming: p.followUpTiming || '2week',
+        workflowKey: p.workflowKey || 'auto',
+        platform: '',
+        snsStatus: p.category === 'sns' ? 'draft' : '',
+        folder: '',
+        deliveredDate: '',
+        afterFollowDone: { thanks: false, followup: false, supportCoconala: false, supportDirect: false, portfolio: false },
+        editorOutsource: false,
+        editorDraftDueDate: '',
+        editorDraftDays: '',
+        editorRequestDate: '',
+        closingDay: p.closingDay !== undefined ? p.closingDay : 25,
+        opsStartDate: '',
+        opsMonth: isAdOpsType(p) ? (p.opsMonth || parseOpsMonthFromName(p.name) || 1) : 0,
+        opsBaseName: isAdOpsType(p) ? (p.opsBaseName || getOpsBaseName(p)) : '',
+        prepayPhase: '',
+      };
+      ensureProjectFinance(copy);
+      state.projects.push(copy);
+      saveState();
+      toast('案件を複製しました — 名前などを編集してください');
+      openProjectModal(copy.id);
+    }
+    window.duplicateProject = duplicateProject;
 
     function deleteProject(id) {
       if (!confirm('この案件を削除しますか？')) return;
