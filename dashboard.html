@@ -1664,7 +1664,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v81</div>
+        <div class="logo-sub">Business Dashboard · v82</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2983,6 +2983,8 @@ ${MAIL_FOOTER}`,
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
         if (p.draftDueDate === undefined) p.draftDueDate = '';
         if (p.finalDueDate === undefined) p.finalDueDate = '';
+        if (p.draftDueDone === undefined) p.draftDueDone = false;
+        if (p.finalDueDone === undefined) p.finalDueDone = false;
         // 旧・単一期日 → 初稿提出／最終納品へ移行
         if (!p.draftDueDate && !p.finalDueDate && p.deadlineDate) {
           const plan = p.deadlinePlan || '';
@@ -3843,10 +3845,10 @@ ${MAIL_FOOTER}`,
       const projectDeadlines = [];
       state.projects.forEach(p => {
         if (p.status !== 'doing' && p.status !== 'todo') return;
-        if (p.draftDueDate && p.draftDueDate <= today) {
+        if (p.draftDueDate && p.draftDueDate <= today && !p.draftDueDone) {
           projectDeadlines.push({ project: p, label: '初稿提出', date: p.draftDueDate });
         }
-        if (p.finalDueDate && p.finalDueDate <= today) {
+        if (p.finalDueDate && p.finalDueDate <= today && !p.finalDueDone) {
           projectDeadlines.push({ project: p, label: '最終納品', date: p.finalDueDate });
         }
       });
@@ -4036,8 +4038,28 @@ ${MAIL_FOOTER}`,
 
     function getProjectDeadlineLines(p) {
       const lines = [];
-      if (p.draftDueDate) lines.push({ kind: 'draft', date: p.draftDueDate, text: `${formatDateMd(p.draftDueDate)}までに初稿提出` });
-      if (p.finalDueDate) lines.push({ kind: 'final', date: p.finalDueDate, text: `${formatDateMd(p.finalDueDate)}までに最終納品` });
+      if (p.draftDueDate) {
+        const done = !!p.draftDueDone;
+        lines.push({
+          kind: 'draft',
+          date: p.draftDueDate,
+          done,
+          text: done
+            ? `${formatDateMd(p.draftDueDate)} 初稿提出 済`
+            : `${formatDateMd(p.draftDueDate)}までに初稿提出`,
+        });
+      }
+      if (p.finalDueDate) {
+        const done = !!p.finalDueDone;
+        lines.push({
+          kind: 'final',
+          date: p.finalDueDate,
+          done,
+          text: done
+            ? `${formatDateMd(p.finalDueDate)} 最終納品 済`
+            : `${formatDateMd(p.finalDueDate)}までに最終納品`,
+        });
+      }
       return lines;
     }
 
@@ -4294,6 +4316,8 @@ ${MAIL_FOOTER}`,
         deadlinePlan: '',
         draftDueDate: '',
         finalDueDate: '',
+        draftDueDone: false,
+        finalDueDone: false,
         memo: p.memo || '',
         revenue: p.revenue || 0,
         targetHours: p.targetHours || 0,
@@ -4477,11 +4501,11 @@ ${MAIL_FOOTER}`,
       });
       state.projects.forEach(p => {
         if (p.status !== 'doing' && p.status !== 'todo') return;
-        if (p.draftDueDate && p.draftDueDate <= today) {
-          entries.push({ kind: 'projectDeadline', item: p, date: p.draftDueDate, label: '初稿提出' });
+        if (p.draftDueDate && p.draftDueDate <= today && !p.draftDueDone) {
+          entries.push({ kind: 'projectDeadline', item: p, date: p.draftDueDate, label: '初稿提出', deadlineKind: 'draft' });
         }
-        if (p.finalDueDate && p.finalDueDate <= today) {
-          entries.push({ kind: 'projectDeadline', item: p, date: p.finalDueDate, label: '最終納品' });
+        if (p.finalDueDate && p.finalDueDate <= today && !p.finalDueDone) {
+          entries.push({ kind: 'projectDeadline', item: p, date: p.finalDueDate, label: '最終納品', deadlineKind: 'final' });
         }
       });
       if (isInvoiceCreationDay(today)) {
@@ -4558,7 +4582,7 @@ ${MAIL_FOOTER}`,
         el.innerHTML = `<div class="task-empty">今日のタスクはありません（案件タスクからドラッグ、または上で追加）</div>`;
         return;
       }
-      el.innerHTML = entries.map(({ kind, item: t, milestone, shifted, label, date }) => {
+      el.innerHTML = entries.map(({ kind, item: t, milestone, shifted, label, date, deadlineKind }) => {
         if (kind === 'followUp') {
           const timing = t.followUpTiming === '1month' ? '1ヶ月後' : '2週間後';
           return `
@@ -4596,6 +4620,7 @@ ${MAIL_FOOTER}`,
           const overdue = date < todayStr();
           return `
         <div class="task-item task-item-reminder${overdue ? ' overdue' : ''}">
+          <input type="checkbox" class="task-check" onchange="toggleProjectDeadline('${t.id}','${deadlineKind || 'draft'}')">
           <span class="task-category 未完了">${overdue ? '未完了' : '今日'}</span>
           <span class="task-category 依頼">${esc(label || '期日')}</span>
           <span class="task-text">${esc(t.client || t.name)} — ${esc(label || '期日')}（${formatDateJa(date)}）</span>
@@ -4925,12 +4950,15 @@ ${MAIL_FOOTER}`,
       const status = document.getElementById('projectStatus').value;
       const draftDueDate = document.getElementById('projectDraftDueDate').value;
       const finalDueDate = document.getElementById('projectFinalDueDate').value;
+      const existing = editingProjectId ? state.projects.find(x => x.id === editingProjectId) : null;
       const data = {
         category,
         name,
         status,
         draftDueDate: (status === 'todo' || status === 'doing') ? draftDueDate : '',
         finalDueDate: (status === 'todo' || status === 'doing') ? finalDueDate : '',
+        draftDueDone: existing && existing.draftDueDate === draftDueDate ? !!existing.draftDueDone : false,
+        finalDueDone: existing && existing.finalDueDate === finalDueDate ? !!existing.finalDueDone : false,
         deadlineDate: '',
         deadlinePlan: '',
         memo: document.getElementById('projectMemo').value.trim(),
@@ -5039,6 +5067,8 @@ ${MAIL_FOOTER}`,
         deadlinePlan: '',
         draftDueDate: '',
         finalDueDate: '',
+        draftDueDone: false,
+        finalDueDone: false,
         memo: p.memo || '',
         revenue: p.revenue || 0,
         targetHours: p.targetHours || 0,
@@ -5172,6 +5202,20 @@ ${MAIL_FOOTER}`,
       if (kind === 'bizTodo') toggleBizTodo(id);
       else toggleTask(id);
     }
+
+    function toggleProjectDeadline(projectId, deadlineKind) {
+      const p = state.projects.find(x => x.id === projectId);
+      if (!p) return;
+      if (deadlineKind === 'final') {
+        p.finalDueDone = !p.finalDueDone;
+        toast(p.finalDueDone ? '最終納品を完了にしました' : '最終納品を未完了に戻しました');
+      } else {
+        p.draftDueDone = !p.draftDueDone;
+        toast(p.draftDueDone ? '初稿提出を完了にしました' : '初稿提出を未完了に戻しました');
+      }
+      saveState();
+    }
+    window.toggleProjectDeadline = toggleProjectDeadline;
 
     function scheduleTaskOnDate(dateStr) {
       document.getElementById('taskScheduleDate').value = dateStr;
@@ -6070,7 +6114,7 @@ ${MAIL_FOOTER}`,
       const events = {};
       const today = todayStr();
       state.projects.forEach(p => {
-        if (p.draftDueDate) {
+        if (p.draftDueDate && !p.draftDueDone) {
           if (!events[p.draftDueDate]) events[p.draftDueDate] = [];
           events[p.draftDueDate].push({
             label: `${p.name}（初稿提出）`,
@@ -6080,7 +6124,7 @@ ${MAIL_FOOTER}`,
             deadline: true,
           });
         }
-        if (p.finalDueDate) {
+        if (p.finalDueDate && !p.finalDueDone) {
           if (!events[p.finalDueDate]) events[p.finalDueDate] = [];
           events[p.finalDueDate].push({
             label: `${p.name}（最終納品）`,
