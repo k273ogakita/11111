@@ -482,8 +482,25 @@
       grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
+    .deadline-fields-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .deadline-row {
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+    .deadline-row-label {
+      font-size: .78rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
     @media (max-width: 480px) {
       .deadline-fields { grid-template-columns: 1fr; }
+      .deadline-row { grid-template-columns: 1fr; }
     }
 
     .section-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -1647,7 +1664,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v80</div>
+        <div class="logo-sub">Business Dashboard · v81</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1721,7 +1738,7 @@
         </div>
         <div id="calGrid"></div>
         <div class="cal-legend">
-          <div class="cal-legend-item"><div class="cal-legend-dot client"></div>📌 案件の期日（初稿提出など）</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot client"></div>📌 案件の期日（初稿提出・最終納品）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot editor-draft"></div>🎬 編集者からの初稿提出</div>
           <div class="cal-legend-item"><div class="cal-legend-dot event"></div>📍 イベント・現場（撮影/勉強会/打合せ）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot remote"></div>🏠 在宅ワーク</div>
@@ -1897,11 +1914,17 @@
       </div>
       <div class="form-group" id="deadlineGroup">
         <label>期日</label>
-        <div class="deadline-fields">
-          <input type="date" id="projectDeadlineDate">
-          <input type="text" id="projectDeadlinePlan" placeholder="例: 初稿提出">
+        <div class="deadline-fields-stack">
+          <div class="deadline-row">
+            <span class="deadline-row-label">初稿提出</span>
+            <input type="date" id="projectDraftDueDate">
+          </div>
+          <div class="deadline-row">
+            <span class="deadline-row-label">最終納品</span>
+            <input type="date" id="projectFinalDueDate">
+          </div>
         </div>
-        <div class="form-hint">カードに「◯月◯日までに〇〇予定」と表示されます</div>
+        <div class="form-hint">カード・カレンダー・今日のタスクに表示されます</div>
       </div>
       <div class="form-group">
         <label>メモ</label>
@@ -2958,6 +2981,14 @@ ${MAIL_FOOTER}`,
         if (p.phase === 'チェック中') p.phase = 'クライアントチェック中';
         if (p.deadlineDate === undefined) p.deadlineDate = '';
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
+        if (p.draftDueDate === undefined) p.draftDueDate = '';
+        if (p.finalDueDate === undefined) p.finalDueDate = '';
+        // 旧・単一期日 → 初稿提出／最終納品へ移行
+        if (!p.draftDueDate && !p.finalDueDate && p.deadlineDate) {
+          const plan = p.deadlinePlan || '';
+          if (/納品|最終/.test(plan)) p.finalDueDate = p.deadlineDate;
+          else p.draftDueDate = p.deadlineDate;
+        }
         if (p.editorOutsource === undefined) p.editorOutsource = false;
         if (p.editorDraftDueDate === undefined) p.editorDraftDueDate = '';
         if (p.editorDraftDays === undefined) p.editorDraftDays = '';
@@ -3809,6 +3840,16 @@ ${MAIL_FOOTER}`,
         p.editorDraftDueDate <= today &&
         (p.status === 'doing' || p.status === 'todo')
       );
+      const projectDeadlines = [];
+      state.projects.forEach(p => {
+        if (p.status !== 'doing' && p.status !== 'todo') return;
+        if (p.draftDueDate && p.draftDueDate <= today) {
+          projectDeadlines.push({ project: p, label: '初稿提出', date: p.draftDueDate });
+        }
+        if (p.finalDueDate && p.finalDueDate <= today) {
+          projectDeadlines.push({ project: p, label: '最終納品', date: p.finalDueDate });
+        }
+      });
       const invoiceDay = isInvoiceCreationDay(today);
       let invoiceNotice = '';
       if (invoiceDay) {
@@ -3818,7 +3859,7 @@ ${MAIL_FOOTER}`,
           ? `<div class="notice-bar-inner">🧾 <strong>請求書作成</strong> — 25日が土日祝のため、本日（${esc(formatDateJa(issue.dateStr))}）が発行日です</div>`
           : `<div class="notice-bar-inner">🧾 <strong>請求書作成</strong> — 本日は毎月25日の請求書発行日です</div>`;
       }
-      if (due.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && !invoiceDay) {
+      if (due.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && !invoiceDay) {
         el.style.display = 'none';
         el.innerHTML = '';
         return;
@@ -3833,6 +3874,9 @@ ${MAIL_FOOTER}`,
         ),
         ...editorDrafts.map(p =>
           `<div class="notice-bar-inner">🎬 <strong>${esc(p.client || p.name)}</strong> — 編集者からの初稿提出日です（${esc(formatDateJa(p.editorDraftDueDate))}）</div>`
+        ),
+        ...projectDeadlines.map(({ project: p, label, date }) =>
+          `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — ${esc(label)}の日です（${esc(formatDateJa(date))}）</div>`
         ),
         invoiceNotice,
       ].filter(Boolean).join('');
@@ -3983,17 +4027,28 @@ ${MAIL_FOOTER}`,
       }).join('');
     }
 
+    function formatDateMd(iso) {
+      if (!iso) return '';
+      const parts = iso.split('-');
+      if (parts.length < 3) return iso;
+      return `${+parts[1]}月${+parts[2]}日`;
+    }
+
+    function getProjectDeadlineLines(p) {
+      const lines = [];
+      if (p.draftDueDate) lines.push({ kind: 'draft', date: p.draftDueDate, text: `${formatDateMd(p.draftDueDate)}までに初稿提出` });
+      if (p.finalDueDate) lines.push({ kind: 'final', date: p.finalDueDate, text: `${formatDateMd(p.finalDueDate)}までに最終納品` });
+      return lines;
+    }
+
     function formatDeadline(p) {
-      if (!p.deadlineDate && !p.deadlinePlan) return '';
-      if (p.deadlineDate && p.deadlinePlan) {
-        const [y, m, d] = p.deadlineDate.split('-');
-        return `${+m}月${+d}日までに${p.deadlinePlan}予定`;
-      }
-      if (p.deadlineDate) {
-        const [y, m, d] = p.deadlineDate.split('-');
-        return `${+m}月${+d}日まで`;
-      }
-      return `${p.deadlinePlan}予定`;
+      return getProjectDeadlineLines(p).map(l => l.text).join(' ／ ');
+    }
+
+    function renderDeadlineHtml(p) {
+      const lines = getProjectDeadlineLines(p);
+      if (!lines.length) return '';
+      return lines.map(l => `<div class="card-deadline">${esc(l.text)}</div>`).join('');
     }
 
     function renderAfterFollowButtons(p) {
@@ -4088,8 +4143,7 @@ ${MAIL_FOOTER}`,
             : `運用開始 ${formatDateJa(p.opsStartDate)} · 締日 ${formatDateJa(getAdOpsClosingDate(p))} · 請求予定 ${formatDateJa(getAdOpsInvoiceDate(p))}`}${p.status === 'doing' && p.phase === '広告開始' ? '（開始予定日）' : ''}</div>`
           : `<div class="card-deadline">運用開始日 未設定（準備中）</div>`)
         : '';
-      const deadline = (p.status === 'todo' || p.status === 'doing') && formatDeadline(p)
-        ? `<div class="card-deadline">${esc(formatDeadline(p))}</div>` : '';
+      const deadline = (p.status === 'todo' || p.status === 'doing') ? renderDeadlineHtml(p) : '';
       const memoBlock = p.memo && p.memo.trim()
         ? `<div class="card-memo">${esc(p.memo.trim())}</div>` : '';
       const phaseLabel = p.phase && p.status !== 'done'
@@ -4238,6 +4292,8 @@ ${MAIL_FOOTER}`,
         created: todayStr(),
         deadlineDate: '',
         deadlinePlan: '',
+        draftDueDate: '',
+        finalDueDate: '',
         memo: p.memo || '',
         revenue: p.revenue || 0,
         targetHours: p.targetHours || 0,
@@ -4390,6 +4446,7 @@ ${MAIL_FOOTER}`,
 
     function entryDate(entry) {
       if (entry.kind === 'editorDraft') return entry.date || entry.item.editorDraftDueDate || '';
+      if (entry.kind === 'projectDeadline') return entry.date || '';
       return entry.item.date || entry.item.dueDate || '';
     }
 
@@ -4417,6 +4474,15 @@ ${MAIL_FOOTER}`,
         if (!p.editorDraftDueDate || p.editorDraftDueDate > today) return;
         if (p.status !== 'doing' && p.status !== 'todo') return;
         entries.push({ kind: 'editorDraft', item: p, date: p.editorDraftDueDate });
+      });
+      state.projects.forEach(p => {
+        if (p.status !== 'doing' && p.status !== 'todo') return;
+        if (p.draftDueDate && p.draftDueDate <= today) {
+          entries.push({ kind: 'projectDeadline', item: p, date: p.draftDueDate, label: '初稿提出' });
+        }
+        if (p.finalDueDate && p.finalDueDate <= today) {
+          entries.push({ kind: 'projectDeadline', item: p, date: p.finalDueDate, label: '最終納品' });
+        }
       });
       if (isInvoiceCreationDay(today)) {
         const [y, m] = today.split('-').map(Number);
@@ -4492,7 +4558,7 @@ ${MAIL_FOOTER}`,
         el.innerHTML = `<div class="task-empty">今日のタスクはありません（案件タスクからドラッグ、または上で追加）</div>`;
         return;
       }
-      el.innerHTML = entries.map(({ kind, item: t, milestone, shifted }) => {
+      el.innerHTML = entries.map(({ kind, item: t, milestone, shifted, label, date }) => {
         if (kind === 'followUp') {
           const timing = t.followUpTiming === '1month' ? '1ヶ月後' : '2週間後';
           return `
@@ -4524,6 +4590,16 @@ ${MAIL_FOOTER}`,
           <span class="task-category 依頼">編集者初稿</span>
           <span class="task-text">${esc(t.client || t.name)} — 編集者からの初稿提出（${formatDateJa(t.editorDraftDueDate)}）</span>
           <button type="button" class="btn btn-ghost" onclick="openChecklist('${t.id}')">チェックリスト</button>
+        </div>`;
+        }
+        if (kind === 'projectDeadline') {
+          const overdue = date < todayStr();
+          return `
+        <div class="task-item task-item-reminder${overdue ? ' overdue' : ''}">
+          <span class="task-category 未完了">${overdue ? '未完了' : '今日'}</span>
+          <span class="task-category 依頼">${esc(label || '期日')}</span>
+          <span class="task-text">${esc(t.client || t.name)} — ${esc(label || '期日')}（${formatDateJa(date)}）</span>
+          <button type="button" class="btn btn-ghost" onclick="editProject('${t.id}')">案件を開く</button>
         </div>`;
         }
         if (kind === 'invoiceTask') {
@@ -4767,8 +4843,8 @@ ${MAIL_FOOTER}`,
         }
         document.getElementById('projectWorkflow').value = p.workflowKey || 'auto';
         document.getElementById('projectStatus').value = p.status;
-        document.getElementById('projectDeadlineDate').value = p.deadlineDate || '';
-        document.getElementById('projectDeadlinePlan').value = p.deadlinePlan || '';
+        document.getElementById('projectDraftDueDate').value = p.draftDueDate || '';
+        document.getElementById('projectFinalDueDate').value = p.finalDueDate || '';
         document.getElementById('projectMemo').value = p.memo || '';
         ensureProjectFinance(p);
         document.getElementById('projectRevenue').value = p.revenue || '';
@@ -4793,8 +4869,8 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectType').value = 'explainer-video';
         document.getElementById('projectWorkflow').value = 'auto';
         document.getElementById('projectStatus').value = 'todo';
-        document.getElementById('projectDeadlineDate').value = '';
-        document.getElementById('projectDeadlinePlan').value = '';
+        document.getElementById('projectDraftDueDate').value = '';
+        document.getElementById('projectFinalDueDate').value = '';
         document.getElementById('projectMemo').value = '';
         document.getElementById('projectRevenue').value = '';
         document.getElementById('projectTargetHours').value = '';
@@ -4847,14 +4923,16 @@ ${MAIL_FOOTER}`,
       if (!name) { toast('名前を入力してください'); return; }
       const category = document.getElementById('projectCategory').value;
       const status = document.getElementById('projectStatus').value;
-      const deadlineDate = document.getElementById('projectDeadlineDate').value;
-      const deadlinePlan = document.getElementById('projectDeadlinePlan').value.trim();
+      const draftDueDate = document.getElementById('projectDraftDueDate').value;
+      const finalDueDate = document.getElementById('projectFinalDueDate').value;
       const data = {
         category,
         name,
         status,
-        deadlineDate: (status === 'todo' || status === 'doing') ? deadlineDate : '',
-        deadlinePlan: (status === 'todo' || status === 'doing') ? deadlinePlan : '',
+        draftDueDate: (status === 'todo' || status === 'doing') ? draftDueDate : '',
+        finalDueDate: (status === 'todo' || status === 'doing') ? finalDueDate : '',
+        deadlineDate: '',
+        deadlinePlan: '',
         memo: document.getElementById('projectMemo').value.trim(),
       };
       const financeData = {
@@ -4959,6 +5037,8 @@ ${MAIL_FOOTER}`,
         created: todayStr(),
         deadlineDate: '',
         deadlinePlan: '',
+        draftDueDate: '',
+        finalDueDate: '',
         memo: p.memo || '',
         revenue: p.revenue || 0,
         targetHours: p.targetHours || 0,
@@ -5990,10 +6070,25 @@ ${MAIL_FOOTER}`,
       const events = {};
       const today = todayStr();
       state.projects.forEach(p => {
-        if (p.deadlineDate) {
-          if (!events[p.deadlineDate]) events[p.deadlineDate] = [];
-          const label = p.deadlinePlan ? `${p.name}（${p.deadlinePlan}）` : p.name;
-          events[p.deadlineDate].push({ label, category: p.category, client: p.client, status: p.status, deadline: true });
+        if (p.draftDueDate) {
+          if (!events[p.draftDueDate]) events[p.draftDueDate] = [];
+          events[p.draftDueDate].push({
+            label: `${p.name}（初稿提出）`,
+            category: p.category,
+            client: p.client,
+            status: p.status,
+            deadline: true,
+          });
+        }
+        if (p.finalDueDate) {
+          if (!events[p.finalDueDate]) events[p.finalDueDate] = [];
+          events[p.finalDueDate].push({
+            label: `${p.name}（最終納品）`,
+            category: p.category,
+            client: p.client,
+            status: p.status,
+            deadline: true,
+          });
         }
       });
       (state.bizTodos || []).forEach(t => {
