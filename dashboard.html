@@ -426,6 +426,47 @@
       letter-spacing: .04em;
       margin-bottom: 4px;
     }
+    .phase-btn.af-contact {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .af-contact-date {
+      font-size: .58rem;
+      opacity: .7;
+    }
+    .phase-btn.af-contact.due {
+      background: var(--red-glow, #fbe9e0);
+      border-color: #e8956a;
+      color: #b4531f;
+      font-weight: 700;
+    }
+    .col-afterfollow .column-header {
+      background: rgba(155,122,208,.12);
+    }
+    .column-empty-hint {
+      text-align: center;
+      color: var(--muted);
+      font-size: .68rem;
+      padding: 18px 10px;
+      opacity: .6;
+      line-height: 1.5;
+    }
+    .af-card {
+      border-left: 3px solid #9b7ad0;
+    }
+    .af-check-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: .78rem;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+    .af-check-line input[type="checkbox"] {
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
     .mail-copy-row {
       display: flex;
       gap: 8px;
@@ -1664,7 +1705,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v82</div>
+        <div class="logo-sub">Business Dashboard · v83</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1746,7 +1787,7 @@
           <div class="cal-legend-item"><div class="cal-legend-dot biz"></div>事業TODO</div>
           <div class="cal-legend-item"><div class="cal-legend-dot task"></div>予定タスク</div>
           <div class="cal-legend-item"><div class="cal-legend-dot subscription"></div>サブスク更新</div>
-          <div class="cal-legend-item"><div class="cal-legend-dot followup"></div>アフターフォロー②</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot followup"></div>アフターフォロー連絡（2週/1月/半年/1年）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--red)"></div>広告開始</div>
           <div class="cal-legend-item"><div class="cal-legend-dot followup"></div>広告運用 MT</div>
           <div class="cal-legend-item"><div class="cal-legend-dot task"></div>レポート作成</div>
@@ -1909,6 +1950,7 @@
           <option value="todo">未着手</option>
           <option value="doing">進行中</option>
           <option value="billing">請求</option>
+          <option value="unpaid">入金未</option>
           <option value="done">完了</option>
         </select>
       </div>
@@ -1931,7 +1973,10 @@
         <textarea id="projectMemo" placeholder="案件メモ（自由記載）"></textarea>
       </div>
       <div class="finance-fields" id="followUpGroup" style="display:none">
-        <div class="finance-fields-title">アフターフォロー（メール宛先）</div>
+        <div class="finance-fields-title">アフターフォロー</div>
+        <div class="form-group">
+          <label class="af-check-line"><input type="checkbox" id="projectAfterFollow"> アフターフォローが必要な案件（「アフターフォロー」列に表示し、納品日から2週間後／1ヶ月後／半年後／1年後に連絡）</label>
+        </div>
         <div class="form-row-2">
           <div class="form-group">
             <label>宛先クリニック名</label>
@@ -2139,8 +2184,20 @@
     const STATUSES = [
       { id: 'todo',    label: '未着手',  colClass: '' },
       { id: 'doing',   label: '進行中',  colClass: '' },
-      { id: 'billing', label: '請求・アフターフォロー', colClass: '' },
+      { id: 'billing', label: '請求',    colClass: '' },
+      { id: 'unpaid',  label: '入金未',  colClass: '' },
       { id: 'done',    label: '完了',    colClass: 'col-done' },
+    ];
+
+    // 表示用の列。afterfollow は案件の実ステータスではなく、
+    // 「アフターフォローが必要な案件」を請求／入金未／完了とは別に重複表示する仮想列。
+    const BOARD_COLUMNS = [
+      { id: 'todo',        label: '未着手',        kind: 'status', colClass: '' },
+      { id: 'doing',       label: '進行中',        kind: 'status', colClass: '' },
+      { id: 'billing',     label: '請求',          kind: 'status', colClass: '' },
+      { id: 'afterfollow', label: 'アフターフォロー', kind: 'afterfollow', colClass: 'col-afterfollow' },
+      { id: 'unpaid',      label: '入金未',        kind: 'status', colClass: '' },
+      { id: 'done',        label: '完了',          kind: 'status', colClass: 'col-done' },
     ];
 
     const DOING_PHASES = ['ヒアリング・構成', '撮影', '制作中', 'クライアントチェック中', '納品済'];
@@ -2282,12 +2339,19 @@
       });
     }
     const BILLING_PHASES = ['作成未', '請求書作成済', '送付済', '入金済'];
+    // メール送付系のアフターフォロー項目（お礼状・サポート案内・実績公開）
     const AFTER_FOLLOW_PHASES = [
       { key: 'thanks', label: '1 お礼状の送付' },
-      { key: 'followup', label: '2 アフターフォロー' },
-      { key: 'supportCoconala', label: '3-1 動画安心サポートのご案内（ココナラ）' },
-      { key: 'supportDirect', label: '3-2 動画安心サポートのご案内（通常）' },
-      { key: 'portfolio', label: '4 実績公開の可否確認' },
+      { key: 'supportCoconala', label: '2-1 動画安心サポートのご案内（ココナラ）' },
+      { key: 'supportDirect', label: '2-2 動画安心サポートのご案内（通常）' },
+      { key: 'portfolio', label: '3 実績公開の可否確認' },
+    ];
+    // 納品日を起点にした時系列の連絡（2週間後 / 1ヶ月後 / 半年後 / 1年後）
+    const AFTER_FOLLOW_CONTACTS = [
+      { key: 'w2', label: '2週間後', kind: 'day',   n: 14 },
+      { key: 'm1', label: '1ヶ月後', kind: 'month', n: 1 },
+      { key: 'm6', label: '半年後',  kind: 'month', n: 6 },
+      { key: 'y1', label: '1年後',   kind: 'month', n: 12 },
     ];
     const SUPPORT_PERIOD_BLOCK = `【動画安心サポート適用期間】
 　　　年　　月　　日 〜 　　　年　　月　　日`;
@@ -2353,7 +2417,7 @@ nARK　緒方 和奈
     }
 
     function ensureDeliveredDate(p) {
-      if (!p.deliveredDate && (p.phase === '納品済' || p.status === 'billing' || p.status === 'done')) {
+      if (!p.deliveredDate && (p.phase === '納品済' || p.status === 'billing' || p.status === 'unpaid' || p.status === 'done')) {
         p.deliveredDate = p.invoiceDate || todayStr();
       }
     }
@@ -2373,6 +2437,61 @@ nARK　緒方 和奈
       return state.projects.filter(p =>
         p.category === 'client' && getFollowUpDueDate(p) === date
       );
+    }
+
+    /* ── アフターフォロー（納品日起点の4連絡） ── */
+    function needsAfterFollow(p) {
+      return !!(p && p.category === 'client' && p.afterFollow);
+    }
+
+    function afterFollowContactDate(p, contact) {
+      if (!p || !p.deliveredDate) return null;
+      return contact.kind === 'day'
+        ? addDaysToDate(p.deliveredDate, contact.n)
+        : addMonthsToDate(p.deliveredDate, contact.n);
+    }
+
+    function getAfterFollowContacts(p) {
+      ensureProjectFinance(p);
+      ensureDeliveredDate(p);
+      if (!p.deliveredDate) return [];
+      const done = p.afterFollowSchedule || {};
+      return AFTER_FOLLOW_CONTACTS.map(c => ({
+        key: c.key,
+        label: c.label,
+        date: afterFollowContactDate(p, c),
+        done: !!done[c.key],
+      }));
+    }
+
+    function hasPendingAfterFollow(p) {
+      if (!needsAfterFollow(p) || !p.deliveredDate) return false;
+      const contacts = getAfterFollowContacts(p);
+      if (!contacts.length) return false;
+      if (contacts.some(c => !c.done)) return true;
+      // 4連絡が全て済んでも、メール送付系（お礼状・サポート案内・実績公開）が残っていれば表示継続
+      const done = p.afterFollowDone || {};
+      return AFTER_FOLLOW_PHASES.some(ph => !done[ph.key]);
+    }
+
+    // アフターフォロー列に重複表示する案件
+    function afterFollowColumnProjects(list) {
+      return (list || state.projects).filter(p => needsAfterFollow(p) && hasPendingAfterFollow(p));
+    }
+
+    // 期日が来ている（＝今日以前で未完了の）連絡を集める
+    function getDueAfterFollowContacts(forDate) {
+      const date = forDate || todayStr();
+      const results = [];
+      state.projects.forEach(p => {
+        if (!needsAfterFollow(p)) return;
+        getAfterFollowContacts(p).forEach(c => {
+          if (!c.done && c.date && c.date <= date) {
+            results.push({ project: p, contact: c });
+          }
+        });
+      });
+      return results;
     }
 
     const STORAGE_KEY = 'nark_dashboard_v4';
@@ -2670,7 +2789,7 @@ nARK　緒方 和奈
       if (p.contractRoute === undefined) p.contractRoute = detectContractRoute(p);
       ensureDeliveredDate(p);
       if (!p.afterFollowDone || typeof p.afterFollowDone !== 'object') {
-        p.afterFollowDone = { thanks: false, followup: false, supportCoconala: false, supportDirect: false, portfolio: false };
+        p.afterFollowDone = { thanks: false, supportCoconala: false, supportDirect: false, portfolio: false };
       } else {
         if (p.afterFollowDone.support) {
           const route = p.contractRoute || detectContractRoute(p);
@@ -2682,8 +2801,23 @@ nARK　緒方 和奈
         if (p.afterFollowDone.supportDirect === undefined) p.afterFollowDone.supportDirect = false;
         if (p.afterFollowDone.portfolio === undefined) p.afterFollowDone.portfolio = false;
         if (p.afterFollowDone.thanks === undefined) p.afterFollowDone.thanks = false;
-        if (p.afterFollowDone.followup === undefined) p.afterFollowDone.followup = false;
       }
+      // アフターフォロー要否（手動フラグ・既定は従来の自動判定）
+      if (p.afterFollow === undefined) p.afterFollow = isAfterFollowEligible(p);
+      // 納品日起点の4連絡（2週間後/1ヶ月後/半年後/1年後）の実施状況
+      if (!p.afterFollowSchedule || typeof p.afterFollowSchedule !== 'object') {
+        p.afterFollowSchedule = { w2: false, m1: false, m6: false, y1: false };
+        // 旧・単一「アフターフォロー②」の実施済みを移行
+        if (p.afterFollowDone && p.afterFollowDone.followup) {
+          if (p.followUpTiming === '1month') p.afterFollowSchedule.m1 = true;
+          else p.afterFollowSchedule.w2 = true;
+        }
+      } else {
+        ['w2', 'm1', 'm6', 'y1'].forEach(k => {
+          if (p.afterFollowSchedule[k] === undefined) p.afterFollowSchedule[k] = false;
+        });
+      }
+      if (p.afterFollowDone && p.afterFollowDone.followup !== undefined) delete p.afterFollowDone.followup;
       if (p.closingDay === undefined) p.closingDay = 25;
       if (p.opsStartDate === undefined) p.opsStartDate = '';
       if (p.prepayPhase === undefined) p.prepayPhase = isAdOpsType(p) ? '作成未' : '';
@@ -2956,12 +3090,17 @@ ${MAIL_FOOTER}`,
     function getFollowMail(step, p) {
       const builders = {
         thanks: buildThanksMail,
-        followup: buildFollowupMail,
         supportCoconala: buildSupportMailCoconala,
         supportDirect: buildSupportMailDirect,
         portfolio: buildPortfolioMail,
       };
+      // 納品日起点の4連絡（2週間後/1ヶ月後/半年後/1年後）はアフターフォローの様子見メール
+      if (AFTER_FOLLOW_CONTACTS.some(c => c.key === step)) return buildFollowupMail(p);
       return (builders[step] || buildThanksMail)(p);
+    }
+
+    function isAfterFollowContactKey(step) {
+      return AFTER_FOLLOW_CONTACTS.some(c => c.key === step);
     }
 
     function migrateState(data) {
@@ -2996,6 +3135,8 @@ ${MAIL_FOOTER}`,
         if (p.editorDraftDays === undefined) p.editorDraftDays = '';
         if (p.editorRequestDate === undefined) p.editorRequestDate = '';
         if (p.status === 'done' && p.category === 'client' && !p.phase) p.phase = '';
+        // 送付済で請求列に残っていた案件は「入金未」列へ移行
+        if (p.status === 'billing' && p.phase === '送付済' && p.type !== 'ad-ops') p.status = 'unpaid';
         ensureProjectFinance(p);
       });
       const existing = new Set(data.projects.map(p => p.folder || p.name));
@@ -3588,7 +3729,7 @@ ${MAIL_FOOTER}`,
     }
 
     function ensureBillingDate(p) {
-      if (p.status !== 'billing' && p.status !== 'done') return;
+      if (p.status !== 'billing' && p.status !== 'unpaid' && p.status !== 'done') return;
       if (isAdOpsType(p)) {
         ensureAdOpsInvoiceDate(p, false);
         return;
@@ -3833,7 +3974,7 @@ ${MAIL_FOOTER}`,
     function renderNotices() {
       const el = document.getElementById('noticeBar');
       if (!el) return;
-      const due = getDueFollowUpProjects();
+      const due = getDueAfterFollowContacts();
       const adOpsClosing = getDueAdOpsClosingProjects();
       const today = todayStr();
       const editorDrafts = state.projects.filter(p =>
@@ -3868,8 +4009,8 @@ ${MAIL_FOOTER}`,
       }
       el.style.display = '';
       el.innerHTML = [
-        ...due.map(p =>
-          `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — 2 アフターフォローの日です（納品 ${esc(p.deliveredDate || '')} から${p.followUpTiming === '1month' ? '1ヶ月' : '2週間'}）</div>`
+        ...due.map(({ project: p, contact: c }) =>
+          `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — アフターフォロー（${esc(c.label)}）の日です（納品 ${esc(p.deliveredDate || '')}）</div>`
         ),
         ...adOpsClosing.map(p =>
           `<div class="notice-bar-inner">📅 <strong>${esc(p.client || p.name)}</strong> — 広告運用の締日です（${esc(formatDateJa(getAdOpsClosingDate(p)))}）→ 請求列へ移動（請求日 ${esc(formatDateJa(getAdOpsInvoiceDate(p)))}）</div>`
@@ -3889,6 +4030,7 @@ ${MAIL_FOOTER}`,
       const todo    = projects.filter(p => p.status === 'todo').length;
       const doing   = projects.filter(p => p.status === 'doing').length;
       const billing = projects.filter(p => p.status === 'billing').length;
+      const unpaid = projects.filter(p => p.status === 'unpaid').length;
       const todayTasks = getTodayTaskEntries().length;
       const openBizTodos = (state.bizTodos || []).filter(t => !t.done).length;
       const ms = getMilestoneStats();
@@ -3898,7 +4040,9 @@ ${MAIL_FOOTER}`,
         <span class="stat-divider"></span>
         <span class="stat-chip highlight">進行中 <strong>${doing}</strong></span>
         <span class="stat-divider"></span>
-        <span class="stat-chip">請求/AF <strong>${billing}</strong></span>
+        <span class="stat-chip">請求 <strong>${billing}</strong></span>
+        <span class="stat-divider"></span>
+        <span class="stat-chip">入金未 <strong>${unpaid}</strong></span>
         <span class="stat-divider"></span>
         <span class="stat-chip highlight">今日のタスク <strong id="todayTaskCount">${todayTasks}</strong></span>
         <span class="stat-divider"></span>
@@ -3996,7 +4140,24 @@ ${MAIL_FOOTER}`,
 
     function renderKanban() {
       const projects = filteredProjects();
-      document.getElementById('kanban').innerHTML = STATUSES.map(s => {
+      document.getElementById('kanban').innerHTML = BOARD_COLUMNS.map(s => {
+        // アフターフォロー列：実ステータスではなく、要フォロー案件を重複表示（ドロップ不可）
+        if (s.kind === 'afterfollow') {
+          const cards = afterFollowColumnProjects(projects);
+          return `
+            <div class="column ${s.colClass}" data-status="${s.id}">
+              <div class="column-header">
+                <span class="column-title">${s.label}</span>
+                <span class="column-count">${cards.length}</span>
+              </div>
+              <div class="column-body${cards.length === 0 ? ' empty' : ''}">
+                ${cards.length === 0
+                  ? '<div class="column-empty-hint">アフターフォローが必要な案件（案件編集でチェック）がここに表示されます</div>'
+                  : cards.map(p => renderAfterFollowCard(p)).join('')}
+              </div>
+            </div>
+          `;
+        }
         let cards = projects.filter(p => p.status === s.id);
         if (s.id === 'doing') cards = sortDoingProjects(cards);
         const emptyMsg = s.id === 'done' ? '' : 'empty';
@@ -4077,7 +4238,7 @@ ${MAIL_FOOTER}`,
       ensureProjectFinance(p);
       const done = p.afterFollowDone || {};
       return `<div class="after-follow-section">
-        <div class="after-follow-label">アフターフォロー</div>
+        <div class="after-follow-label">メール送付</div>
         <div class="phase-btns interactive">${AFTER_FOLLOW_PHASES.map(ph => {
           const isDone = !!done[ph.key];
           return `<button type="button" class="phase-btn${isDone ? ' done' : ''}"
@@ -4086,6 +4247,46 @@ ${MAIL_FOOTER}`,
                     title="クリックでメールアプリを開く">${isDone ? '✓ ' : ''}${ph.label}</button>`;
         }).join('')}</div>
       </div>`;
+    }
+
+    // 納品日起点の4連絡（2週間後/1ヶ月後/半年後/1年後）
+    function renderAfterFollowSchedule(p) {
+      const today = todayStr();
+      const contacts = getAfterFollowContacts(p);
+      if (!contacts.length) return '';
+      return `<div class="after-follow-section">
+        <div class="after-follow-label">連絡（納品日から）</div>
+        <div class="phase-btns interactive">${contacts.map(c => {
+          const due = !c.done && c.date && c.date <= today;
+          const cls = c.done ? ' done' : (due ? ' due' : '');
+          const dateStr = c.date ? formatDateJa(c.date) : '';
+          return `<button type="button" class="phase-btn af-contact${cls}"
+                    data-follow-mail="1" data-follow-id="${p.id}" data-follow-step="${c.key}"
+                    onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
+                    title="クリックでメールアプリを開き、連絡済みにします">${c.done ? '✓ ' : ''}${c.label}${dateStr ? `<span class="af-contact-date">${dateStr}</span>` : ''}</button>`;
+        }).join('')}</div>
+      </div>`;
+    }
+
+    // アフターフォロー列に重複表示する簡易カード（ドラッグ不可）
+    function renderAfterFollowCard(p) {
+      const client = p.client ? `<span>${esc(p.client)}</span>` : '';
+      const delivered = p.deliveredDate ? `<div class="card-deadline">納品 ${esc(formatDateJa(p.deliveredDate))}</div>` : '';
+      const statusLabel = (STATUSES.find(s => s.id === p.status) || {}).label || '';
+      return `
+        <div class="card af-card" data-id="${p.id}">
+          <div class="card-header">
+            <div class="card-name">${esc(p.name)}</div>
+            <div class="card-actions has-edit">
+              <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
+            </div>
+          </div>
+          <div class="card-meta">${client}${statusLabel ? `<span class="card-tag">${esc(statusLabel)}</span>` : ''}</div>
+          ${delivered}
+          ${renderAfterFollowSchedule(p)}
+          ${renderAfterFollowButtons(p)}
+        </div>
+      `;
     }
 
     function renderPhaseButtons(p) {
@@ -4118,7 +4319,7 @@ ${MAIL_FOOTER}`,
                   onclick="event.stopPropagation();setDoingPhase('${p.id}','${ph}')">${ph}</button>
         `).join('')}</div>`;
       }
-      if (p.status === 'billing') {
+      if (p.status === 'billing' || p.status === 'unpaid') {
         if (isAdOpsType(p)) {
           return `<div class="phase-btns-stack">
             <div class="phase-row-label">月次締め</div>
@@ -4131,15 +4332,10 @@ ${MAIL_FOOTER}`,
           </div>`;
         }
         const billingPhases = getBillingPhases(p);
-        const billing = `<div class="phase-btns">${billingPhases.map(ph => `
+        return `<div class="phase-btns">${billingPhases.map(ph => `
           <button class="phase-btn${p.phase === ph ? ' active' : ''}"
                     onclick="event.stopPropagation();setBillingPhase('${p.id}','${ph}')">${ph}</button>
         `).join('')}</div>`;
-        const afterFollow = isAfterFollowEligible(p) ? renderAfterFollowButtons(p) : '';
-        return billing + afterFollow;
-      }
-      if (p.status === 'done' && isAfterFollowEligible(p)) {
-        return renderAfterFollowButtons(p);
       }
       return '';
     }
@@ -4221,7 +4417,7 @@ ${MAIL_FOOTER}`,
           ${hours}h${target ? ' / 目標' + target + 'h' : ''} · 変動費 ${formatYen(projectVariableTotal(p))}
         </div>`;
       }
-      if (p.status === 'doing' || p.status === 'billing') {
+      if (p.status === 'doing' || p.status === 'billing' || p.status === 'unpaid') {
         const hourly = projectHourlyProfit(p);
         const hourlyStr = hourly !== null ? formatYen(Math.round(hourly)) + '/h' : '—';
         const timeStr = `${hours}h / 目標${target}h`;
@@ -4280,7 +4476,7 @@ ${MAIL_FOOTER}`,
         p.phase = '作成未';
         ensureBillingDate(p);
         saveState();
-        toast(`「${p.name}」→ 請求・アフターフォロー`);
+        toast(`「${p.name}」→ 請求`);
         return;
       }
       if (phase === '広告開始' && isAdOpsType(p)) {
@@ -4336,7 +4532,9 @@ ${MAIL_FOOTER}`,
         snsStatus: '',
         folder: '',
         deliveredDate: '',
-        afterFollowDone: { thanks: false, followup: false, supportCoconala: false, supportDirect: false, portfolio: false },
+        afterFollow: false,
+        afterFollowDone: { thanks: false, supportCoconala: false, supportDirect: false, portfolio: false },
+        afterFollowSchedule: { w2: false, m1: false, m6: false, y1: false },
       };
       p.status = 'done';
       p.phase = '';
@@ -4380,6 +4578,15 @@ ${MAIL_FOOTER}`,
         saveState();
         toast(`「${p.name}」→ 完了`);
         return;
+      }
+      if (phase === '送付済') {
+        p.status = 'unpaid';
+        saveState();
+        toast(`「${p.name}」→ 入金未`);
+        return;
+      }
+      if (phase === '作成未' || phase === '請求書作成済') {
+        p.status = 'billing';
       }
       saveState();
       toast(`「${p.name}」→ ${phase}`);
@@ -4442,9 +4649,18 @@ ${MAIL_FOOTER}`,
       launchMailto(url);
 
       setTimeout(function() {
-        p.afterFollowDone[step] = true;
+        let label;
+        if (isAfterFollowContactKey(step)) {
+          if (!p.afterFollowSchedule || typeof p.afterFollowSchedule !== 'object') {
+            p.afterFollowSchedule = { w2: false, m1: false, m6: false, y1: false };
+          }
+          p.afterFollowSchedule[step] = true;
+          label = 'アフターフォロー（' + (AFTER_FOLLOW_CONTACTS.find(x => x.key === step)?.label || '') + '）';
+        } else {
+          p.afterFollowDone[step] = true;
+          label = AFTER_FOLLOW_PHASES.find(x => x.key === step)?.label || 'メール';
+        }
         saveState();
-        const label = AFTER_FOLLOW_PHASES.find(x => x.key === step)?.label || 'メール';
         if (usedClipboardFallback) {
           toast(`「${label}」→ 件名のみ反映。本文はコピー済みなので ⌘V で貼り付けてください`);
         } else {
@@ -4471,6 +4687,7 @@ ${MAIL_FOOTER}`,
     function entryDate(entry) {
       if (entry.kind === 'editorDraft') return entry.date || entry.item.editorDraftDueDate || '';
       if (entry.kind === 'projectDeadline') return entry.date || '';
+      if (entry.kind === 'followUp') return entry.contact ? (entry.contact.date || '') : '';
       return entry.item.date || entry.item.dueDate || '';
     }
 
@@ -4484,8 +4701,8 @@ ${MAIL_FOOTER}`,
       (state.bizTodos || []).filter(t => !t.done && t.dueDate && t.dueDate <= today).forEach(t => {
         entries.push({ kind: 'bizTodo', item: t });
       });
-      getDueFollowUpProjects(today).forEach(p => {
-        entries.push({ kind: 'followUp', item: p });
+      getDueAfterFollowContacts(today).forEach(({ project, contact }) => {
+        entries.push({ kind: 'followUp', item: project, contact });
       });
       getDueAdOpsClosingProjects(today).forEach(p => {
         entries.push({ kind: 'adOpsClosing', item: p });
@@ -4582,14 +4799,16 @@ ${MAIL_FOOTER}`,
         el.innerHTML = `<div class="task-empty">今日のタスクはありません（案件タスクからドラッグ、または上で追加）</div>`;
         return;
       }
-      el.innerHTML = entries.map(({ kind, item: t, milestone, shifted, label, date, deadlineKind }) => {
+      el.innerHTML = entries.map(({ kind, item: t, milestone, shifted, label, date, deadlineKind, contact }) => {
         if (kind === 'followUp') {
-          const timing = t.followUpTiming === '1month' ? '1ヶ月後' : '2週間後';
+          const cLabel = contact ? contact.label : 'アフターフォロー';
+          const cKey = contact ? contact.key : 'w2';
+          const overdue = contact && contact.date && contact.date < todayStr();
           return `
-        <div class="task-item task-item-reminder">
-          <span class="task-category 営業">AF②</span>
-          <span class="task-text">${esc(t.client || t.name)} — アフターフォロー（${timing}）</span>
-          <button type="button" class="btn btn-primary" onclick="openFollowMail('${t.id}','followup')">メールを開く</button>
+        <div class="task-item task-item-reminder${overdue ? ' overdue' : ''}">
+          <span class="task-category 営業">AF</span>
+          <span class="task-text">${esc(t.client || t.name)} — アフターフォロー（${esc(cLabel)}）</span>
+          <button type="button" class="btn btn-primary" onclick="openFollowMail('${t.id}','${cKey}')">メールを開く</button>
         </div>`;
         }
         if (kind === 'adOpsClosing') {
@@ -4879,6 +5098,7 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectMailDirector').value = p.mailDirector || '';
         document.getElementById('projectContractRoute').value = p.contractRoute || detectContractRoute(p);
         document.getElementById('projectFollowTiming').value = p.followUpTiming || '2week';
+        document.getElementById('projectAfterFollow').checked = needsAfterFollow(p);
         document.getElementById('projectOpsStartDate').value = p.opsStartDate || '';
         document.getElementById('projectOpsMonthDisplay').value = isAdOpsType(p)
           ? formatOpsMonthLabel(getOpsMonth(p)) : '';
@@ -4904,6 +5124,7 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectMailDirector').value = '';
         document.getElementById('projectContractRoute').value = 'directSupport';
         document.getElementById('projectFollowTiming').value = '2week';
+        document.getElementById('projectAfterFollow').checked = true;
         document.getElementById('projectOpsStartDate').value = '';
         document.getElementById('projectOpsMonthDisplay').value = '';
         updateAdOpsClosingPreview();
@@ -4940,7 +5161,7 @@ ${MAIL_FOOTER}`,
     }
 
     function statusToSnsStatus(status) {
-      return { todo: 'draft', doing: 'scheduled', billing: 'scheduled', done: 'published' }[status] || 'draft';
+      return { todo: 'draft', doing: 'scheduled', billing: 'scheduled', unpaid: 'scheduled', done: 'published' }[status] || 'draft';
     }
 
     function saveProject() {
@@ -4983,6 +5204,7 @@ ${MAIL_FOOTER}`,
         data.followUpTiming = isMechauruRoute(data.contractRoute)
           ? 'none'
           : document.getElementById('projectFollowTiming').value;
+        data.afterFollow = document.getElementById('projectAfterFollow').checked;
         if (isWorkflowEligibleType(data.type)) {
           data.workflowKey = document.getElementById('projectWorkflow').value;
         } else {
@@ -4991,6 +5213,7 @@ ${MAIL_FOOTER}`,
         if (data.type === 'ad-ops') {
           data.opsStartDate = document.getElementById('projectOpsStartDate').value;
           data.followUpTiming = 'none';
+          data.afterFollow = false;
         }
       }
       if (category === 'sns') {
@@ -5016,17 +5239,19 @@ ${MAIL_FOOTER}`,
           if (data.status === 'doing' && !p.phase) p.phase = getDefaultDoingPhase(p);
           if (data.status === 'doing' && data.type === 'ad-ops' && !p.prepayPhase) p.prepayPhase = '作成未';
           if (data.status === 'billing' && !p.phase) p.phase = data.type === 'ad-ops' ? '' : '作成未';
+          if (data.status === 'unpaid') p.phase = '送付済';
           if (data.status === 'done') p.phase = '';
           if (data.status === 'todo') { p.phase = ''; p.prepayPhase = ''; }
         }
-        if (data.status === 'billing' || data.status === 'done') {
+        if (data.status === 'billing' || data.status === 'unpaid' || data.status === 'done') {
           ensureBillingDate(p);
           if (!isAdOpsType(p)) ensureDeliveredDate(p);
         }
         toast(category === 'sns' ? '自社事業整備を更新しました' : '案件を更新しました');
       } else {
         const phase = data.status === 'doing' ? getDefaultDoingPhase({ ...data, category })
-          : data.status === 'billing' ? (data.type === 'ad-ops' ? '' : '作成未') : '';
+          : data.status === 'billing' ? (data.type === 'ad-ops' ? '' : '作成未')
+          : data.status === 'unpaid' ? '送付済' : '';
         const newProject = {
           id: uid(), ...data, phase, created: todayStr(),
           editorOutsource: false, editorDraftDueDate: '', editorDraftDays: '', editorRequestDate: '',
@@ -5037,7 +5262,7 @@ ${MAIL_FOOTER}`,
           newProject.opsBaseName = getOpsBaseName(newProject);
           if (newProject.status === 'doing') newProject.prepayPhase = '作成未';
         }
-        if (newProject.status === 'billing' || newProject.status === 'done') {
+        if (newProject.status === 'billing' || newProject.status === 'unpaid' || newProject.status === 'done') {
           ensureBillingDate(newProject);
           if (!isAdOpsType(newProject)) ensureDeliveredDate(newProject);
         }
@@ -5088,7 +5313,9 @@ ${MAIL_FOOTER}`,
         snsStatus: p.category === 'sns' ? 'draft' : '',
         folder: '',
         deliveredDate: '',
-        afterFollowDone: { thanks: false, followup: false, supportCoconala: false, supportDirect: false, portfolio: false },
+        afterFollow: p.afterFollow !== undefined ? p.afterFollow : isAfterFollowEligible(p),
+        afterFollowDone: { thanks: false, supportCoconala: false, supportDirect: false, portfolio: false },
+        afterFollowSchedule: { w2: false, m1: false, m6: false, y1: false },
         editorOutsource: false,
         editorDraftDueDate: '',
         editorDraftDays: '',
@@ -5138,13 +5365,16 @@ ${MAIL_FOOTER}`,
       e.preventDefault();
       e.currentTarget.classList.remove('drag-over');
       if (!draggedId) return;
+      // アフターフォローは自動表示の仮想列なのでドロップ先にできない
+      if (status === 'afterfollow') return;
       const p = state.projects.find(x => x.id === draggedId);
       if (p && p.status !== status) {
         p.status = status;
         if (status === 'doing' && !p.phase) p.phase = getDefaultDoingPhase(p);
         if (status === 'doing' && isAdOpsType(p) && !p.prepayPhase) p.prepayPhase = '作成未';
         if (status === 'billing' && !p.phase) p.phase = isAdOpsType(p) ? '' : '作成未';
-        if (status === 'billing' || status === 'done') {
+        if (status === 'unpaid') p.phase = '送付済';
+        if (status === 'billing' || status === 'unpaid' || status === 'done') {
           ensureBillingDate(p);
           if (!isAdOpsType(p)) ensureDeliveredDate(p);
         }
@@ -5152,7 +5382,7 @@ ${MAIL_FOOTER}`,
         if (status === 'done' || status === 'todo') p.phase = '';
         if (p.category === 'sns') p.snsStatus = statusToSnsStatus(status);
         saveState();
-        const label = STATUSES.find(s => s.id === status).label;
+        const label = (STATUSES.find(s => s.id === status) || {}).label || status;
         toast(`「${p.name}」→ ${label}`);
       }
     }
@@ -6168,15 +6398,16 @@ ${MAIL_FOOTER}`,
         });
       });
       state.projects.forEach(p => {
-        if (p.category !== 'client') return;
-        const due = getFollowUpDueDate(p);
-        if (!due) return;
-        if (!events[due]) events[due] = [];
-        events[due].push({
-          label: `AF②: ${p.client || p.name}`,
-          category: 'follow-up',
-          client: p.deliveredDate ? `納品 ${p.deliveredDate}` : '',
-          status: '',
+        if (!needsAfterFollow(p)) return;
+        getAfterFollowContacts(p).forEach(c => {
+          if (c.done || !c.date) return;
+          if (!events[c.date]) events[c.date] = [];
+          events[c.date].push({
+            label: `AF ${c.label}: ${p.client || p.name}`,
+            category: 'follow-up',
+            client: p.deliveredDate ? `納品 ${p.deliveredDate}` : '',
+            status: '',
+          });
         });
       });
       state.projects.forEach(p => {
