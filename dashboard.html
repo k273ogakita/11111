@@ -392,6 +392,26 @@
       border-color: #43a047;
       color: #fff;
     }
+    .phase-btn.deliver-with {
+      border-color: #9b7ad0;
+      color: #6b3fa0;
+      font-weight: 700;
+    }
+    .phase-btn.deliver-with:hover {
+      background: #9b7ad0;
+      border-color: #9b7ad0;
+      color: #fff;
+    }
+    .phase-btn.deliver-without {
+      border-color: #b0a898;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .phase-btn.deliver-without:hover {
+      background: #8c8278;
+      border-color: #8c8278;
+      color: #fff;
+    }
     .phase-btn.continue {
       border-color: #7a9fd4;
       color: #4a6fa5;
@@ -1705,7 +1725,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v83</div>
+        <div class="logo-sub">Business Dashboard · v84</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2339,12 +2359,12 @@
       });
     }
     const BILLING_PHASES = ['作成未', '請求書作成済', '送付済', '入金済'];
-    // メール送付系のアフターフォロー項目（お礼状・サポート案内・実績公開）
+    // メール送付系のアフターフォロー項目（サポート案内・お礼状・実績公開）
     const AFTER_FOLLOW_PHASES = [
-      { key: 'thanks', label: '1 お礼状の送付' },
-      { key: 'supportCoconala', label: '2-1 動画安心サポートのご案内（ココナラ）' },
-      { key: 'supportDirect', label: '2-2 動画安心サポートのご案内（通常）' },
-      { key: 'portfolio', label: '3 実績公開の可否確認' },
+      { key: 'supportCoconala', label: '動画安心サポートのご案内（ココナラ）' },
+      { key: 'supportDirect', label: '動画安心サポートのご案内（通常）' },
+      { key: 'thanks', label: 'お礼状の送付' },
+      { key: 'portfolio', label: '実績公開の可否確認' },
     ];
     // 納品日を起点にした時系列の連絡（2週間後 / 1ヶ月後 / 半年後 / 1年後）
     const AFTER_FOLLOW_CONTACTS = [
@@ -2467,11 +2487,7 @@ nARK　緒方 和奈
     function hasPendingAfterFollow(p) {
       if (!needsAfterFollow(p) || !p.deliveredDate) return false;
       const contacts = getAfterFollowContacts(p);
-      if (!contacts.length) return false;
-      if (contacts.some(c => !c.done)) return true;
-      // 4連絡が全て済んでも、メール送付系（お礼状・サポート案内・実績公開）が残っていれば表示継続
-      const done = p.afterFollowDone || {};
-      return AFTER_FOLLOW_PHASES.some(ph => !done[ph.key]);
+      return contacts.length > 0 && contacts.some(c => !c.done);
     }
 
     // アフターフォロー列に重複表示する案件
@@ -2871,6 +2887,12 @@ nARK　緒方 和奈
     function isAfterFollowEligible(p) {
       if (p.contractRoute === 'mechauru') return false;
       return p.category === 'client' && (p.type === 'explainer-video' || p.type === 'video' || p.type === 'both');
+    }
+
+    // 説明動画（クライアント・アニメーション説明動画）だけ、進行中カードに
+    // アフターフォロー関連メールボタンを表示する
+    function isExplainerVideoProject(p) {
+      return p && p.category === 'client' && p.type === 'explainer-video' && p.contractRoute !== 'mechauru';
     }
 
     function isMechauruRoute(route) {
@@ -4234,18 +4256,30 @@ ${MAIL_FOOTER}`,
       return lines.map(l => `<div class="card-deadline">${esc(l.text)}</div>`).join('');
     }
 
-    function renderAfterFollowButtons(p) {
+    function followMailButton(p, key) {
+      const ph = AFTER_FOLLOW_PHASES.find(x => x.key === key);
+      if (!ph) return '';
+      const isDone = !!(p.afterFollowDone && p.afterFollowDone[key]);
+      return `<button type="button" class="phase-btn${isDone ? ' done' : ''}"
+                data-follow-mail="1" data-follow-id="${p.id}" data-follow-step="${ph.key}"
+                onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
+                title="クリックでメールアプリを開く">${isDone ? '✓ ' : ''}${ph.label}</button>`;
+    }
+
+    // 進行中の説明動画カードに出すアフターフォロー用メールボタン
+    // （クライアントチェック中〜納品の頃に案内・お礼状・実績確認を送れるように）
+    function renderDoingAfterFollowButtons(p) {
       ensureProjectFinance(p);
-      const done = p.afterFollowDone || {};
       return `<div class="after-follow-section">
-        <div class="after-follow-label">メール送付</div>
-        <div class="phase-btns interactive">${AFTER_FOLLOW_PHASES.map(ph => {
-          const isDone = !!done[ph.key];
-          return `<button type="button" class="phase-btn${isDone ? ' done' : ''}"
-                    data-follow-mail="1" data-follow-id="${p.id}" data-follow-step="${ph.key}"
-                    onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
-                    title="クリックでメールアプリを開く">${isDone ? '✓ ' : ''}${ph.label}</button>`;
-        }).join('')}</div>
+        <div class="after-follow-label">年間サポートプラスのご案内</div>
+        <div class="phase-btns interactive">
+          ${followMailButton(p, 'supportCoconala')}
+          ${followMailButton(p, 'supportDirect')}
+        </div>
+        <div class="phase-btns interactive">
+          ${followMailButton(p, 'thanks')}
+          ${followMailButton(p, 'portfolio')}
+        </div>
       </div>`;
     }
 
@@ -4284,7 +4318,6 @@ ${MAIL_FOOTER}`,
           <div class="card-meta">${client}${statusLabel ? `<span class="card-tag">${esc(statusLabel)}</span>` : ''}</div>
           ${delivered}
           ${renderAfterFollowSchedule(p)}
-          ${renderAfterFollowButtons(p)}
         </div>
       `;
     }
@@ -4314,10 +4347,21 @@ ${MAIL_FOOTER}`,
           </div>`;
         }
         const phases = getDoingPhases(p);
-        return `<div class="phase-btns">${phases.map(ph => `
-          <button class="phase-btn${p.phase === ph ? ' active' : ''}"
-                  onclick="event.stopPropagation();setDoingPhase('${p.id}','${ph}')">${ph}</button>
-        `).join('')}</div>`;
+        const eligible = isAfterFollowEligible(p);
+        const phaseRow = `<div class="phase-btns">${phases.map(ph => {
+          // アフターフォロー対象は「納品済」を「納品（アフターサポート有／なし）」の2ボタンに分割
+          if (ph === '納品済' && eligible) {
+            return `<button class="phase-btn deliver-with"
+                      onclick="event.stopPropagation();deliverProject('${p.id}',true)">納品（アフターサポート有）</button>
+              <button class="phase-btn deliver-without"
+                      onclick="event.stopPropagation();deliverProject('${p.id}',false)">納品（アフターサポートなし）</button>`;
+          }
+          return `<button class="phase-btn${p.phase === ph ? ' active' : ''}"
+                  onclick="event.stopPropagation();setDoingPhase('${p.id}','${ph}')">${ph}</button>`;
+        }).join('')}</div>`;
+        // 説明動画は進行中カードにアフターフォロー用メールボタンを表示（後から有りになる場合に備える）
+        const followMails = isExplainerVideoProject(p) ? renderDoingAfterFollowButtons(p) : '';
+        return phaseRow + followMails;
       }
       if (p.status === 'billing' || p.status === 'unpaid') {
         if (isAdOpsType(p)) {
@@ -4490,6 +4534,23 @@ ${MAIL_FOOTER}`,
       saveState();
       toast(`「${p.name}」→ ${phase}`);
     }
+
+    // 納品（アフターサポート有／なし）— 請求列へ移動しつつアフターフォロー要否を確定
+    function deliverProject(id, withSupport) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p) return;
+      if (!p.deliveredDate) p.deliveredDate = todayStr();
+      p.afterFollow = !!withSupport;
+      p.status = 'billing';
+      p.phase = '作成未';
+      ensureBillingDate(p);
+      if (p.category === 'sns') p.snsStatus = 'scheduled';
+      saveState();
+      toast(withSupport
+        ? `「${p.name}」→ 請求（アフターサポート有・アフターフォローへ）`
+        : `「${p.name}」→ 請求（アフターサポートなし）`);
+    }
+    window.deliverProject = deliverProject;
 
     function continueAdOpsProject(id) {
       const p = state.projects.find(x => x.id === id);
