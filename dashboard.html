@@ -1725,7 +1725,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v84</div>
+        <div class="logo-sub">Business Dashboard · v85</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4260,9 +4260,10 @@ ${MAIL_FOOTER}`,
       const ph = AFTER_FOLLOW_PHASES.find(x => x.key === key);
       if (!ph) return '';
       const isDone = !!(p.afterFollowDone && p.afterFollowDone[key]);
+      // onclick で直接メール起動しつつ伝播を止め、カードのチェックリストが開かないようにする
       return `<button type="button" class="phase-btn${isDone ? ' done' : ''}"
-                data-follow-mail="1" data-follow-id="${p.id}" data-follow-step="${ph.key}"
                 onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
+                onclick="event.stopPropagation();openFollowMail('${p.id}','${ph.key}')"
                 title="クリックでメールアプリを開く">${isDone ? '✓ ' : ''}${ph.label}</button>`;
     }
 
@@ -4271,14 +4272,14 @@ ${MAIL_FOOTER}`,
     function renderDoingAfterFollowButtons(p) {
       ensureProjectFinance(p);
       return `<div class="after-follow-section">
+        <div class="phase-btns interactive">
+          ${followMailButton(p, 'thanks')}
+          ${followMailButton(p, 'portfolio')}
+        </div>
         <div class="after-follow-label">年間サポートプラスのご案内</div>
         <div class="phase-btns interactive">
           ${followMailButton(p, 'supportCoconala')}
           ${followMailButton(p, 'supportDirect')}
-        </div>
-        <div class="phase-btns interactive">
-          ${followMailButton(p, 'thanks')}
-          ${followMailButton(p, 'portfolio')}
         </div>
       </div>`;
     }
