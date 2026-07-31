@@ -1725,7 +1725,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v87</div>
+        <div class="logo-sub">Business Dashboard · v88</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -6159,7 +6159,7 @@ ${MAIL_FOOTER}`,
           }).join('')}
           <div class="checklist-add-row">
             <input type="text" id="customStepInput" class="checklist-add-input" placeholder="この案件だけの作業を入力"
-                   onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomStep();}">
+                   onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();addCustomStep();}">
             <select id="customStepTag" class="checklist-add-tag">
               <option value="編集">編集</option>
               <option value="企画">企画</option>
