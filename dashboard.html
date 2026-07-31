@@ -1725,7 +1725,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v86</div>
+        <div class="logo-sub">Business Dashboard · v87</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4387,9 +4387,9 @@ ${MAIL_FOOTER}`,
           // アフターフォロー対象は「納品済」を「納品（アフターサポート有／なし）」の2ボタンに分割
           if (ph === '納品済' && eligible) {
             return `<button class="phase-btn deliver-with"
-                      onclick="event.stopPropagation();deliverProject('${p.id}',true)">納品（アフターサポート有）</button>
+                      onclick="event.stopPropagation();deliverProject('${p.id}',true)">納品（年間契約）</button>
               <button class="phase-btn deliver-without"
-                      onclick="event.stopPropagation();deliverProject('${p.id}',false)">納品（アフターサポートなし）</button>`;
+                      onclick="event.stopPropagation();deliverProject('${p.id}',false)">納品</button>`;
           }
           return `<button class="phase-btn${p.phase === ph ? ' active' : ''}"
                   onclick="event.stopPropagation();setDoingPhase('${p.id}','${ph}')">${ph}</button>`;
