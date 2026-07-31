@@ -1725,7 +1725,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v88</div>
+        <div class="logo-sub">Business Dashboard · v89</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -5105,7 +5105,7 @@ ${MAIL_FOOTER}`,
       div.dataset.timeId = id;
       div.innerHTML = `
         <input type="date" class="time-date" value="${todayStr()}">
-        <input type="number" class="time-hours" min="0.5" step="0.5" value="1">
+        <input type="number" class="time-hours" min="0" step="0.5" value="0">
         <input type="text" class="time-note" value="${attr(note || '')}" placeholder="メモ（任意）">
         <button type="button" class="row-del-btn" onclick="removeTimeLogRow('${id}')">×</button>
       `;
@@ -5244,7 +5244,7 @@ ${MAIL_FOOTER}`,
     function openProjectTimeLog(id) {
       const p = state.projects.find(x => x.id === id);
       if (!p || p.category === 'sns') return;
-      openProjectModal(id, { focusTimeLog: true, timeLogNote: p.phase || '' });
+      openProjectModal(id, { focusTimeLog: true, timeLogNote: '' });
     }
     window.openProjectTimeLog = openProjectTimeLog;
 
