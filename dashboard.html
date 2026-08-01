@@ -1725,7 +1725,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v89</div>
+        <div class="logo-sub">Business Dashboard · v90</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1841,10 +1841,9 @@
           <option value="event">イベント・現場</option>
           <option value="remote">在宅ワーク</option>
         </select>
-        <input type="text" id="taskInputTop" placeholder="今日やること／予定を入力" autocomplete="off"
-               onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();addTask();}">
+        <input type="text" id="taskInputTop" placeholder="今日やること／予定を入力" autocomplete="off">
       </div>
-      <div class="task-add-hint">空欄なら今日のタスクに追加。予定日を選ぶとカレンダーに入り、その日になるとここに出ます。完了しなかったものは翌日以降も「未完了」としてここに残ります。「イベント・現場」（撮影・勉強会・打ち合わせなど）はカレンダーで目立つ表示になります。<br>下の「案件タスク」からドラッグして今日のタスクに移せます。予定日はカレンダー上でもドラッグでずらせます。</div>
+      <div class="task-add-hint">「追加」ボタンで登録（Enterでは登録しません）。空欄なら今日のタスクに追加。予定日を選ぶとカレンダーに入り、その日になるとここに出ます。完了しなかったものは翌日以降も「未完了」としてここに残ります。「イベント・現場」（撮影・勉強会・打ち合わせなど）はカレンダーで目立つ表示になります。<br>下の「案件タスク」からドラッグして今日のタスクに移せます。予定日はカレンダー上でもドラッグでずらせます。</div>
       <div class="tasks-panel">
         <div class="task-list" id="taskList"
              ondragover="onTaskListDragOver(event)" ondragleave="onTaskListDragLeave(event)" ondrop="onTaskListDrop(event,'today')"></div>
@@ -1858,10 +1857,9 @@
       </div>
       <div class="task-add-row">
         <button class="btn btn-primary task-add-btn" type="button" onclick="addProjectTask()">追加</button>
-        <input type="text" id="projectTaskInput" placeholder="案件のタスク（いつやるかは後で）を入力" autocomplete="off"
-               onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();addProjectTask();}">
+        <input type="text" id="projectTaskInput" placeholder="案件のタスク（いつやるかは後で）を入力" autocomplete="off">
       </div>
-      <div class="task-add-hint">日付なしのタスク置き場。ドラッグで「今日のタスク」へ移動、日付欄で予定日を設定するとカレンダーに予定として入ります。</div>
+      <div class="task-add-hint">「追加」ボタンで登録（Enterでは登録しません）。日付なしのタスク置き場。ドラッグで「今日のタスク」へ移動、日付欄で予定日を設定するとカレンダーに予定として入ります。</div>
       <div class="tasks-panel">
         <div class="task-list" id="projectTaskList"
              ondragover="onTaskListDragOver(event)" ondragleave="onTaskListDragLeave(event)" ondrop="onTaskListDrop(event,'backlog')"></div>
@@ -6158,8 +6156,7 @@ ${MAIL_FOOTER}`,
             </div>`;
           }).join('')}
           <div class="checklist-add-row">
-            <input type="text" id="customStepInput" class="checklist-add-input" placeholder="この案件だけの作業を入力"
-                   onkeydown="if(event.key==='Enter'&&!event.isComposing&&event.keyCode!==229){event.preventDefault();addCustomStep();}">
+            <input type="text" id="customStepInput" class="checklist-add-input" placeholder="この案件だけの作業を入力（追加ボタンで登録）">
             <select id="customStepTag" class="checklist-add-tag">
               <option value="編集">編集</option>
               <option value="企画">企画</option>
