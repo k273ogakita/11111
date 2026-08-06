@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment_retry.outputs.page_url || steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       # リポジトリ全体（SNSメディア等）は上げず、ダッシュボードだけ公開する
@@ -36,5 +36,20 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+      # 直前デプロイの取消直後は競合しやすいので少し待ってから公開。失敗時は1回リトライ。
+      - name: Wait for previous deployment lock
+        run: sleep 30
       - id: deployment
+        continue-on-error: true
         uses: actions/deploy-pages@v4
+      - name: Retry deploy if needed
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 45
+      - id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+      - name: Ensure deployment succeeded
+        if: always() && steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome != 'success'
+        run: |
+          echo "GitHub Pages deploy failed"
+          exit 1
