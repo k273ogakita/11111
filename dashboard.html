@@ -850,10 +850,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 14px;
       padding: 14px 18px;
       border-bottom: 1px solid var(--border);
     }
-    .calendar-nav-title { font-size: .95rem; font-weight: 700; }
+    .calendar-nav-title { font-size: .95rem; font-weight: 700; min-width: 10em; text-align: center; }
     .calendar-nav-btn {
       background: none;
       border: 1px solid var(--border);
@@ -866,6 +867,25 @@
       transition: all .15s;
     }
     .calendar-nav-btn:hover { border-color: var(--red); color: var(--red); }
+    .calendar-nav-btn:disabled {
+      opacity: .35;
+      cursor: default;
+      pointer-events: none;
+    }
+    .calendar-nav-today {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: .72rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--font);
+      transition: all .15s;
+    }
+    .calendar-nav-today:hover { border-color: var(--red); color: var(--red); }
+    .calendar-nav-today[hidden] { display: none; }
     .calendar-month-label {
       padding: 10px 18px 6px;
       font-size: .78rem;
@@ -1730,7 +1750,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v93</div>
+        <div class="logo-sub">Business Dashboard · v94</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1800,7 +1820,10 @@
       </div>
       <div class="calendar-wrap">
         <div class="calendar-nav">
+          <button type="button" class="calendar-nav-btn" id="calPrevBtn" onclick="shiftCalendar(-1)" aria-label="前の月">‹</button>
           <div class="calendar-nav-title" id="calTitle"></div>
+          <button type="button" class="calendar-nav-btn" id="calNextBtn" onclick="shiftCalendar(1)" aria-label="次の月">›</button>
+          <button type="button" class="calendar-nav-today" id="calTodayBtn" hidden onclick="resetCalendar()">今月</button>
         </div>
         <div id="calGrid"></div>
         <div class="cal-legend">
@@ -6489,17 +6512,41 @@ ${MAIL_FOOTER}`,
       return html;
     }
 
+    let calOffset = 0; // 0＝今月＋来月。+1で1ヶ月先へずらす
+
     function getCalendarDisplayMonths() {
       const now = new Date();
-      const y0 = now.getFullYear();
-      const m0 = now.getMonth();
-      const m1 = (m0 + 1) % 12;
-      const y1 = m0 === 11 ? y0 + 1 : y0;
+      const base = new Date(now.getFullYear(), now.getMonth() + calOffset, 1);
+      const y0 = base.getFullYear();
+      const m0 = base.getMonth();
+      const next = new Date(y0, m0 + 1, 1);
+      const y1 = next.getFullYear();
+      const m1 = next.getMonth();
+      const curY = now.getFullYear();
+      const curM = now.getMonth();
+      const labelFor = (y, m) => {
+        if (y === curY && m === curM) return `${m + 1}月（今月）`;
+        if (y === curY && m === curM + 1) return `${m + 1}月（来月）`;
+        if (curM === 11 && y === curY + 1 && m === 0) return `${m + 1}月（来月）`;
+        return `${m + 1}月`;
+      };
       return [
-        { year: y0, month: m0, label: `${m0 + 1}月（今月）` },
-        { year: y1, month: m1, label: `${m1 + 1}月（来月）` },
+        { year: y0, month: m0, label: labelFor(y0, m0) },
+        { year: y1, month: m1, label: labelFor(y1, m1) },
       ];
     }
+
+    function shiftCalendar(delta) {
+      calOffset += delta;
+      renderCalendar();
+    }
+    window.shiftCalendar = shiftCalendar;
+
+    function resetCalendar() {
+      calOffset = 0;
+      renderCalendar();
+    }
+    window.resetCalendar = resetCalendar;
 
     function getCalendarEvents() {
       const events = {};
@@ -6631,6 +6678,8 @@ ${MAIL_FOOTER}`,
       const months = getCalendarDisplayMonths();
       document.getElementById('calTitle').textContent =
         `${months[0].year}年${months[0].month + 1}月 · ${months[1].month + 1}月`;
+      const todayBtn = document.getElementById('calTodayBtn');
+      if (todayBtn) todayBtn.hidden = calOffset === 0;
 
       const events = getCalendarEvents();
       const today = todayStr();
