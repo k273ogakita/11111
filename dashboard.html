@@ -1076,7 +1076,14 @@
       border-left: 2px solid #c85a3c;
       font-weight: 700;
     }
+    .cal-event.payment-confirm {
+      background: rgba(42,138,94,.12);
+      color: #1f6b48;
+      border-left: 2px solid #2a8a5e;
+      font-weight: 700;
+    }
     .cal-legend-dot.invoice { background: #c85a3c; }
+    .cal-legend-dot.payment { background: #2a8a5e; }
     .cal-day.clickable {
       cursor: pointer;
       transition: background .12s;
@@ -1723,7 +1730,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v92</div>
+        <div class="logo-sub">Business Dashboard · v93</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1810,6 +1817,7 @@
           <div class="cal-legend-item"><div class="cal-legend-dot followup"></div>広告運用 MT</div>
           <div class="cal-legend-item"><div class="cal-legend-dot task"></div>レポート作成</div>
           <div class="cal-legend-item"><div class="cal-legend-dot invoice"></div>🧾 請求書作成（毎月25日・土日祝は前倒し）</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot payment"></div>💰 振込確認（請求日の翌々月末）</div>
         </div>
       </div>
     </section>
@@ -2039,8 +2047,9 @@
         </div>
         <div class="form-group">
           <label>請求日</label>
-          <input type="date" id="projectInvoiceDate">
+          <input type="date" id="projectInvoiceDate" onchange="updatePaymentDueHint()">
           <div class="form-hint" id="invoiceDateHint">請求ステータスに移すと今日の日付が自動入力されます</div>
+          <div class="form-hint" id="paymentDueHint"></div>
         </div>
         <div class="finance-fields" id="adOpsGroup" style="display:none">
           <div class="finance-fields-title">広告運用（月次）</div>
@@ -2431,6 +2440,30 @@ nark.visual.media@gmail.com
       const d = new Date(dateStr + 'T00:00:00');
       d.setMonth(d.getMonth() + months);
       return d.toISOString().slice(0, 10);
+    }
+
+    // 請求日の翌々月末＝振込期限（例: 6/15発行 → 8/31）
+    function getPaymentDueDate(invoiceDate) {
+      if (!invoiceDate) return null;
+      const d = new Date(invoiceDate + 'T00:00:00');
+      if (Number.isNaN(d.getTime())) return null;
+      const last = new Date(d.getFullYear(), d.getMonth() + 3, 0);
+      return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}-${String(last.getDate()).padStart(2, '0')}`;
+    }
+
+    function needsPaymentConfirm(p) {
+      if (!p || !p.invoiceDate) return false;
+      if (p.status === 'done') return false;
+      return p.status === 'billing' || p.status === 'unpaid';
+    }
+
+    function getDuePaymentConfirmProjects(forDate) {
+      const date = forDate || todayStr();
+      return state.projects.filter(p => {
+        if (!needsPaymentConfirm(p)) return false;
+        const due = getPaymentDueDate(p.invoiceDate);
+        return due && due <= date;
+      });
     }
 
     function ensureDeliveredDate(p) {
@@ -4027,6 +4060,7 @@ ${MAIL_FOOTER}`,
       const el = document.getElementById('noticeBar');
       if (!el) return;
       const due = getDueAfterFollowContacts();
+      const paymentDue = getDuePaymentConfirmProjects();
       const adOpsClosing = getDueAdOpsClosingProjects();
       const today = todayStr();
       const editorDrafts = state.projects.filter(p =>
@@ -4054,7 +4088,7 @@ ${MAIL_FOOTER}`,
           ? `<div class="notice-bar-inner">🧾 <strong>請求書作成</strong> — 25日が土日祝のため、本日（${esc(formatDateJa(issue.dateStr))}）が発行日です</div>`
           : `<div class="notice-bar-inner">🧾 <strong>請求書作成</strong> — 本日は毎月25日の請求書発行日です</div>`;
       }
-      if (due.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && !invoiceDay) {
+      if (due.length === 0 && paymentDue.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && !invoiceDay) {
         el.style.display = 'none';
         el.innerHTML = '';
         return;
@@ -4064,6 +4098,11 @@ ${MAIL_FOOTER}`,
         ...due.map(({ project: p, contact: c }) =>
           `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — アフターフォロー（${esc(c.label)}）の日です（納品 ${esc(p.deliveredDate || '')}）</div>`
         ),
+        ...paymentDue.map(p => {
+          const dueDate = getPaymentDueDate(p.invoiceDate);
+          const overdue = dueDate && dueDate < today;
+          return `<div class="notice-bar-inner">💰 <strong>${esc(p.client || p.name)}</strong> — 振込確認の日です（期限 ${esc(formatDateJa(dueDate))}・請求日 ${esc(formatDateJa(p.invoiceDate))}${overdue ? '・未入金' : ''}）</div>`;
+        }),
         ...adOpsClosing.map(p =>
           `<div class="notice-bar-inner">📅 <strong>${esc(p.client || p.name)}</strong> — 広告運用の締日です（${esc(formatDateJa(getAdOpsClosingDate(p)))}）→ 請求列へ移動（請求日 ${esc(formatDateJa(getAdOpsInvoiceDate(p)))}）</div>`
         ),
@@ -4436,6 +4475,9 @@ ${MAIL_FOOTER}`,
             : `運用開始 ${formatDateJa(p.opsStartDate)} · 締日 ${formatDateJa(getAdOpsClosingDate(p))} · 請求予定 ${formatDateJa(getAdOpsInvoiceDate(p))}`}${p.status === 'doing' && p.phase === '広告開始' ? '（開始予定日）' : ''}</div>`
           : `<div class="card-deadline">運用開始日 未設定（準備中）</div>`)
         : '';
+      const paymentDueLine = needsPaymentConfirm(p)
+        ? `<div class="card-deadline">振込期限 ${formatDateJa(getPaymentDueDate(p.invoiceDate))}（請求日 ${formatDateJa(p.invoiceDate)}）</div>`
+        : '';
       const deadline = (p.status === 'todo' || p.status === 'doing') ? renderDeadlineHtml(p) : '';
       const memoBlock = p.memo && p.memo.trim()
         ? `<div class="card-memo">${esc(p.memo.trim())}</div>` : '';
@@ -4470,6 +4512,7 @@ ${MAIL_FOOTER}`,
           <div class="card-meta">${meta}</div>
           ${deadline}
           ${adOpsClosingLine}
+          ${paymentDueLine}
           ${memoBlock}
           ${phaseLabel}
           ${financeBlock}
@@ -4780,6 +4823,7 @@ ${MAIL_FOOTER}`,
       if (entry.kind === 'editorDraft') return entry.date || entry.item.editorDraftDueDate || '';
       if (entry.kind === 'projectDeadline') return entry.date || '';
       if (entry.kind === 'followUp') return entry.contact ? (entry.contact.date || '') : '';
+      if (entry.kind === 'paymentConfirm') return entry.date || getPaymentDueDate(entry.item.invoiceDate) || '';
       return entry.item.date || entry.item.dueDate || '';
     }
 
@@ -4795,6 +4839,9 @@ ${MAIL_FOOTER}`,
       });
       getDueAfterFollowContacts(today).forEach(({ project, contact }) => {
         entries.push({ kind: 'followUp', item: project, contact });
+      });
+      getDuePaymentConfirmProjects(today).forEach(p => {
+        entries.push({ kind: 'paymentConfirm', item: p, date: getPaymentDueDate(p.invoiceDate) });
       });
       getDueAdOpsClosingProjects(today).forEach(p => {
         entries.push({ kind: 'adOpsClosing', item: p });
@@ -4901,6 +4948,17 @@ ${MAIL_FOOTER}`,
           <span class="task-category 営業">AF</span>
           <span class="task-text">${esc(t.client || t.name)} — アフターフォロー（${esc(cLabel)}）</span>
           <button type="button" class="btn btn-primary" onclick="openFollowMail('${t.id}','${cKey}')">メールを開く</button>
+        </div>`;
+        }
+        if (kind === 'paymentConfirm') {
+          const dueDate = date || getPaymentDueDate(t.invoiceDate);
+          const overdue = dueDate && dueDate < todayStr();
+          return `
+        <div class="task-item task-item-reminder${overdue ? ' overdue' : ''}">
+          <span class="task-category 未完了">${overdue ? '未完了' : '今日'}</span>
+          <span class="task-category 営業">振込確認</span>
+          <span class="task-text">${esc(t.client || t.name)} — 振込確認（期限 ${formatDateJa(dueDate)}・請求日 ${formatDateJa(t.invoiceDate)}）</span>
+          <button type="button" class="btn btn-ghost" onclick="editProject('${t.id}')">案件を開く</button>
         </div>`;
         }
         if (kind === 'adOpsClosing') {
@@ -5026,6 +5084,17 @@ ${MAIL_FOOTER}`,
       el.textContent = `締日 ${formatDateJa(closing)} · 請求日 ${formatDateJa(invoice)}（締日の月の月末） · MT/レポート（2W）${formatDateJa(at2w)} · MT/レポート（1M）${formatDateJa(closing)}`;
     }
     window.updateAdOpsClosingPreview = updateAdOpsClosingPreview;
+
+    function updatePaymentDueHint() {
+      const el = document.getElementById('paymentDueHint');
+      if (!el) return;
+      const invoice = document.getElementById('projectInvoiceDate')?.value;
+      const due = getPaymentDueDate(invoice);
+      el.textContent = due
+        ? `振込期限（確認日） ${formatDateJa(due)} ※請求日の翌々月末`
+        : '振込期限＝請求日の翌々月末。請求日を入れるとカレンダー／今日のタスクに振込確認が出ます';
+    }
+    window.updatePaymentDueHint = updatePaymentDueHint;
 
     function isWorkflowEligibleType(type) {
       return ['explainer-video', 'branding-video', 'record-video', 'ad-video', 'video', 'both'].includes(type);
@@ -5228,6 +5297,7 @@ ${MAIL_FOOTER}`,
       updateWorkflowGroupVisibility();
       updateAdOpsGroupVisibility();
       updateProjectProfitPreview();
+      updatePaymentDueHint();
       document.getElementById('projectModal').classList.add('open');
       if (opts.focusTimeLog && id) {
         focusProjectTimeLogSection(opts.timeLogNote || '');
@@ -6499,6 +6569,19 @@ ${MAIL_FOOTER}`,
             client: p.deliveredDate ? `納品 ${p.deliveredDate}` : '',
             status: '',
           });
+        });
+      });
+      state.projects.forEach(p => {
+        if (!needsPaymentConfirm(p)) return;
+        const due = getPaymentDueDate(p.invoiceDate);
+        if (!due) return;
+        if (!events[due]) events[due] = [];
+        events[due].push({
+          label: `振込確認: ${p.client || p.name}`,
+          category: 'payment-confirm',
+          client: `請求日 ${p.invoiceDate} → 期限 ${due}`,
+          status: p.status,
+          deadline: true,
         });
       });
       state.projects.forEach(p => {
