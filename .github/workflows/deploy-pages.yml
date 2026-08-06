@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
@@ -25,9 +25,16 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # リポジトリ全体（SNSメディア等）は上げず、ダッシュボードだけ公開する
+      - name: Prepare Pages bundle
+        run: |
+          mkdir -p _site
+          cp dashboard.html _site/dashboard.html
+          cp dashboard.html _site/index.html
+          touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
