@@ -887,12 +887,13 @@
     .calendar-nav-today:hover { border-color: var(--red); color: var(--red); }
     .calendar-nav-today[hidden] { display: none; }
     .calendar-month-label {
-      padding: 10px 18px 6px;
-      font-size: .78rem;
-      font-weight: 700;
-      color: var(--muted);
+      padding: 12px 18px 8px;
+      font-size: .95rem;
+      font-weight: 800;
+      color: var(--text);
       border-bottom: 1px solid var(--border);
       background: var(--surface-2);
+      letter-spacing: .04em;
     }
     .calendar-month-block + .calendar-month-block {
       border-top: 1px solid var(--border);
@@ -1750,7 +1751,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v97</div>
+        <div class="logo-sub">Business Dashboard · v98</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -6529,10 +6530,13 @@ ${MAIL_FOOTER}`,
       const curY = now.getFullYear();
       const curM = now.getMonth();
       const labelFor = (y, m) => {
-        if (y === curY && m === curM) return `${m + 1}月（今月）`;
-        if (y === curY && m === curM + 1) return `${m + 1}月（来月）`;
-        if (curM === 11 && y === curY + 1 && m === 0) return `${m + 1}月（来月）`;
-        return `${m + 1}月`;
+        const base = `${m + 1}月`;
+        if (y === curY && m === curM) return `${base}（今月）`;
+        if (y === curY && m === curM + 1) return `${base}（来月）`;
+        if (curM === 11 && y === curY + 1 && m === 0) return `${base}（来月）`;
+        // 年をまたぐときだけ年を付ける
+        if (y !== curY) return `${y}年${base}`;
+        return base;
       };
       return [
         { year: y0, month: m0, label: labelFor(y0, m0) },
@@ -6680,8 +6684,10 @@ ${MAIL_FOOTER}`,
 
     function renderCalendar() {
       const months = getCalendarDisplayMonths();
-      document.getElementById('calTitle').textContent =
-        `${months[0].year}年${months[0].month + 1}月 · ${months[1].month + 1}月`;
+      // 月名は各カレンダー見出しに出す（「8月・9月」のまとめ表示はしない）
+      const y0 = months[0].year;
+      const y1 = months[1].year;
+      document.getElementById('calTitle').textContent = y0 === y1 ? `${y0}年` : `${y0}年〜${y1}年`;
       const todayBtn = document.getElementById('calTodayBtn');
       if (todayBtn) todayBtn.hidden = calOffset === 0;
 
