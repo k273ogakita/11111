@@ -1751,7 +1751,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v99</div>
+        <div class="logo-sub">Business Dashboard · v100</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2389,8 +2389,7 @@
     const BILLING_PHASES = ['作成未', '請求書作成済', '送付済', '入金済'];
     // メール送付系のアフターフォロー項目（サポート案内・お礼状・実績公開）
     const AFTER_FOLLOW_PHASES = [
-      { key: 'supportCoconala', label: 'バージョンアップサポートのご案内（ココナラ）' },
-      { key: 'supportDirect', label: 'バージョンアップサポートのご案内（通常）' },
+      { key: 'supportDirect', label: 'バージョンアップサポートのご案内' },
       { key: 'thanks', label: 'お礼状の送付' },
       { key: 'portfolio', label: '実績公開の可否確認' },
     ];
@@ -2856,15 +2855,14 @@ nark.visual.media@gmail.com
       if (p.contractRoute === undefined) p.contractRoute = detectContractRoute(p);
       ensureDeliveredDate(p);
       if (!p.afterFollowDone || typeof p.afterFollowDone !== 'object') {
-        p.afterFollowDone = { thanks: false, supportCoconala: false, supportDirect: false, portfolio: false };
+        p.afterFollowDone = { thanks: false, supportDirect: false, portfolio: false };
       } else {
         if (p.afterFollowDone.support) {
           const route = p.contractRoute || detectContractRoute(p);
-          if (route === 'coconala') p.afterFollowDone.supportCoconala = true;
-          else p.afterFollowDone.supportDirect = true;
+          if (route !== 'coconala') p.afterFollowDone.supportDirect = true;
           delete p.afterFollowDone.support;
         }
-        if (p.afterFollowDone.supportCoconala === undefined) p.afterFollowDone.supportCoconala = false;
+        delete p.afterFollowDone.supportCoconala;
         if (p.afterFollowDone.supportDirect === undefined) p.afterFollowDone.supportDirect = false;
         if (p.afterFollowDone.portfolio === undefined) p.afterFollowDone.portfolio = false;
         if (p.afterFollowDone.thanks === undefined) p.afterFollowDone.thanks = false;
@@ -3046,70 +3044,6 @@ ${MAIL_FOOTER}`,
       };
     }
 
-    function mailAddressBlockCoconala(p) {
-      const director = (p.mailDirector || '').trim();
-      if (director) return `医院様\n院長　${director}先生\n`;
-      return `医院様\n院長　〇〇先生\n`;
-    }
-
-    function buildSupportMailCoconala(p) {
-      return {
-        subject: '患者説明動画｜バージョンアップサポートのご案内｜nARK 緒方',
-        body: `${mailAddressBlockCoconala(p)}
-お世話になっております。nARKの緒方です。
-この度は説明動画の制作のご依頼、誠にありがとうございました。
-
-動画納品後の「こう直したい」「最新の情報にしたい」に対応するため、
-１年間のバージョンアップサポートプランをご用意しております。
-納品日から起算した１年間の期間で、任意でご加入いただけます。
-
-【バージョンアップサポートプラン適用期間】
-　　　年　　月　　日 〜 　　　年　　月　　日
-
-【バージョンアップサポートプランとは】
-初年度¥13,200（税別）、2年目以降の更新は¥5,600／年（税別）の年間サポートです。
-「動画をいつでも最新の状態に保てる安心感」のためのもので、
-作った後に「こう直したい」「この部分を最新の情報にしたい」といった
-ご要望にも、安心してご相談いただけます。
-
-【サポート内容】
-・動画の情報アップデート
-・説明セクションの追加（年2回まで）
-・テキスト修正・写真・ロゴ差し替え・簡単なスライド追加
-　（外来担当表の変更、季節に応じた変更、情勢に合わせた変更・追加 など）
-※大幅な変更は別途お見積り
-・他動画制作費用の割引適用（15~37%OFF）病院紹介動画や採用動画などの制作も適応です。
-
-【例：バージョンアップサポート加入中の割引（説明動画の場合）】
-・1本目：15%OFF（¥30,000 → ¥25,500）
-・2本目：25%OFF（¥30,000 → ¥22,500）
-・3本目：37%OFF（¥30,000 → ¥18,900）
-
-ご加入は任意です。更新しなくても、お届け済みの動画は永続してお使いいただけます。
-もし年間サポートプランをご希望の場合は、
-ココナラのサービスにて説明動画の修正対応承ります。のご購入をお願い致します。
-
-
-もちろん、その都度変更のご希望をお申し付けいただくことも可能です。
-その際は、以下の費用が目安になります。
-
-【都度お見積りの場合】
-・軽微な修正（テキスト修正・写真・ロゴ差し替え）
-　→ 6,700円〜
-・スライド追加、部分的な作り直し
-　→ 8,900円〜
-※内容によって変動いたしますので、その都度お見積りをお出しいたします。
-
-
-ほかの説明動画の追加や、待合・Webまわりの整備など、
-「次にこうしたい」がございましたら、お気軽にお知らせください。
-
-引き続きよろしくお願いいたします。
-
-${MAIL_FOOTER}`,
-      };
-    }
-
     function buildSupportMailDirect(p) {
       return {
         subject: '動画納品後の修正対応についてのお知らせ',
@@ -3203,7 +3137,6 @@ ${MAIL_FOOTER}`,
     function getFollowMail(step, p) {
       const builders = {
         thanks: buildThanksMail,
-        supportCoconala: buildSupportMailCoconala,
         supportDirect: buildSupportMailDirect,
         portfolio: buildPortfolioMail,
       };
@@ -4368,16 +4301,17 @@ ${MAIL_FOOTER}`,
     // （クライアントチェック中〜納品の頃に案内・お礼状・実績確認を送れるように）
     function renderDoingAfterFollowButtons(p) {
       ensureProjectFinance(p);
+      const route = p.contractRoute || detectContractRoute(p);
+      const supportBlock = route === 'coconala' ? '' : `<div class="after-follow-label">バージョンアップサポートのご案内</div>
+        <div class="phase-btns interactive">
+          ${followMailButton(p, 'supportDirect')}
+        </div>`;
       return `<div class="after-follow-section">
         <div class="phase-btns interactive">
           ${followMailButton(p, 'thanks')}
           ${followMailButton(p, 'portfolio')}
         </div>
-        <div class="after-follow-label">年間サポートプラスのご案内</div>
-        <div class="phase-btns interactive">
-          ${followMailButton(p, 'supportCoconala')}
-          ${followMailButton(p, 'supportDirect')}
-        </div>
+        ${supportBlock}
       </div>`;
     }
 
@@ -4696,7 +4630,7 @@ ${MAIL_FOOTER}`,
         folder: '',
         deliveredDate: '',
         afterFollow: false,
-        afterFollowDone: { thanks: false, supportCoconala: false, supportDirect: false, portfolio: false },
+        afterFollowDone: { thanks: false, supportDirect: false, portfolio: false },
         afterFollowSchedule: { m1: false, m6: false, y1: false },
       };
       p.status = 'done';
@@ -5504,7 +5438,7 @@ ${MAIL_FOOTER}`,
         folder: '',
         deliveredDate: '',
         afterFollow: p.afterFollow !== undefined ? p.afterFollow : isAfterFollowEligible(p),
-        afterFollowDone: { thanks: false, supportCoconala: false, supportDirect: false, portfolio: false },
+        afterFollowDone: { thanks: false, supportDirect: false, portfolio: false },
         afterFollowSchedule: { m1: false, m6: false, y1: false },
         editorOutsource: false,
         editorDraftDueDate: '',
