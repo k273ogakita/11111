@@ -1031,6 +1031,7 @@
     .cal-event.draggable-task { cursor: grab; }
     .cal-event.draggable-task:active { cursor: grabbing; }
     .cal-event.cal-event-dragging { opacity: .4; }
+    .cal-event.cal-event-editable { cursor: pointer; }
     .cal-day.cal-drag-over { background: var(--red-glow); outline: 2px dashed var(--red); outline-offset: -2px; }
     /* イベント（現場・撮影・勉強会・打ち合わせ） — 強調表示 */
     .cal-event.scheduled-event {
@@ -1751,7 +1752,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v100</div>
+        <div class="logo-sub">Business Dashboard · v101</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1873,7 +1874,7 @@
         </select>
         <input type="text" id="taskInputTop" placeholder="今日やること／予定を入力" autocomplete="off">
       </div>
-      <div class="task-add-hint">「追加」ボタンで登録（Enterでは登録しません）。空欄なら今日のタスクに追加。予定日を選ぶとカレンダーに入り、その日になるとここに出ます。完了しなかったものは翌日以降も「未完了」としてここに残ります。「イベント・現場」（撮影・勉強会・打ち合わせなど）はカレンダーで目立つ表示になります。<br>下の「案件タスク」からドラッグして今日のタスクに移せます。予定日はカレンダー上でもドラッグでずらせます。</div>
+      <div class="task-add-hint">「追加」ボタンで登録（Enterでは登録しません）。空欄なら今日のタスクに追加。予定日を選ぶとカレンダーに入り、その日になるとここに出ます。完了しなかったものは翌日以降も「未完了」としてここに残ります。「イベント・現場」（撮影・勉強会・打ち合わせなど）はカレンダーで目立つ表示になります。<br>カレンダー上の予定をクリック、または一覧の「編集」で内容・日付・種類を後から変更できます。下の「案件タスク」からドラッグして今日のタスクに移せます。予定日はカレンダー上でもドラッグでずらせます。</div>
       <div class="tasks-panel">
         <div class="task-list" id="taskList"
              ondragover="onTaskListDragOver(event)" ondragleave="onTaskListDragLeave(event)" ondrop="onTaskListDrop(event,'today')"></div>
@@ -1945,6 +1946,38 @@
       <div class="modal-actions">
         <button class="btn" onclick="closeBizTodoModal()">キャンセル</button>
         <button class="btn btn-primary" onclick="saveBizTodo()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Task Edit Modal（カレンダー予定・今日のタスク） -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="modal">
+      <h3 id="taskModalTitle">予定を編集</h3>
+      <div class="form-group">
+        <label>内容</label>
+        <input type="text" id="taskEditText" placeholder="予定・タスクの内容">
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>予定日</label>
+          <input type="date" id="taskEditDate">
+          <div class="form-hint">空欄にすると案件タスク（日付なし）へ移動します</div>
+        </div>
+        <div class="form-group">
+          <label>種類</label>
+          <select id="taskEditType">
+            <option value="task">通常</option>
+            <option value="event">イベント・現場</option>
+            <option value="remote">在宅ワーク</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-danger" type="button" onclick="deleteTaskFromModal()">削除</button>
+        <div style="flex:1"></div>
+        <button class="btn" onclick="closeTaskModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveTaskEdit()">保存</button>
       </div>
     </div>
   </div>
@@ -4876,15 +4909,16 @@ ${MAIL_FOOTER}`,
         ? `<span class="task-category イベント">現場</span>`
         : (isRemote ? `<span class="task-category 在宅">在宅</span>` : '');
       const overdueBadge = overdue ? `<span class="task-category 未完了">未完了</span>` : '';
-      const dateControl = `<input type="date" class="task-date-input" value="${t.date || ''}" onchange="rescheduleTask('${t.id}', this.value)" title="予定日を変更（空欄で案件タスクへ）">`;
+      const dateControl = `<input type="date" class="task-date-input" value="${t.date || ''}" onchange="rescheduleTask('${t.id}', this.value)" title="予定日を変更（空欄で案件タスクへ）" onclick="event.stopPropagation()">`;
       return `
         <div class="task-item task-item-draggable${t.done ? ' done' : ''}${overdue ? ' overdue' : ''}${isEvent ? ' task-item-event' : ''}${isRemote ? ' task-item-remote' : ''}"
              draggable="true" ondragstart="onTaskDragStart(event,'${t.id}')" ondragend="onTaskDragEnd(event)">
-          <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} onchange="toggleTask('${t.id}')">
+          <input type="checkbox" class="task-check" ${t.done ? 'checked' : ''} onchange="toggleTask('${t.id}')" onclick="event.stopPropagation()">
           ${overdueBadge}${badge}
           <span class="task-text">${esc(t.text)}</span>
           ${dateControl}
-          <button class="btn btn-ghost btn-danger" onclick="deleteTask('${t.id}')">×</button>
+          <button class="btn btn-ghost" onclick="event.stopPropagation();openTaskModal('${t.id}')">編集</button>
+          <button class="btn btn-ghost btn-danger" onclick="event.stopPropagation();deleteTask('${t.id}')">×</button>
         </div>`;
     }
 
@@ -5588,6 +5622,57 @@ ${MAIL_FOOTER}`,
       state.tasks = state.tasks.filter(t => t.id !== id);
       saveState();
     }
+
+    let editingTaskId = null;
+
+    function openTaskModal(id) {
+      const t = state.tasks.find(x => x.id === id);
+      if (!t) return;
+      editingTaskId = id;
+      document.getElementById('taskModalTitle').textContent = '予定を編集';
+      document.getElementById('taskEditText').value = t.text || '';
+      document.getElementById('taskEditDate').value = t.date || '';
+      document.getElementById('taskEditType').value = t.type || 'task';
+      document.getElementById('taskModal').classList.add('open');
+      setTimeout(() => document.getElementById('taskEditText').focus(), 50);
+    }
+    window.openTaskModal = openTaskModal;
+
+    function closeTaskModal() {
+      document.getElementById('taskModal').classList.remove('open');
+      editingTaskId = null;
+    }
+    window.closeTaskModal = closeTaskModal;
+
+    function saveTaskEdit() {
+      const t = state.tasks.find(x => x.id === editingTaskId);
+      if (!t) { closeTaskModal(); return; }
+      const text = document.getElementById('taskEditText').value.trim();
+      if (!text) {
+        toast('内容を入力してください');
+        document.getElementById('taskEditText').focus();
+        return;
+      }
+      t.text = text;
+      t.date = document.getElementById('taskEditDate').value || '';
+      t.type = document.getElementById('taskEditType').value || 'task';
+      closeTaskModal();
+      saveState();
+      toast(t.date ? `「${t.text}」を更新しました` : `「${t.text}」を案件タスクへ移動しました`);
+    }
+    window.saveTaskEdit = saveTaskEdit;
+
+    function deleteTaskFromModal() {
+      if (!editingTaskId) return;
+      const t = state.tasks.find(x => x.id === editingTaskId);
+      const label = t ? t.text : '予定';
+      if (!confirm(`「${label}」を削除しますか？`)) return;
+      const id = editingTaskId;
+      closeTaskModal();
+      deleteTask(id);
+      toast('削除しました');
+    }
+    window.deleteTaskFromModal = deleteTaskFromModal;
 
     function rescheduleTask(id, newDate) {
       const t = state.tasks.find(x => x.id === id);
@@ -6431,7 +6516,10 @@ ${MAIL_FOOTER}`,
           if (e.isEvent) { cls += ' cal-event-strong'; prefix = '📍 '; }
           if (e.isRemote) { prefix = '🏠 '; }
           if (isSchedTask) {
-            return `<div class="${cls} draggable-task" draggable="true" data-tip="${esc(tip)} — ドラッグで別日に移動" ondragstart="onCalTaskDragStart(event,'${e.taskId}')" ondragend="onCalTaskDragEnd(event)">${prefix}${esc(e.label)}</div>`;
+            return `<div class="${cls} draggable-task cal-event-editable" draggable="true" data-tip="${esc(tip)} — クリックで編集／ドラッグで別日に移動" onclick="event.stopPropagation();openTaskModal('${e.taskId}')" ondragstart="onCalTaskDragStart(event,'${e.taskId}')" ondragend="onCalTaskDragEnd(event)">${prefix}${esc(e.label)}</div>`;
+          }
+          if (e.bizTodoId) {
+            return `<div class="${cls} cal-event-editable" data-tip="${esc(tip)} — クリックで編集" onclick="event.stopPropagation();openBizTodoModal('${e.bizTodoId}')">${prefix}${esc(e.label)}</div>`;
           }
           return `<div class="${cls}" data-tip="${esc(tip)}">${prefix}${esc(e.label)}</div>`;
         }).join('');
@@ -6518,7 +6606,7 @@ ${MAIL_FOOTER}`,
       (state.bizTodos || []).forEach(t => {
         if (t.dueDate && !t.done) {
           if (!events[t.dueDate]) events[t.dueDate] = [];
-          events[t.dueDate].push({ label: `TODO: ${t.text}`, category: 'biz-todo', client: '', status: '' });
+          events[t.dueDate].push({ label: `TODO: ${t.text}`, category: 'biz-todo', client: '', status: '', bizTodoId: t.id });
         }
       });
       state.tasks.forEach(t => {
@@ -6651,6 +6739,9 @@ ${MAIL_FOOTER}`,
     document.getElementById('bizTodoModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeBizTodoModal();
     });
+    document.getElementById('taskModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeTaskModal();
+    });
     document.getElementById('kanban').addEventListener('click', e => {
       const btn = e.target.closest('[data-follow-mail]');
       if (!btn) return;
@@ -6662,7 +6753,7 @@ ${MAIL_FOOTER}`,
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         closeProjectModal(); closePathModal(); closeChecklistModal();
-        closeSubModal(); closeAdModal(); closeBizTodoModal();
+        closeSubModal(); closeAdModal(); closeBizTodoModal(); closeTaskModal();
       }
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z') {
         const t = e.target;
