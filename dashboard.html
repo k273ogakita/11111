@@ -1638,7 +1638,30 @@
       gap: 10px;
       flex-wrap: wrap;
     }
-    .compass-block-title:first-of-type { margin-top: 0; }
+    .compass-fold-header {
+      cursor: pointer;
+      user-select: none;
+      margin: 16px 0 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .compass-fold-header:hover { border-color: #c9bfb0; }
+    .compass-fold-header .compass-block-title {
+      margin: 0;
+      flex: 1;
+      color: var(--text);
+      text-transform: none;
+      letter-spacing: .04em;
+    }
+    .compass-fold-header .collapse-chevron {
+      margin-left: 0;
+      font-size: .85rem;
+    }
     .compass-block-note {
       font-size: .72rem;
       font-weight: 500;
@@ -2074,7 +2097,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v104</div>
+        <div class="logo-sub">Business Dashboard · v105</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3163,6 +3186,14 @@ nark.visual.media@gmail.com
         ],
       },
       {
+        id: 'nowork',
+        title: 'やらない仕事',
+        tone: 'skip',
+        items: [
+          '低単価で面白くない、成長につながらない仕事',
+        ],
+      },
+      {
         id: 'life',
         title: 'これから活かしたい経験',
         tone: 'life',
@@ -3360,6 +3391,8 @@ nark.visual.media@gmail.com
     let modalTimeIds = [];
     let subsExpanded = false;
     let adsExpanded = false;
+    let compassStrengthsExpanded = false;
+    let compassReviewExpanded = false;
     let doneExpanded = false;
     let editingAdId = null;
     let editingBizTodoId = null;
@@ -4823,10 +4856,35 @@ ${MAIL_FOOTER}`,
     window.resetReviewMonth = resetReviewMonth;
 
     function scrollToMonthlyReview() {
+      compassReviewExpanded = true;
+      applyCompassFolds();
       const el = document.getElementById('compassReview');
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     window.scrollToMonthlyReview = scrollToMonthlyReview;
+
+    function applyCompassFolds() {
+      const sBody = document.getElementById('strengthCollapse');
+      const rBody = document.getElementById('reviewCollapse');
+      const sChev = document.getElementById('strengthChevron');
+      const rChev = document.getElementById('reviewChevron');
+      if (sBody) sBody.classList.toggle('open', compassStrengthsExpanded);
+      if (rBody) rBody.classList.toggle('open', compassReviewExpanded);
+      if (sChev) sChev.textContent = compassStrengthsExpanded ? '▾' : '▸';
+      if (rChev) rChev.textContent = compassReviewExpanded ? '▾' : '▸';
+    }
+
+    function toggleCompassStrengths() {
+      compassStrengthsExpanded = !compassStrengthsExpanded;
+      applyCompassFolds();
+    }
+    window.toggleCompassStrengths = toggleCompassStrengths;
+
+    function toggleCompassReview() {
+      compassReviewExpanded = !compassReviewExpanded;
+      applyCompassFolds();
+    }
+    window.toggleCompassReview = toggleCompassReview;
 
     function visionBulletHtml(lines) {
       return `<ul class="vision-bullets">${(lines || []).map(line => `<li>${esc(line)}</li>`).join('')}</ul>`;
@@ -4885,26 +4943,32 @@ ${MAIL_FOOTER}`,
           <textarea placeholder="後で書く" oninput="onVisionInput('pathOverview', this)">${esc(v.pathOverview)}</textarea>
         </div>
 
-        <div class="compass-block-title">自分の強み・選ばれる理由</div>
-        <div class="strength-grid">
-          ${STRENGTH_CARDS.map(card => `
-            <div class="strength-card ${card.tone}">
-              <h4>${esc(card.title)}</h4>
-              <ul>${card.items.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
-            </div>`).join('')}
+        <div class="compass-fold-header" onclick="toggleCompassStrengths()">
+          <div class="compass-block-title">自分の強み・選ばれる理由</div>
+          <span class="collapse-chevron" id="strengthChevron">▸</span>
+        </div>
+        <div class="collapse-body" id="strengthCollapse">
+          <div class="strength-grid">
+            ${STRENGTH_CARDS.map(card => `
+              <div class="strength-card ${card.tone}">
+                <h4>${esc(card.title)}</h4>
+                <ul>${card.items.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
+              </div>`).join('')}
+          </div>
         </div>
 
-        <div class="compass-block-title" id="compassReview">
-          毎月の振り返り
-          <span class="compass-block-note">${esc(monthKey)}</span>
-          <div class="review-nav">
+        <div class="compass-fold-header" id="compassReview" onclick="toggleCompassReview()">
+          <div class="compass-block-title">毎月の振り返り<span class="compass-block-note">${esc(monthKey)}</span></div>
+          <span class="collapse-chevron" id="reviewChevron">▸</span>
+        </div>
+        <div class="collapse-body" id="reviewCollapse">
+          <div class="review-nav" style="margin: 8px 0 10px; justify-content: flex-start;" onclick="event.stopPropagation()">
             <button type="button" class="calendar-nav-btn" onclick="shiftReviewMonth(-1)" aria-label="前の月">‹</button>
             <div class="review-nav-title">${esc(reviewMonthLabel())}</div>
             <button type="button" class="calendar-nav-btn" onclick="shiftReviewMonth(1)" aria-label="次の月">›</button>
             ${reviewMonthOffset !== 0 ? `<button type="button" class="calendar-nav-today" onclick="resetReviewMonth()">今月</button>` : ''}
           </div>
-        </div>
-        <div class="review-grid">
+          <div class="review-grid">
           <div class="review-card well">
             <h4>今月うまく行ったこと</h4>
             <div class="review-field">
@@ -4952,7 +5016,9 @@ ${MAIL_FOOTER}`,
             <textarea placeholder="後で書く" oninput="onReviewInput('directionGap', this)">${esc(r.directionGap)}</textarea>
           </div>
         </div>
+        </div>
       `;
+      applyCompassFolds();
     }
 
     function renderMilestones() {
