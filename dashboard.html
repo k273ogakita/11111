@@ -1662,10 +1662,30 @@
       margin-left: 0;
       font-size: .85rem;
     }
-    .compass-fold-header .btn {
-      margin-left: auto;
-      font-size: .72rem;
-      padding: 4px 10px;
+    .review-text-out {
+      margin-top: 12px;
+      border-radius: 12px;
+      padding: 14px;
+      background: linear-gradient(165deg, #fff8e8 0%, #f5ead0 100%);
+      border: 1px solid #d4b56a;
+    }
+    .review-text-out[hidden] { display: none !important; }
+    .review-text-out-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+      font-size: .82rem;
+      font-weight: 700;
+      color: #6e5a40;
+    }
+    .review-text-out-head .btn { margin-left: auto; }
+    .review-text-out textarea {
+      min-height: 220px;
+      font-size: .82rem;
+      line-height: 1.5;
+      background: rgba(255,255,255,.9);
     }
     .compass-block-note {
       font-size: .72rem;
@@ -2102,7 +2122,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v107</div>
+        <div class="logo-sub">Business Dashboard · v108</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4042,6 +4062,55 @@ ${MAIL_FOOTER}`,
       });
     }
 
+    let lastGeneratedReviewText = '';
+    let lastGeneratedReviewMonth = '';
+
+    function showReviewTextOutput(md) {
+      const box = document.getElementById('reviewTextOut');
+      const ta = document.getElementById('reviewTextOutput');
+      if (!box || !ta) return;
+      box.hidden = false;
+      ta.value = md;
+      ta.focus();
+      ta.select();
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function generateReviewText() {
+      compassReviewExpanded = true;
+      applyCompassFolds();
+      const key = currentReviewMonthKey();
+      const md = buildReviewMarkdown(key);
+      lastGeneratedReviewText = md;
+      lastGeneratedReviewMonth = key;
+      showReviewTextOutput(md);
+      const copy = navigator.clipboard && navigator.clipboard.writeText
+        ? navigator.clipboard.writeText(md)
+        : Promise.reject();
+      copy.then(function() {
+        toast('テキストを生成しました。コピー済みです。チャットに貼ってください');
+      }).catch(function() {
+        toast('テキストを生成しました。枠内をコピーしてチャットに貼ってください');
+      });
+      saveReviewText(key);
+    }
+    window.generateReviewText = generateReviewText;
+
+    function copyReviewText() {
+      const ta = document.getElementById('reviewTextOutput');
+      const md = (ta && ta.value) || lastGeneratedReviewText || buildReviewMarkdown(currentReviewMonthKey());
+      if (ta) {
+        ta.focus();
+        ta.select();
+      }
+      const copy = navigator.clipboard && navigator.clipboard.writeText
+        ? navigator.clipboard.writeText(md)
+        : Promise.reject();
+      copy.then(function() { toast('コピーしました'); })
+        .catch(function() { toast('枠内を選択してコピーしてください'); });
+    }
+    window.copyReviewText = copyReviewText;
+
     function saveReviewTextNow() {
       saveReviewText(currentReviewMonthKey(), { force: true, download: true }).then(function(dest) {
         if (dest === 'folder') toast('振り返りを 事業運営/振り返り に保存しました');
@@ -5133,6 +5202,7 @@ ${MAIL_FOOTER}`,
 
         <div class="compass-fold-header" id="compassReview" onclick="toggleCompassReview()">
           <div class="compass-block-title">毎月の振り返り<span class="compass-block-note">${esc(monthKey)}</span></div>
+          <button type="button" class="btn btn-primary" onclick="event.stopPropagation(); generateReviewText()">テキスト生成</button>
           <button type="button" class="btn" onclick="event.stopPropagation(); saveReviewTextNow()">テキスト保存</button>
           <button type="button" class="btn btn-ghost" onclick="event.stopPropagation(); pickReviewDirectory()" title="事業運営/振り返り フォルダを選ぶ">保存先</button>
           <span class="collapse-chevron" id="reviewChevron">▸</span>
@@ -5191,6 +5261,13 @@ ${MAIL_FOOTER}`,
             <label>向かいたい方向に向かうために、何が足りないのか／何を変える必要があるのか</label>
             <textarea placeholder="後で書く" oninput="onReviewInput('directionGap', this)">${esc(r.directionGap)}</textarea>
           </div>
+        </div>
+        <div class="review-text-out" id="reviewTextOut"${lastGeneratedReviewText && lastGeneratedReviewMonth === monthKey ? '' : ' hidden'}>
+          <div class="review-text-out-head">
+            この文章をコピーして、チャットに送ってください
+            <button type="button" class="btn btn-primary" onclick="copyReviewText()">コピー</button>
+          </div>
+          <textarea id="reviewTextOutput" readonly>${esc(lastGeneratedReviewMonth === monthKey ? lastGeneratedReviewText : '')}</textarea>
         </div>
         </div>
       `;
