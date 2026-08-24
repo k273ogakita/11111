@@ -2102,7 +2102,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v106</div>
+        <div class="logo-sub">Business Dashboard · v107</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2950,6 +2950,7 @@ nark.visual.media@gmail.com
     const STORAGE_PREV_KEY = 'nark_dashboard_v4_prev';
     const AUTO_BACKUP_LAST_KEY = 'nark_dashboard_auto_backup_last';
     const BACKUP_DIR_LABEL_KEY = 'nark_backup_dir_label';
+    const REVIEW_DIR_LABEL_KEY = 'nark_review_dir_label';
     const AUTH_SESSION_KEY = 'nark_dashboard_session';
     const AUTH_TRUSTED_KEY = 'nark_dashboard_trusted';
     const AUTH_TRUSTED_DAYS = 90;
@@ -2964,6 +2965,8 @@ nark.visual.media@gmail.com
 
     let backupDirHandle = null;
     let backupDirName = localStorage.getItem(BACKUP_DIR_LABEL_KEY) || '';
+    let reviewDirHandle = null;
+    let reviewDirName = localStorage.getItem(REVIEW_DIR_LABEL_KEY) || '';
     let autoSaveTimer = null;
     let dashboardBooted = false;
 
@@ -3944,6 +3947,68 @@ ${MAIL_FOOTER}`,
       ].join('\n');
     }
 
+    function persistReviewDirHandle(handle) {
+      return openBackupDb().then(function(db) {
+        return new Promise(function(resolve, reject) {
+          const tx = db.transaction(BACKUP_DIR_STORE, 'readwrite');
+          tx.objectStore(BACKUP_DIR_STORE).put(handle, 'reviewDir');
+          tx.oncomplete = function() { resolve(); };
+          tx.onerror = function() { reject(tx.error); };
+        });
+      });
+    }
+
+    function loadReviewDirHandle() {
+      if (!supportsBackupDir()) return Promise.resolve(null);
+      return openBackupDb().then(function(db) {
+        return new Promise(function(resolve, reject) {
+          const tx = db.transaction(BACKUP_DIR_STORE, 'readonly');
+          const req = tx.objectStore(BACKUP_DIR_STORE).get('reviewDir');
+          req.onsuccess = function() { resolve(req.result || null); };
+          req.onerror = function() { reject(req.error); };
+        });
+      }).catch(function() { return null; });
+    }
+
+    async function resolveReviewDirHandle() {
+      if (reviewDirHandle && await ensureBackupDirPermission(reviewDirHandle)) return reviewDirHandle;
+      if (!backupDirHandle || !(await ensureBackupDirPermission(backupDirHandle))) return null;
+      const name = backupDirHandle.name;
+      try {
+        if (name === '振り返り') return backupDirHandle;
+        if (name === '事業運営') {
+          return await backupDirHandle.getDirectoryHandle('振り返り', { create: true });
+        }
+        if (name === 'nARK') {
+          const ops = await backupDirHandle.getDirectoryHandle('事業運営', { create: false });
+          return await ops.getDirectoryHandle('振り返り', { create: true });
+        }
+      } catch (_) {}
+      return null;
+    }
+
+    async function pickReviewDirectory() {
+      if (!supportsBackupDir()) {
+        alert('このブラウザではフォルダ指定に対応していません。Chrome または Edge をお使いください。');
+        return;
+      }
+      try {
+        const handle = await window.showDirectoryPicker({
+          id: 'nark-review-folder',
+          mode: 'readwrite',
+        });
+        reviewDirHandle = handle;
+        reviewDirName = handle.name;
+        await persistReviewDirHandle(handle);
+        localStorage.setItem(REVIEW_DIR_LABEL_KEY, reviewDirName);
+        toast('振り返りの保存先: ' + reviewDirName);
+        saveAllReviewTexts();
+      } catch (err) {
+        if (err && err.name !== 'AbortError') alert('フォルダの選択に失敗しました。');
+      }
+    }
+    window.pickReviewDirectory = pickReviewDirectory;
+
     async function saveReviewText(monthKey, options) {
       options = options || {};
       monthKey = monthKey || currentReviewMonthKey();
@@ -3952,6 +4017,17 @@ ${MAIL_FOOTER}`,
       if (!reviewHasContent(r) && !options.force) return null;
       const filename = reviewTextFileName(monthKey);
       const md = buildReviewMarkdown(monthKey);
+      const reviewDir = await resolveReviewDirHandle();
+      if (reviewDir) {
+        try {
+          const fileHandle = await reviewDir.getFileHandle(filename, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(new Blob([md], { type: 'text/plain;charset=utf-8' }));
+          await writable.close();
+          if (options.download) downloadFile(filename, md, 'text/plain;charset=utf-8');
+          return 'folder';
+        } catch (_) {}
+      }
       const dest = await saveBackupFile(filename, md, 'text/plain;charset=utf-8');
       if (options.download && dest === 'folder') {
         downloadFile(filename, md, 'text/plain;charset=utf-8');
@@ -3968,8 +4044,8 @@ ${MAIL_FOOTER}`,
 
     function saveReviewTextNow() {
       saveReviewText(currentReviewMonthKey(), { force: true, download: true }).then(function(dest) {
-        if (dest === 'folder') toast('振り返りをテキスト保存しました');
-        else toast('振り返りテキストをダウンロードしました');
+        if (dest === 'folder') toast('振り返りを 事業運営/振り返り に保存しました');
+        else toast('振り返りテキストをダウンロードしました。事業運営/振り返り に入れてください');
       });
     }
     window.saveReviewTextNow = saveReviewTextNow;
@@ -4070,6 +4146,11 @@ ${MAIL_FOOTER}`,
       if (backupDirHandle) {
         const ok = await ensureBackupDirPermission(backupDirHandle);
         if (!ok) backupDirHandle = null;
+      }
+      reviewDirHandle = await loadReviewDirHandle();
+      if (reviewDirHandle) {
+        const ok = await ensureBackupDirPermission(reviewDirHandle);
+        if (!ok) reviewDirHandle = null;
       }
       updateBackupDirLabel();
     }
@@ -5053,6 +5134,7 @@ ${MAIL_FOOTER}`,
         <div class="compass-fold-header" id="compassReview" onclick="toggleCompassReview()">
           <div class="compass-block-title">毎月の振り返り<span class="compass-block-note">${esc(monthKey)}</span></div>
           <button type="button" class="btn" onclick="event.stopPropagation(); saveReviewTextNow()">テキスト保存</button>
+          <button type="button" class="btn btn-ghost" onclick="event.stopPropagation(); pickReviewDirectory()" title="事業運営/振り返り フォルダを選ぶ">保存先</button>
           <span class="collapse-chevron" id="reviewChevron">▸</span>
         </div>
         <div class="collapse-body" id="reviewCollapse">
