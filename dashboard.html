@@ -1098,6 +1098,12 @@
       border-left: 2px solid #c85a3c;
       font-weight: 700;
     }
+    .cal-event.monthly-review {
+      background: rgba(50,120,200,.12);
+      color: #245a96;
+      border-left: 2px solid #3278c8;
+      font-weight: 700;
+    }
     .cal-event.payment-confirm {
       background: rgba(42,138,94,.12);
       color: #1f6b48;
@@ -1106,6 +1112,7 @@
     }
     .cal-legend-dot.invoice { background: #c85a3c; }
     .cal-legend-dot.payment { background: #2a8a5e; }
+    .cal-legend-dot.monthly-review { background: #3278c8; }
     .cal-day.clickable {
       cursor: pointer;
       transition: background .12s;
@@ -1752,7 +1759,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v101</div>
+        <div class="logo-sub">Business Dashboard · v102</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1843,6 +1850,7 @@
           <div class="cal-legend-item"><div class="cal-legend-dot task"></div>レポート作成</div>
           <div class="cal-legend-item"><div class="cal-legend-dot invoice"></div>🧾 請求書作成（毎月25日・土日祝は前倒し）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot payment"></div>💰 振込確認（請求日の翌々月末）</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot monthly-review"></div>🪞 今月の振り返り（第4週火曜・30分）</div>
         </div>
       </div>
     </section>
@@ -3653,6 +3661,37 @@ ${MAIL_FOOTER}`,
       return !!(issue && issue.dateStr === dateStr);
     }
 
+    /**
+     * 毎月「第4週」（日付22〜28日）の火曜日＝今月の振り返り（30分・朝イチ）。
+     * 例: 2026-08 → 8/25（火）、2026-09 → 9/22（火）
+     */
+    function getMonthlyReviewDate(year, monthIndex) {
+      const y = year;
+      const m = monthIndex + 1;
+      const lastDay = new Date(y, m, 0).getDate();
+      const start = 22;
+      const end = Math.min(28, lastDay);
+      for (let d = start; d <= end; d++) {
+        const dt = new Date(y, monthIndex, d);
+        if (dt.getDay() === 2) { // Tuesday
+          return {
+            year: y,
+            month: m,
+            day: d,
+            dateStr: toDateStr(y, m, d),
+          };
+        }
+      }
+      return null;
+    }
+
+    function isMonthlyReviewDay(dateStr) {
+      if (!dateStr) return false;
+      const [y, m] = dateStr.split('-').map(Number);
+      const review = getMonthlyReviewDate(y, m - 1);
+      return !!(review && review.dateStr === dateStr);
+    }
+
     function formatDateJP(iso) {
       const [y, m, d] = iso.split('-');
       const days = ['日','月','火','水','木','金','土'];
@@ -4074,6 +4113,7 @@ ${MAIL_FOOTER}`,
         }
       });
       const invoiceDay = isInvoiceCreationDay(today);
+      const reviewDay = isMonthlyReviewDay(today);
       let invoiceNotice = '';
       if (invoiceDay) {
         const [y, m] = today.split('-').map(Number);
@@ -4082,13 +4122,17 @@ ${MAIL_FOOTER}`,
           ? `<div class="notice-bar-inner">🧾 <strong>請求書作成</strong> — 25日が土日祝のため、本日（${esc(formatDateJa(issue.dateStr))}）が発行日です</div>`
           : `<div class="notice-bar-inner">🧾 <strong>請求書作成</strong> — 本日は毎月25日の請求書発行日です</div>`;
       }
-      if (due.length === 0 && paymentDue.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && !invoiceDay) {
+      const reviewNotice = reviewDay
+        ? `<div class="notice-bar-inner">🪞 <strong>今月の振り返り</strong> — 第4週火曜の朝イチに30分確保（本日）</div>`
+        : '';
+      if (due.length === 0 && paymentDue.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && !invoiceDay && !reviewDay) {
         el.style.display = 'none';
         el.innerHTML = '';
         return;
       }
       el.style.display = '';
       el.innerHTML = [
+        reviewNotice,
         ...due.map(({ project: p, contact: c }) =>
           `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — アフターフォロー（${esc(c.label)}）の日です（納品 ${esc(p.deliveredDate || '')}）</div>`
         ),
@@ -4859,6 +4903,12 @@ ${MAIL_FOOTER}`,
           entries.push({ kind: 'projectDeadline', item: p, date: p.finalDueDate, label: '最終納品', deadlineKind: 'final' });
         }
       });
+      if (isMonthlyReviewDay(today)) {
+        entries.push({
+          kind: 'monthlyReview',
+          item: { date: today, done: false, type: 'event' },
+        });
+      }
       if (isInvoiceCreationDay(today)) {
         const [y, m] = today.split('-').map(Number);
         const issue = getMonthlyInvoiceIssueDate(y, m - 1);
@@ -4869,6 +4919,9 @@ ${MAIL_FOOTER}`,
         });
       }
       entries.sort((a, b) => {
+        // 振り返りは「1番最初」に固定
+        if (a.kind === 'monthlyReview' && b.kind !== 'monthlyReview') return -1;
+        if (b.kind === 'monthlyReview' && a.kind !== 'monthlyReview') return 1;
         if (a.item.done !== b.item.done) return a.item.done ? 1 : -1;
         const aDate = entryDate(a);
         const bDate = entryDate(b);
@@ -4990,6 +5043,14 @@ ${MAIL_FOOTER}`,
           <span class="task-category 依頼">${esc(label || '期日')}</span>
           <span class="task-text">${esc(t.client || t.name)} — ${esc(label || '期日')}（${formatDateJa(date)}）</span>
           <button type="button" class="btn btn-ghost" onclick="editProject('${t.id}')">案件を開く</button>
+        </div>`;
+        }
+        if (kind === 'monthlyReview') {
+          return `
+        <div class="task-item task-item-reminder">
+          <span class="task-category イベント">朝イチ</span>
+          <span class="task-category 運営">振り返り</span>
+          <span class="task-text">今月の振り返り（30分）— 第4週火曜・一番最初に確保</span>
         </div>`;
         }
         if (kind === 'invoiceTask') {
@@ -6697,6 +6758,19 @@ ${MAIL_FOOTER}`,
           client: issue.shifted
             ? `本来 ${formatDateJa(issue.targetDateStr)}（土日祝）→ ${formatDateJa(issue.dateStr)}`
             : '毎月25日',
+          status: '',
+          deadline: true,
+        });
+      });
+      // 毎月第4週（22〜28日）の火曜：今月の振り返り30分（朝イチ）
+      getCalendarDisplayMonths().forEach(({ year, month }) => {
+        const review = getMonthlyReviewDate(year, month);
+        if (!review) return;
+        if (!events[review.dateStr]) events[review.dateStr] = [];
+        events[review.dateStr].unshift({
+          label: '今月の振り返り（30分・朝イチ）',
+          category: 'monthly-review',
+          client: '第4週の火曜日',
           status: '',
           deadline: true,
         });
