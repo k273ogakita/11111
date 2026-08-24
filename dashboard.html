@@ -1665,8 +1665,14 @@
     .horizon-title {
       font-size: .95rem;
       font-weight: 800;
-      margin: 3px 0 10px;
+      margin: 3px 0 4px;
       line-height: 1.3;
+    }
+    .horizon-meta {
+      font-size: .72rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      opacity: .85;
     }
     .horizon-card textarea {
       background: rgba(255,255,255,.72);
@@ -1675,6 +1681,88 @@
       font-size: .8rem;
       line-height: 1.5;
     }
+    .vision-items { display: flex; flex-direction: column; gap: 8px; }
+    .vision-item {
+      background: rgba(255,255,255,.62);
+      border-radius: 8px;
+      padding: 8px 10px 7px;
+    }
+    .vision-item-label {
+      display: inline-block;
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      padding: 2px 8px;
+      border-radius: 99px;
+      margin-bottom: 5px;
+    }
+    .vision-item-label.health { background: #fde8e8; color: #b42318; }
+    .vision-item-label.family { background: #fff1e0; color: #b54708; }
+    .vision-item-label.money { background: #fef7c3; color: #854d0e; }
+    .vision-item-label.work { background: #e8f1fb; color: #175cd3; }
+    .vision-item-label.hobby { background: #f4e8fb; color: #6941c6; }
+    .vision-bullets {
+      margin: 0;
+      padding-left: 16px;
+    }
+    .vision-bullets li {
+      font-size: .75rem;
+      line-height: 1.45;
+      margin-bottom: 3px;
+      color: var(--text);
+    }
+    .vision-compare {
+      display: grid;
+      grid-template-columns: 72px repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
+    .vision-compare-head,
+    .vision-compare-cell,
+    .vision-compare-cat {
+      border-radius: 10px;
+      padding: 10px 10px 8px;
+    }
+    .vision-compare-cat {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      writing-mode: horizontal-tb;
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding-top: 12px;
+    }
+    .vision-compare-head {
+      border: 1px solid transparent;
+      min-height: 64px;
+    }
+    .vision-compare-head .horizon-title { font-size: .88rem; margin-bottom: 2px; }
+    .vision-compare-head .horizon-meta { margin-bottom: 0; }
+    .vision-compare-cell {
+      border: 1px solid transparent;
+      background: rgba(255,255,255,.55);
+    }
+    .vision-compare-cell.now,
+    .vision-compare-head.now { background: linear-gradient(165deg, #f5efe6 0%, #e7dccb 100%); border-color: #c4b49a; }
+    .vision-compare-cell.three,
+    .vision-compare-head.three { background: linear-gradient(165deg, #fff3e8 0%, #ffdcc4 100%); border-color: #e8a57a; }
+    .vision-compare-cell.ten,
+    .vision-compare-head.ten { background: linear-gradient(165deg, #e7f6f2 0%, #cfeae3 100%); border-color: #7ebfb0; }
+    .vision-compare-cell.grandmother,
+    .vision-compare-head.grandmother { background: linear-gradient(165deg, #f6edff 0%, #ead9f8 100%); border-color: #c9a6e0; }
+    .vision-compare-head.now .horizon-title,
+    .vision-compare-head.now .horizon-step { color: #6e5a40; }
+    .vision-compare-head.three .horizon-title,
+    .vision-compare-head.three .horizon-step { color: #c45c28; }
+    .vision-compare-head.ten .horizon-title,
+    .vision-compare-head.ten .horizon-step { color: #1f6f62; }
+    .vision-compare-head.grandmother .horizon-title,
+    .vision-compare-head.grandmother .horizon-step { color: #6b3d96; }
+    .compass-timeline.vision-eras { display: none; }
     .horizon-card.grandmother {
       background: linear-gradient(165deg, #f6edff 0%, #ead9f8 100%);
       border-color: #c9a6e0;
@@ -1945,6 +2033,8 @@
       .compass-timeline { grid-template-columns: 1fr 1fr; }
       .strength-grid { grid-template-columns: 1fr 1fr; }
       .review-grid { grid-template-columns: 1fr; }
+      .vision-compare { display: none; }
+      .compass-timeline.vision-eras { display: grid; }
     }
     @media (max-width: 600px) {
       .app { padding: 16px; }
@@ -1984,7 +2074,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v103</div>
+        <div class="logo-sub">Business Dashboard · v104</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3080,6 +3170,162 @@ nark.visual.media@gmail.com
           '子どもは今2歳半。出産・育児の経験がある',
           '将来の学び（勉強）に活かしたい',
         ],
+      },
+    ];
+
+    const VISION_CATS = [
+      { id: 'health', label: '健康' },
+      { id: 'family', label: '家族' },
+      { id: 'money', label: 'お金' },
+      { id: 'work', label: '仕事' },
+      { id: 'hobby', label: '趣味' },
+    ];
+
+    const VISION_ERAS = [
+      {
+        id: 'now',
+        tone: 'now',
+        step: 'いま',
+        title: '現状',
+        meta: '36歳 · 息子2歳半',
+        items: {
+          health: [
+            '透析は回避中',
+            'しっかり寝ている',
+          ],
+          family: [
+            '3人仲良く暮らしている',
+            '子ども第一優先。ただし土日に仕事・仕事の集まりが月2〜3回ある',
+            '結婚記念日・家族のお祝いはみんなでしている',
+            '月〜土は子どもを終日保育園に預けている',
+            '夜も仕事で、夫と話す時間はあまりない。大きな問題ではないが、もう少し夜ゆっくりした方がいい',
+          ],
+          money: [
+            '自分の収入：看護師 約8万円',
+            '動画は固定費を払うと、プラスマイナスゼロかマイナス約3万円',
+            '夫の収入でやれている。ナースのパートを減らしたので、これからよりギリギリになる',
+          ],
+          work: [
+            '月〜土は終日、看護師か動画。夜も働いている',
+            '日曜も、子どもが寝ている間に約2時間仕事',
+            '医療向けの説明動画を構築中。依頼は月1〜2本、1本あたり約3万円',
+            '編集案件は月1本くらい（1本 2.5万〜5万円）',
+            '看護師：月曜午前、木曜1日、金曜午前、土曜午前',
+            '直接丸受けした仕事は、ディレクションから撮影・編集まで全部。工程が多い',
+            '編集を任せられる人がまだいない（信頼・腕・都合やメリットが噛み合う人が見つかっていない）',
+          ],
+          hobby: [
+            '仕事はそれっぽく楽しんでいる',
+            '友人との食事は年2回くらい',
+            '旅行の余裕はない（お金も時間も）',
+            '日曜だけ子どもと過ごしている',
+            '家族でお出かけは3ヶ月に1回くらい',
+          ],
+        },
+      },
+      {
+        id: 'three',
+        tone: 'three',
+        step: '3年後',
+        title: '3年後の理想',
+        meta: '39歳 · 息子5歳',
+        items: {
+          health: [
+            '透析はまだ回避している',
+            'しっかり睡眠が取れている',
+          ],
+          family: [
+            '変わらず3人で仲良く暮らしている',
+            '結婚記念日はおいしいご飯を食べに行く',
+            '家族のお祝いは、みんな揃ってお祝いする',
+            '家族を第一優先にする',
+            '夜はゆっくり夫と過ごす',
+            '土曜は子どもを14時ごろお迎えし、帰ってから好きなことをさせる時間にする',
+            '日曜に仕事が入ったら、別の曜日に保育園を休ませて子どもとの時間に変える',
+          ],
+          money: [
+            'コンスタントに月40万円、または年収約600万円',
+            'そのうち不労所得が約10万円',
+          ],
+          work: [
+            '月〜金 8:30〜17:00、土曜 8:30〜14:00',
+            '動画の仕事を頑張る。医療系。編集はたまに、ディレクションがメイン',
+            '患者説明サービス、クリニック紹介動画、出産動画、就活動画もしたい',
+            '投資を始めている',
+            '看護師はお手伝い程度。週1〜2回がいい',
+          ],
+          hobby: [
+            '仕事を楽しんでいる',
+            '年1回、子連れで遠くへ旅行（約30万円）',
+            '年1回、一人旅（約7万円）',
+            '土曜の午後と日曜は、楽しく子どもと過ごす',
+          ],
+        },
+      },
+      {
+        id: 'ten',
+        tone: 'ten',
+        step: '10年後',
+        title: '10年後の理想',
+        meta: '46歳 · 息子12歳',
+        items: {
+          health: [
+            '透析を回避している',
+            'しっかり寝ている',
+          ],
+          family: [
+            '夫と年2〜3回、おいしいご飯（結婚記念日、お互いの誕生日）',
+            '息子のやりたいことをさせてあげられる（習い事・やってみたいこと）',
+            '家族とニコニコして過ごせる',
+          ],
+          money: [
+            '月収50万円（うち不労所得 約25万円）',
+          ],
+          work: [
+            '月〜金のみ 8:30〜17:00',
+            '計画を立て、指示を出す立場（個人事業主）',
+            '動画制作が主',
+            '医療関係者や患者さんのストレス・苦痛を緩和できる会を運営できていると楽しそう。人とつながりを感じられる会ができているといい',
+            '息子の習い事も、仕事の一環のように関わる',
+          ],
+          hobby: [
+            '好きな服を着て、友達と食事に行く',
+            '夫・子どもと年1回旅行（北海道や海外など、少し遠いところ）',
+            '月1回、美容室・エステ',
+            '友人と3ヶ月に1回遊ぶ（近場でも旅行でも）',
+          ],
+        },
+      },
+      {
+        id: 'grandmother',
+        tone: 'grandmother',
+        step: 'いちばん先',
+        title: 'おばあちゃんになったとき',
+        meta: '70歳〜想定 · 息子40歳',
+        items: {
+          health: [
+            '透析を導入している（週3〜4回）',
+          ],
+          family: [
+            '夫と仲良く、月2回くらいおいしいご飯を食べに行く',
+            '息子（40歳）の家族とも、正月・お盆など節目にみんなで食事に連れていく',
+          ],
+          money: [
+            '不労所得 月30万円 ＋ 年金 約10万円で、普通の生活ができる',
+            '自分と夫の介護・お葬式代は、自分で用意できる',
+            '孫にいろいろ買えるお金の余裕がある',
+          ],
+          work: [
+            '仕事はしていない',
+            'じいさんばあさんが集まるコミュニティを運営・管理し、自分も参加している（カラオケ、軽運動など楽しいやつ）',
+            '犬の散歩と猫の世話が、仕事みたいなもの',
+          ],
+          hobby: [
+            '友人とカラオケや食事に行く',
+            '犬や猫と遊ぶ',
+            '週2回の習い事をしている',
+          ],
+        },
       },
     ];
 
@@ -4582,6 +4828,18 @@ ${MAIL_FOOTER}`,
     }
     window.scrollToMonthlyReview = scrollToMonthlyReview;
 
+    function visionBulletHtml(lines) {
+      return `<ul class="vision-bullets">${(lines || []).map(line => `<li>${esc(line)}</li>`).join('')}</ul>`;
+    }
+
+    function visionItemsHtml(era) {
+      return `<div class="vision-items">${VISION_CATS.map(cat => `
+        <div class="vision-item">
+          <div class="vision-item-label ${cat.id}">${esc(cat.label)}</div>
+          ${visionBulletHtml(era.items[cat.id])}
+        </div>`).join('')}</div>`;
+    }
+
     function renderCompass() {
       const el = document.getElementById('compassPanel');
       if (!el) return;
@@ -4595,28 +4853,29 @@ ${MAIL_FOOTER}`,
         <div class="compass-kicker">Direction</div>
         <div class="compass-heading">理想の状態と、いまの自分</div>
 
-        <div class="compass-block-title">時間の軸</div>
-        <div class="compass-timeline">
-          <div class="horizon-card grandmother">
-            <div class="horizon-step">いちばん先</div>
-            <div class="horizon-title">おばあちゃんになったときの理想</div>
-            <textarea placeholder="後で書く" oninput="onVisionInput('grandmother', this)">${esc(v.grandmother)}</textarea>
-          </div>
-          <div class="horizon-card ten">
-            <div class="horizon-step">10年後</div>
-            <div class="horizon-title">10年後の理想の状態</div>
-            <textarea placeholder="後で書く" oninput="onVisionInput('tenYears', this)">${esc(v.tenYears)}</textarea>
-          </div>
-          <div class="horizon-card three">
-            <div class="horizon-step">3年後</div>
-            <div class="horizon-title">3年後の理想の状態</div>
-            <textarea placeholder="後で書く" oninput="onVisionInput('threeYears', this)">${esc(v.threeYears)}</textarea>
-          </div>
-          <div class="horizon-card now">
-            <div class="horizon-step">いま</div>
-            <div class="horizon-title">現状</div>
-            <textarea placeholder="後で書く" oninput="onVisionInput('current', this)">${esc(v.current)}</textarea>
-          </div>
+        <div class="compass-block-title">時間の軸<span class="compass-block-note">健康・家族・お金・仕事・趣味</span></div>
+        <div class="vision-compare">
+          <div></div>
+          ${VISION_ERAS.map(era => `
+            <div class="vision-compare-head ${era.tone}">
+              <div class="horizon-step">${esc(era.step)}</div>
+              <div class="horizon-title">${esc(era.title)}</div>
+              <div class="horizon-meta">${esc(era.meta)}</div>
+            </div>`).join('')}
+          ${VISION_CATS.map(cat => `
+            <div class="vision-compare-cat"><span class="vision-item-label ${cat.id}">${esc(cat.label)}</span></div>
+            ${VISION_ERAS.map(era => `
+              <div class="vision-compare-cell ${era.tone}">${visionBulletHtml(era.items[cat.id])}</div>`).join('')}
+          `).join('')}
+        </div>
+        <div class="compass-timeline vision-eras">
+          ${VISION_ERAS.map(era => `
+            <div class="horizon-card ${era.tone}">
+              <div class="horizon-step">${esc(era.step)}</div>
+              <div class="horizon-title">${esc(era.title)}</div>
+              <div class="horizon-meta">${esc(era.meta)}</div>
+              ${visionItemsHtml(era)}
+            </div>`).join('')}
         </div>
 
         <div class="path-card">
