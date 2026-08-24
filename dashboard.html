@@ -1662,6 +1662,11 @@
       margin-left: 0;
       font-size: .85rem;
     }
+    .compass-fold-header .btn {
+      margin-left: auto;
+      font-size: .72rem;
+      padding: 4px 10px;
+    }
     .compass-block-note {
       font-size: .72rem;
       font-weight: 500;
@@ -2097,7 +2102,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v105</div>
+        <div class="logo-sub">Business Dashboard · v106</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3090,6 +3095,7 @@ nark.visual.media@gmail.com
       render();
       initBackupDir().then(function() {
         runWeeklyAutoBackupIfDue();
+        saveAllReviewTexts();
       });
       setInterval(renderDateTime, 30000);
       setInterval(function() { runWeeklyAutoBackupIfDue(); }, 60000);
@@ -3866,6 +3872,7 @@ ${MAIL_FOOTER}`,
     function persistStateQuiet() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       scheduleAutoSaveToFolder();
+      scheduleReviewTextSave();
     }
 
     function undoLastAction() {
@@ -3887,6 +3894,92 @@ ${MAIL_FOOTER}`,
       autoSaveTimer = setTimeout(function() {
         exportJsonBackup({ filename: 'latest.json' });
       }, 2000);
+    }
+
+    function reviewTextFileName(monthKey) {
+      const [y, m] = String(monthKey).split('-');
+      return y + '-' + Number(m) + '振り返り.md';
+    }
+
+    function reviewHasContent(r) {
+      if (!r || typeof r !== 'object') return false;
+      return ['wentWell', 'wentWellWhy', 'wentWellNext', 'wentPoor', 'wentPoorWhy', 'wentPoorNext', 'directionStatus', 'directionNote', 'directionGap']
+        .some(function(k) { return String(r[k] || '').trim(); });
+    }
+
+    function directionStatusLabel(status) {
+      return { yes: '取れている', partial: '一部取れている', no: '取れていない' }[status] || '（未記入）';
+    }
+
+    function reviewMdSection(title, value) {
+      const text = String(value || '').trim();
+      return '## ' + title + '\n\n' + (text || '（未記入）') + '\n';
+    }
+
+    function buildReviewMarkdown(monthKey) {
+      ensureVisionAndReviews(state);
+      const r = Object.assign(emptyReview(), state.reviews[monthKey] || {});
+      const [y, m] = String(monthKey).split('-');
+      const title = Number(y) + '-' + Number(m) + '振り返り';
+      const note = String(r.directionNote || '').trim();
+      return [
+        '# ' + title,
+        '',
+        '- 対象月: ' + y + '年' + Number(m) + '月',
+        '- 記録日: ' + todayStr(),
+        '- 出典: nARK Dashboard 毎月の振り返り',
+        '',
+        reviewMdSection('今月うまく行ったこと', r.wentWell),
+        reviewMdSection('なぜうまく行ったか', r.wentWellWhy),
+        reviewMdSection('次も繰り返すための具体策', r.wentWellNext),
+        reviewMdSection('今月うまくいかなかったこと', r.wentPoor),
+        reviewMdSection('なぜうまくいかなかったか', r.wentPoorWhy),
+        reviewMdSection('繰り返さないための具体策', r.wentPoorNext),
+        '## 向かいたい方向に向かう行動を取れているか',
+        '',
+        directionStatusLabel(r.directionStatus),
+        '',
+        note ? note + '\n' : '',
+        reviewMdSection('向かいたい方向に向かうために、何が足りないのか／何を変える必要があるのか', r.directionGap),
+      ].join('\n');
+    }
+
+    async function saveReviewText(monthKey, options) {
+      options = options || {};
+      monthKey = monthKey || currentReviewMonthKey();
+      ensureVisionAndReviews(state);
+      const r = Object.assign(emptyReview(), state.reviews[monthKey] || {});
+      if (!reviewHasContent(r) && !options.force) return null;
+      const filename = reviewTextFileName(monthKey);
+      const md = buildReviewMarkdown(monthKey);
+      const dest = await saveBackupFile(filename, md, 'text/plain;charset=utf-8');
+      if (options.download && dest === 'folder') {
+        downloadFile(filename, md, 'text/plain;charset=utf-8');
+      }
+      return dest;
+    }
+
+    function saveAllReviewTexts() {
+      ensureVisionAndReviews(state);
+      Object.keys(state.reviews || {}).forEach(function(k) {
+        saveReviewText(k);
+      });
+    }
+
+    function saveReviewTextNow() {
+      saveReviewText(currentReviewMonthKey(), { force: true, download: true }).then(function(dest) {
+        if (dest === 'folder') toast('振り返りをテキスト保存しました');
+        else toast('振り返りテキストをダウンロードしました');
+      });
+    }
+    window.saveReviewTextNow = saveReviewTextNow;
+
+    let reviewSaveTimer = null;
+    function scheduleReviewTextSave() {
+      clearTimeout(reviewSaveTimer);
+      reviewSaveTimer = setTimeout(function() {
+        saveReviewText(currentReviewMonthKey());
+      }, 1000);
     }
 
     function restorePreviousState() {
@@ -4959,6 +5052,7 @@ ${MAIL_FOOTER}`,
 
         <div class="compass-fold-header" id="compassReview" onclick="toggleCompassReview()">
           <div class="compass-block-title">毎月の振り返り<span class="compass-block-note">${esc(monthKey)}</span></div>
+          <button type="button" class="btn" onclick="event.stopPropagation(); saveReviewTextNow()">テキスト保存</button>
           <span class="collapse-chevron" id="reviewChevron">▸</span>
         </div>
         <div class="collapse-body" id="reviewCollapse">
