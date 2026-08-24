@@ -1607,6 +1607,226 @@
       color: var(--muted);
     }
 
+    /* ── Compass（理想・現状・強み・月次振り返り） ── */
+    .compass-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px 24px;
+      margin-bottom: 24px;
+    }
+    .compass-kicker {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .compass-heading {
+      font-size: 1.12rem;
+      font-weight: 800;
+      margin: 4px 0 18px;
+    }
+    .compass-block-title {
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin: 20px 0 10px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .compass-block-title:first-of-type { margin-top: 0; }
+    .compass-block-note {
+      font-size: .72rem;
+      font-weight: 500;
+      letter-spacing: 0;
+      color: var(--muted);
+    }
+    .compass-timeline {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .horizon-card {
+      border-radius: 12px;
+      padding: 14px 14px 12px;
+      border: 1px solid transparent;
+      min-height: 0;
+    }
+    .horizon-step {
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .horizon-title {
+      font-size: .95rem;
+      font-weight: 800;
+      margin: 3px 0 10px;
+      line-height: 1.3;
+    }
+    .horizon-card textarea {
+      background: rgba(255,255,255,.72);
+      border-color: rgba(58,53,48,.1);
+      min-height: 92px;
+      font-size: .8rem;
+      line-height: 1.5;
+    }
+    .horizon-card.grandmother {
+      background: linear-gradient(165deg, #f6edff 0%, #ead9f8 100%);
+      border-color: #c9a6e0;
+    }
+    .horizon-card.grandmother .horizon-step,
+    .horizon-card.grandmother .horizon-title { color: #6b3d96; }
+    .horizon-card.ten {
+      background: linear-gradient(165deg, #e7f6f2 0%, #cfeae3 100%);
+      border-color: #7ebfb0;
+    }
+    .horizon-card.ten .horizon-step,
+    .horizon-card.ten .horizon-title { color: #1f6f62; }
+    .horizon-card.three {
+      background: linear-gradient(165deg, #fff3e8 0%, #ffdcc4 100%);
+      border-color: #e8a57a;
+    }
+    .horizon-card.three .horizon-step,
+    .horizon-card.three .horizon-title { color: #c45c28; }
+    .horizon-card.now {
+      background: linear-gradient(165deg, #f5efe6 0%, #e7dccb 100%);
+      border-color: #c4b49a;
+    }
+    .horizon-card.now .horizon-step,
+    .horizon-card.now .horizon-title { color: #6e5a40; }
+    .path-card {
+      margin-top: 12px;
+      border-radius: 12px;
+      padding: 16px 16px 14px;
+      background: linear-gradient(165deg, #eaf6ee 0%, #d5eadc 100%);
+      border: 1px solid #8fc4a3;
+    }
+    .path-card .horizon-title { color: #1f6b43; margin-bottom: 4px; }
+    .path-card textarea {
+      background: rgba(255,255,255,.72);
+      border-color: rgba(31,107,67,.15);
+      min-height: 80px;
+      font-size: .82rem;
+      margin-top: 10px;
+    }
+    .strength-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .strength-card {
+      border-radius: 10px;
+      padding: 12px 13px 10px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-left: 4px solid var(--red);
+    }
+    .strength-card h4 {
+      font-size: .78rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .strength-card ul {
+      margin: 0;
+      padding-left: 16px;
+    }
+    .strength-card li {
+      font-size: .75rem;
+      line-height: 1.5;
+      margin-bottom: 4px;
+    }
+    .strength-card.peach { border-left-color: #e8956a; background: #fbf3ec; }
+    .strength-card.peach h4 { color: #c45c28; }
+    .strength-card.clinic { border-left-color: #3b82c4; background: #eef5fb; }
+    .strength-card.clinic h4 { color: #245a8c; }
+    .strength-card.patient { border-left-color: #d4a800; background: #fbf6e6; }
+    .strength-card.patient h4 { color: #8a6c00; }
+    .strength-card.craft { border-left-color: #6b3fa0; background: #f4eef8; }
+    .strength-card.craft h4 { color: #5a2f88; }
+    .strength-card.skip { border-left-color: #8c8278; background: #f3efe9; }
+    .strength-card.skip h4 { color: #6a625a; }
+    .strength-card.life { border-left-color: #c45c8a; background: #f9eef4; }
+    .strength-card.life h4 { color: #9a3d6a; }
+    .review-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+    }
+    .review-nav-title { font-size: .85rem; font-weight: 700; color: var(--text); min-width: 7.5em; text-align: center; }
+    .review-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .review-card {
+      border-radius: 12px;
+      padding: 14px 14px 12px;
+      border: 1px solid transparent;
+    }
+    .review-card h4 {
+      font-size: .88rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .review-field { margin-bottom: 8px; }
+    .review-field label {
+      display: block;
+      font-size: .68rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .review-card textarea {
+      min-height: 64px;
+      font-size: .8rem;
+      background: rgba(255,255,255,.78);
+    }
+    .review-card.well {
+      background: linear-gradient(165deg, #eaf6ee 0%, #d8eedf 100%);
+      border-color: #8fc4a3;
+    }
+    .review-card.well h4 { color: #1f6b43; }
+    .review-card.poor {
+      background: linear-gradient(165deg, #fdf0ea 0%, #f8ddd0 100%);
+      border-color: #e8a57a;
+    }
+    .review-card.poor h4 { color: #c45c28; }
+    .review-card.direction {
+      margin-top: 12px;
+      background: linear-gradient(165deg, #eaf1fb 0%, #d5e3f6 100%);
+      border-color: #8fb0d8;
+    }
+    .review-card.direction h4 { color: #245a8c; }
+    .dir-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+    .dir-chip {
+      border: 1px solid rgba(36,90,140,.25);
+      background: rgba(255,255,255,.7);
+      color: #245a8c;
+      border-radius: 99px;
+      padding: 5px 12px;
+      font-size: .75rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--font);
+    }
+    .dir-chip:hover { border-color: #3278c8; }
+    .dir-chip.on {
+      background: #3278c8;
+      border-color: #3278c8;
+      color: #fff;
+    }
+    .notice-jump {
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
     .sub-list { display: flex; flex-direction: column; gap: 8px; }
     .sub-item {
       display: flex;
@@ -1722,6 +1942,9 @@
       .finance-breakdown-3 { grid-template-columns: repeat(2, 1fr); }
       .finance-breakdown-4 { grid-template-columns: repeat(2, 1fr); }
       .milestone-grid { grid-template-columns: 1fr; }
+      .compass-timeline { grid-template-columns: 1fr 1fr; }
+      .strength-grid { grid-template-columns: 1fr 1fr; }
+      .review-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 600px) {
       .app { padding: 16px; }
@@ -1734,6 +1957,8 @@
         font-size: .8rem;
         color: var(--red);
       }
+      .compass-timeline, .strength-grid { grid-template-columns: 1fr; }
+      .compass-panel { padding: 16px; }
     }
   </style>
 </head>
@@ -1759,7 +1984,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v102</div>
+        <div class="logo-sub">Business Dashboard · v103</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -1786,6 +2011,8 @@
     </div>
 
     <div class="notice-bar" id="noticeBar" style="display:none"></div>
+
+    <section class="compass-panel" id="compassPanel"></section>
 
     <div class="stats" id="stats"></div>
 
@@ -2796,6 +3023,66 @@ nark.visual.media@gmail.com
       ],
     };
 
+    const STRENGTH_CARDS = [
+      {
+        id: 'personality',
+        title: '人柄',
+        tone: 'peach',
+        items: [
+          '誰とでも打ち解けやすい。優しい。誰にでも話しかける',
+          '相手によって態度を変えない。正直。大げさに反応しない',
+          'ちょっと面白い。いい人',
+        ],
+      },
+      {
+        id: 'clinic',
+        title: '医療の現場',
+        tone: 'clinic',
+        items: [
+          '看護師として約7〜8年。医療知識と現場経験がある',
+          'クリニックでの経験もある',
+          '院長の考え・心理、病院の状況と経営の一端、看護師の状況と心理がわかる',
+        ],
+      },
+      {
+        id: 'patient',
+        title: '患者としての経験',
+        tone: 'patient',
+        items: [
+          '腎移植から約10年。患者の状況と気持ちがわかる',
+          '当事者として、現実が見える',
+        ],
+      },
+      {
+        id: 'craft',
+        title: '撮影・動画編集',
+        tone: 'craft',
+        items: [
+          '普通のカメラ（一眼レフ）で撮れる',
+          '動画編集は、品質よくできる',
+          '高精細専用機・ドローン・スローモーションはしない',
+        ],
+      },
+      {
+        id: 'skip',
+        title: 'やらないこと',
+        tone: 'skip',
+        items: [
+          'SNSには興味がない',
+          'TikTokには全く興味がない',
+        ],
+      },
+      {
+        id: 'life',
+        title: 'これから活かしたい経験',
+        tone: 'life',
+        items: [
+          '子どもは今2歳半。出産・育児の経験がある',
+          '将来の学び（勉強）に活かしたい',
+        ],
+      },
+    ];
+
     const SNS_STATUS_MAP = {
       draft: 'todo', scheduled: 'doing', designing: 'doing',
       '翻訳確認中': 'doing', '修正中': 'doing', published: 'done',
@@ -2832,6 +3119,7 @@ nark.visual.media@gmail.com
     let editingBizTodoId = null;
     let bizTodoFilter = 'open';
     let bizTodoShowDone = false;
+    let reviewMonthOffset = 0;
 
     function defaultState() {
       return {
@@ -2844,7 +3132,40 @@ nark.visual.media@gmail.com
         adExpenses: [],
         bizTodos: [],
         milestoneDone: {},
+        vision: emptyVision(),
+        reviews: {},
       };
+    }
+
+    function emptyVision() {
+      return {
+        grandmother: '',
+        tenYears: '',
+        threeYears: '',
+        current: '',
+        pathOverview: '',
+      };
+    }
+
+    function emptyReview() {
+      return {
+        wentWell: '',
+        wentWellWhy: '',
+        wentWellNext: '',
+        wentPoor: '',
+        wentPoorWhy: '',
+        wentPoorNext: '',
+        directionStatus: '',
+        directionNote: '',
+        directionGap: '',
+      };
+    }
+
+    function ensureVisionAndReviews(data) {
+      if (!data.vision || typeof data.vision !== 'object') data.vision = emptyVision();
+      else data.vision = Object.assign(emptyVision(), data.vision);
+      if (!data.reviews || typeof data.reviews !== 'object') data.reviews = {};
+      return data;
     }
 
     function ensureMilestones(data) {
@@ -3195,6 +3516,7 @@ ${MAIL_FOOTER}`,
       if (!data.adExpenses) data.adExpenses = [];
       if (!data.bizTodos) data.bizTodos = [];
       ensureMilestones(data);
+      ensureVisionAndReviews(data);
       data.projects.forEach(p => {
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
         if (TYPE_MIGRATION[p.type]) p.type = TYPE_MIGRATION[p.type];
@@ -3260,6 +3582,11 @@ ${MAIL_FOOTER}`,
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       scheduleAutoSaveToFolder();
       render();
+    }
+
+    function persistStateQuiet() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      scheduleAutoSaveToFolder();
     }
 
     function undoLastAction() {
@@ -3871,6 +4198,7 @@ ${MAIL_FOOTER}`,
       }
       renderDateTime();
       renderNotices();
+      renderCompass();
       renderStats();
       renderMilestones();
       renderFinance();
@@ -4123,7 +4451,7 @@ ${MAIL_FOOTER}`,
           : `<div class="notice-bar-inner">🧾 <strong>請求書作成</strong> — 本日は毎月25日の請求書発行日です</div>`;
       }
       const reviewNotice = reviewDay
-        ? `<div class="notice-bar-inner">🪞 <strong>今月の振り返り</strong> — 第4週火曜の朝イチに30分確保（本日）</div>`
+        ? `<div class="notice-bar-inner">🪞 <strong class="notice-jump" onclick="scrollToMonthlyReview()">今月の振り返り</strong> — 第4週火曜の朝イチに30分確保（本日）</div>`
         : '';
       if (due.length === 0 && paymentDue.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && !invoiceDay && !reviewDay) {
         el.style.display = 'none';
@@ -4178,6 +4506,193 @@ ${MAIL_FOOTER}`,
         <span class="stat-chip">事業TODO <strong>${openBizTodos}</strong></span>
         <span class="stat-divider"></span>
         <span class="stat-chip highlight">マイルストーン <strong>${ms.done}/${ms.total}</strong></span>
+      `;
+    }
+
+    function reviewMonthDate() {
+      const d = new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth() + reviewMonthOffset);
+      return d;
+    }
+
+    function currentReviewMonthKey() {
+      const d = reviewMonthDate();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function reviewMonthLabel() {
+      const d = reviewMonthDate();
+      const isCurrent = reviewMonthOffset === 0;
+      return `${d.getFullYear()}年${d.getMonth() + 1}月${isCurrent ? '（今月）' : ''}`;
+    }
+
+    function ensureCurrentReview() {
+      ensureVisionAndReviews(state);
+      const key = currentReviewMonthKey();
+      if (!state.reviews[key]) state.reviews[key] = emptyReview();
+      else state.reviews[key] = Object.assign(emptyReview(), state.reviews[key]);
+      return state.reviews[key];
+    }
+
+    function isCompassFocused() {
+      const el = document.activeElement;
+      return !!(el && el.closest && el.closest('#compassPanel'));
+    }
+
+    function onVisionInput(key, el) {
+      ensureVisionAndReviews(state);
+      state.vision[key] = el.value;
+      persistStateQuiet();
+    }
+    window.onVisionInput = onVisionInput;
+
+    function onReviewInput(key, el) {
+      const r = ensureCurrentReview();
+      r[key] = el.value;
+      persistStateQuiet();
+    }
+    window.onReviewInput = onReviewInput;
+
+    function setReviewDirection(status) {
+      const r = ensureCurrentReview();
+      r.directionStatus = r.directionStatus === status ? '' : status;
+      persistStateQuiet();
+      document.querySelectorAll('[data-dir-chip]').forEach(btn => {
+        btn.classList.toggle('on', btn.dataset.dirChip === r.directionStatus);
+      });
+    }
+    window.setReviewDirection = setReviewDirection;
+
+    function shiftReviewMonth(delta) {
+      reviewMonthOffset += delta;
+      renderCompass();
+    }
+    window.shiftReviewMonth = shiftReviewMonth;
+
+    function resetReviewMonth() {
+      reviewMonthOffset = 0;
+      renderCompass();
+    }
+    window.resetReviewMonth = resetReviewMonth;
+
+    function scrollToMonthlyReview() {
+      const el = document.getElementById('compassReview');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    window.scrollToMonthlyReview = scrollToMonthlyReview;
+
+    function renderCompass() {
+      const el = document.getElementById('compassPanel');
+      if (!el) return;
+      if (isCompassFocused()) return;
+      ensureVisionAndReviews(state);
+      const v = state.vision;
+      const r = ensureCurrentReview();
+      const monthKey = currentReviewMonthKey();
+
+      el.innerHTML = `
+        <div class="compass-kicker">Direction</div>
+        <div class="compass-heading">理想の状態と、いまの自分</div>
+
+        <div class="compass-block-title">時間の軸</div>
+        <div class="compass-timeline">
+          <div class="horizon-card grandmother">
+            <div class="horizon-step">いちばん先</div>
+            <div class="horizon-title">おばあちゃんになったときの理想</div>
+            <textarea placeholder="後で書く" oninput="onVisionInput('grandmother', this)">${esc(v.grandmother)}</textarea>
+          </div>
+          <div class="horizon-card ten">
+            <div class="horizon-step">10年後</div>
+            <div class="horizon-title">10年後の理想の状態</div>
+            <textarea placeholder="後で書く" oninput="onVisionInput('tenYears', this)">${esc(v.tenYears)}</textarea>
+          </div>
+          <div class="horizon-card three">
+            <div class="horizon-step">3年後</div>
+            <div class="horizon-title">3年後の理想の状態</div>
+            <textarea placeholder="後で書く" oninput="onVisionInput('threeYears', this)">${esc(v.threeYears)}</textarea>
+          </div>
+          <div class="horizon-card now">
+            <div class="horizon-step">いま</div>
+            <div class="horizon-title">現状</div>
+            <textarea placeholder="後で書く" oninput="onVisionInput('current', this)">${esc(v.current)}</textarea>
+          </div>
+        </div>
+
+        <div class="path-card">
+          <div class="horizon-step" style="color:#1f6b43">橋渡し</div>
+          <div class="horizon-title">現状を、3年後の理想の状態にするためにするべきこと</div>
+          <div class="compass-block-note">概略だけここに書く。詳細はマインドマップで別管理する。</div>
+          <textarea placeholder="後で書く" oninput="onVisionInput('pathOverview', this)">${esc(v.pathOverview)}</textarea>
+        </div>
+
+        <div class="compass-block-title">自分の強み・選ばれる理由</div>
+        <div class="strength-grid">
+          ${STRENGTH_CARDS.map(card => `
+            <div class="strength-card ${card.tone}">
+              <h4>${esc(card.title)}</h4>
+              <ul>${card.items.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
+            </div>`).join('')}
+        </div>
+
+        <div class="compass-block-title" id="compassReview">
+          毎月の振り返り
+          <span class="compass-block-note">${esc(monthKey)}</span>
+          <div class="review-nav">
+            <button type="button" class="calendar-nav-btn" onclick="shiftReviewMonth(-1)" aria-label="前の月">‹</button>
+            <div class="review-nav-title">${esc(reviewMonthLabel())}</div>
+            <button type="button" class="calendar-nav-btn" onclick="shiftReviewMonth(1)" aria-label="次の月">›</button>
+            ${reviewMonthOffset !== 0 ? `<button type="button" class="calendar-nav-today" onclick="resetReviewMonth()">今月</button>` : ''}
+          </div>
+        </div>
+        <div class="review-grid">
+          <div class="review-card well">
+            <h4>今月うまく行ったこと</h4>
+            <div class="review-field">
+              <label>何がうまく行ったか</label>
+              <textarea placeholder="後で書く" oninput="onReviewInput('wentWell', this)">${esc(r.wentWell)}</textarea>
+            </div>
+            <div class="review-field">
+              <label>なぜうまく行ったか</label>
+              <textarea placeholder="後で書く" oninput="onReviewInput('wentWellWhy', this)">${esc(r.wentWellWhy)}</textarea>
+            </div>
+            <div class="review-field">
+              <label>次も繰り返すための具体策</label>
+              <textarea placeholder="後で書く" oninput="onReviewInput('wentWellNext', this)">${esc(r.wentWellNext)}</textarea>
+            </div>
+          </div>
+          <div class="review-card poor">
+            <h4>今月うまくいかなかったこと</h4>
+            <div class="review-field">
+              <label>何がうまくいかなかったか</label>
+              <textarea placeholder="後で書く" oninput="onReviewInput('wentPoor', this)">${esc(r.wentPoor)}</textarea>
+            </div>
+            <div class="review-field">
+              <label>なぜうまくいかなかったか</label>
+              <textarea placeholder="後で書く" oninput="onReviewInput('wentPoorWhy', this)">${esc(r.wentPoorWhy)}</textarea>
+            </div>
+            <div class="review-field">
+              <label>繰り返さないための具体策</label>
+              <textarea placeholder="後で書く" oninput="onReviewInput('wentPoorNext', this)">${esc(r.wentPoorNext)}</textarea>
+            </div>
+          </div>
+        </div>
+        <div class="review-card direction">
+          <h4>向かいたい方向に、向かえているか</h4>
+          <div class="review-field">
+            <label>向かいたい方向に向かうための行動を取れているか</label>
+            <div class="dir-chips">
+              <button type="button" class="dir-chip${r.directionStatus === 'yes' ? ' on' : ''}" data-dir-chip="yes" onclick="setReviewDirection('yes')">取れている</button>
+              <button type="button" class="dir-chip${r.directionStatus === 'partial' ? ' on' : ''}" data-dir-chip="partial" onclick="setReviewDirection('partial')">一部取れている</button>
+              <button type="button" class="dir-chip${r.directionStatus === 'no' ? ' on' : ''}" data-dir-chip="no" onclick="setReviewDirection('no')">取れていない</button>
+            </div>
+            <textarea placeholder="後で書く" oninput="onReviewInput('directionNote', this)">${esc(r.directionNote)}</textarea>
+          </div>
+          <div class="review-field">
+            <label>向かいたい方向に向かうために、何が足りないのか／何を変える必要があるのか</label>
+            <textarea placeholder="後で書く" oninput="onReviewInput('directionGap', this)">${esc(r.directionGap)}</textarea>
+          </div>
+        </div>
       `;
     }
 
