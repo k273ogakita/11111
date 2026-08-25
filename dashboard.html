@@ -1788,6 +1788,23 @@
       border: 1px solid transparent;
       min-height: 64px;
     }
+    .vision-illust {
+      margin: -10px -10px 10px;
+      border-radius: 10px 10px 8px 8px;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      background: rgba(255,255,255,.35);
+    }
+    .vision-illust img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .horizon-card .vision-illust {
+      margin: -14px -14px 12px;
+      border-radius: 12px 12px 8px 8px;
+    }
     .vision-compare-head .horizon-title { font-size: .88rem; margin-bottom: 2px; }
     .vision-compare-head .horizon-meta { margin-bottom: 0; }
     .vision-compare-cell {
@@ -2122,7 +2139,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v108</div>
+        <div class="logo-sub">Business Dashboard · v109</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3248,6 +3265,7 @@ nark.visual.media@gmail.com
         step: 'いま',
         title: '現状',
         meta: '36歳 · 息子2歳半',
+        image: 'vision-now.jpg',
         items: {
           health: [
             '透析は回避中',
@@ -3289,6 +3307,7 @@ nark.visual.media@gmail.com
         step: '3年後',
         title: '3年後の理想',
         meta: '39歳 · 息子5歳',
+        image: 'vision-three.jpg',
         items: {
           health: [
             '透析はまだ回避している',
@@ -3328,6 +3347,7 @@ nark.visual.media@gmail.com
         step: '10年後',
         title: '10年後の理想',
         meta: '46歳 · 息子12歳',
+        image: 'vision-ten.jpg',
         items: {
           health: [
             '透析を回避している',
@@ -3362,6 +3382,7 @@ nark.visual.media@gmail.com
         step: 'いちばん先',
         title: 'おばあちゃんになったとき',
         meta: '70歳〜想定 · 息子40歳',
+        image: 'vision-grandmother.jpg',
         items: {
           health: [
             '透析を導入している（週3〜4回）',
@@ -5129,6 +5150,11 @@ ${MAIL_FOOTER}`,
     }
     window.toggleCompassReview = toggleCompassReview;
 
+    function visionIllustHtml(era) {
+      if (!era.image) return '';
+      return `<div class="vision-illust"><img src="${esc(era.image)}" alt="${esc(era.title)}"></div>`;
+    }
+
     function visionBulletHtml(lines) {
       return `<ul class="vision-bullets">${(lines || []).map(line => `<li>${esc(line)}</li>`).join('')}</ul>`;
     }
@@ -5159,6 +5185,7 @@ ${MAIL_FOOTER}`,
           <div></div>
           ${VISION_ERAS.map(era => `
             <div class="vision-compare-head ${era.tone}">
+              ${visionIllustHtml(era)}
               <div class="horizon-step">${esc(era.step)}</div>
               <div class="horizon-title">${esc(era.title)}</div>
               <div class="horizon-meta">${esc(era.meta)}</div>
@@ -5172,6 +5199,7 @@ ${MAIL_FOOTER}`,
         <div class="compass-timeline vision-eras">
           ${VISION_ERAS.map(era => `
             <div class="horizon-card ${era.tone}">
+              ${visionIllustHtml(era)}
               <div class="horizon-step">${esc(era.step)}</div>
               <div class="horizon-title">${esc(era.title)}</div>
               <div class="horizon-meta">${esc(era.meta)}</div>
