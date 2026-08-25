@@ -2216,7 +2216,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v117</div>
+        <div class="logo-sub">Business Dashboard · v118</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4083,7 +4083,6 @@ ${MAIL_FOOTER}`,
     function persistStateQuiet() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       scheduleAutoSaveToFolder();
-      scheduleReviewTextSave();
     }
 
     function undoLastAction() {
@@ -4280,7 +4279,6 @@ ${MAIL_FOOTER}`,
       }).catch(function() {
         toast('テキストを生成しました。枠内をコピーしてチャットに貼ってください');
       });
-      saveReviewText(key);
     }
     window.generateReviewText = generateReviewText;
 
@@ -4306,14 +4304,6 @@ ${MAIL_FOOTER}`,
       });
     }
     window.saveReviewTextNow = saveReviewTextNow;
-
-    let reviewSaveTimer = null;
-    function scheduleReviewTextSave() {
-      clearTimeout(reviewSaveTimer);
-      reviewSaveTimer = setTimeout(function() {
-        saveReviewText(currentReviewMonthKey());
-      }, 1000);
-    }
 
     function restorePreviousState() {
       const prev = localStorage.getItem(STORAGE_PREV_KEY);
