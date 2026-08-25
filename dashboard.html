@@ -1759,6 +1759,12 @@
       margin-bottom: 3px;
       color: var(--text);
     }
+    .vision-faces {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
     .vision-compare {
       display: grid;
       grid-template-columns: 72px repeat(4, minmax(0, 1fr));
@@ -2160,6 +2166,7 @@
       .compass-timeline { grid-template-columns: 1fr 1fr; }
       .strength-grid { grid-template-columns: 1fr 1fr; }
       .review-grid { grid-template-columns: 1fr; }
+      .vision-faces { grid-template-columns: 1fr 1fr; }
       .vision-compare { display: none; }
       .compass-timeline.vision-eras { display: grid; }
     }
@@ -2202,7 +2209,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v114</div>
+        <div class="logo-sub">Business Dashboard · v115</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3592,6 +3599,8 @@ nark.visual.media@gmail.com
     let adsExpanded = false;
     let compassStrengthsExpanded = false;
     let compassReviewExpanded = false;
+    let compassVisionExpanded = false;
+    let compassPathExpanded = false;
     let doneExpanded = false;
     let editingAdId = null;
     let editingBizTodoId = null;
@@ -5277,15 +5286,31 @@ ${MAIL_FOOTER}`,
     window.scrollToMonthlyReview = scrollToMonthlyReview;
 
     function applyCompassFolds() {
-      const sBody = document.getElementById('strengthCollapse');
-      const rBody = document.getElementById('reviewCollapse');
-      const sChev = document.getElementById('strengthChevron');
-      const rChev = document.getElementById('reviewChevron');
-      if (sBody) sBody.classList.toggle('open', compassStrengthsExpanded);
-      if (rBody) rBody.classList.toggle('open', compassReviewExpanded);
-      if (sChev) sChev.textContent = compassStrengthsExpanded ? '▾' : '▸';
-      if (rChev) rChev.textContent = compassReviewExpanded ? '▾' : '▸';
+      const pairs = [
+        ['visionCollapse', 'visionChevron', compassVisionExpanded],
+        ['pathCollapse', 'pathChevron', compassPathExpanded],
+        ['strengthCollapse', 'strengthChevron', compassStrengthsExpanded],
+        ['reviewCollapse', 'reviewChevron', compassReviewExpanded],
+      ];
+      pairs.forEach(([bodyId, chevId, on]) => {
+        const body = document.getElementById(bodyId);
+        const chev = document.getElementById(chevId);
+        if (body) body.classList.toggle('open', on);
+        if (chev) chev.textContent = on ? '▾' : '▸';
+      });
     }
+
+    function toggleCompassVision() {
+      compassVisionExpanded = !compassVisionExpanded;
+      applyCompassFolds();
+    }
+    window.toggleCompassVision = toggleCompassVision;
+
+    function toggleCompassPath() {
+      compassPathExpanded = !compassPathExpanded;
+      applyCompassFolds();
+    }
+    window.toggleCompassPath = toggleCompassPath;
 
     function toggleCompassStrengths() {
       compassStrengthsExpanded = !compassStrengthsExpanded;
@@ -5366,8 +5391,7 @@ ${MAIL_FOOTER}`,
         <div class="compass-heading">理想の状態と、いまの自分</div>
 
         <div class="compass-block-title">時間の軸<span class="compass-block-note">健康・家族・お金・仕事・趣味</span></div>
-        <div class="vision-compare">
-          <div></div>
+        <div class="vision-faces">
           ${VISION_ERAS.map(era => `
             <div class="vision-compare-head ${era.tone}">
               ${visionIllustHtml(era)}
@@ -5375,6 +5399,14 @@ ${MAIL_FOOTER}`,
               <div class="horizon-title">${esc(era.title)}</div>
               <div class="horizon-meta">${esc(era.meta)}</div>
             </div>`).join('')}
+        </div>
+
+        <div class="compass-fold-header" onclick="toggleCompassVision()">
+          <div class="compass-block-title">時間の軸の詳細<span class="compass-block-note">健康・家族・お金・仕事・趣味</span></div>
+          <span class="collapse-chevron" id="visionChevron">▸</span>
+        </div>
+        <div class="collapse-body" id="visionCollapse">
+        <div class="vision-compare">
           ${VISION_CATS.map(cat => `
             <div class="vision-compare-cat"><span class="vision-item-label ${cat.id}">${esc(cat.label)}</span></div>
             ${VISION_ERAS.map(era => `
@@ -5384,19 +5416,25 @@ ${MAIL_FOOTER}`,
         <div class="compass-timeline vision-eras">
           ${VISION_ERAS.map(era => `
             <div class="horizon-card ${era.tone}">
-              ${visionIllustHtml(era)}
               <div class="horizon-step">${esc(era.step)}</div>
               <div class="horizon-title">${esc(era.title)}</div>
               <div class="horizon-meta">${esc(era.meta)}</div>
               ${visionItemsHtml(era)}
             </div>`).join('')}
         </div>
+        </div>
 
+        <div class="compass-fold-header" onclick="toggleCompassPath()">
+          <div class="compass-block-title">橋渡し<span class="compass-block-note">現状を、3年後の理想の状態にするためにするべきこと</span></div>
+          <span class="collapse-chevron" id="pathChevron">▸</span>
+        </div>
+        <div class="collapse-body" id="pathCollapse">
         <div class="path-card">
           <div class="horizon-step" style="color:#1f6b43">橋渡し</div>
           <div class="horizon-title">現状を、3年後の理想の状態にするためにするべきこと</div>
           <div class="compass-block-note">2026-08-25 いま足りないこと、変えること。詳細の行動分解はマインドマップで別管理する。</div>
           <div class="path-grid">${PATH_GAPS.map(pathCatHtml).join('')}</div>
+        </div>
         </div>
 
         <div class="compass-fold-header" onclick="toggleCompassStrengths()">
