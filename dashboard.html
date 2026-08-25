@@ -2256,7 +2256,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v119</div>
+        <div class="logo-sub">Business Dashboard · v120</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4148,7 +4148,7 @@ ${MAIL_FOOTER}`,
 
     function reviewTextFileName(monthKey) {
       const [y, m] = String(monthKey).split('-');
-      return y + '-' + Number(m) + '振り返り.md';
+      return y + '-' + Number(m) + '振り返り.docx';
     }
 
     function reviewHasContent(r) {
@@ -4192,6 +4192,184 @@ ${MAIL_FOOTER}`,
         note ? note + '\n' : '',
         reviewMdSection('向かいたい方向に向かうために、何が足りないのか／何を変える必要があるのか', r.directionGap),
       ].join('\n');
+    }
+
+    function reviewXmlEscape(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function reviewDocxParagraph(text, opts) {
+      opts = opts || {};
+      const raw = String(text == null ? '' : text);
+      const lines = raw.length ? raw.split(/\r?\n/) : [''];
+      const bold = opts.bold ? '<w:b/>' : '';
+      const size = opts.size || (opts.heading ? '28' : '21');
+      const spaceAfter = opts.heading ? '160' : '80';
+      return lines.map(function(line, i) {
+        const emptyFallback = (opts.content !== false && i === 0 && !String(line).trim() && !raw.trim())
+          ? '（未記入）'
+          : '';
+        const t = reviewXmlEscape(String(line).length ? line : emptyFallback);
+        return '<w:p>'
+          + '<w:pPr><w:spacing w:after="' + spaceAfter + '"/></w:pPr>'
+          + '<w:r><w:rPr>' + bold + '<w:sz w:val="' + size + '"/><w:szCs w:val="' + size + '"/></w:rPr>'
+          + '<w:t xml:space="preserve">' + t + '</w:t></w:r></w:p>';
+      }).join('');
+    }
+
+    function buildReviewDocxBlob(monthKey) {
+      ensureVisionAndReviews(state);
+      const r = Object.assign(emptyReview(), state.reviews[monthKey] || {});
+      const [y, m] = String(monthKey).split('-');
+      const title = Number(y) + '-' + Number(m) + '振り返り';
+      const body = [
+        reviewDocxParagraph(title, { heading: true, bold: true, size: '32' }),
+        reviewDocxParagraph('対象月: ' + y + '年' + Number(m) + '月'),
+        reviewDocxParagraph('記録日: ' + todayStr()),
+        reviewDocxParagraph('出典: nARK Dashboard 毎月の振り返り'),
+        reviewDocxParagraph('', { content: false }),
+        reviewDocxParagraph('今月うまく行ったこと', { bold: true, heading: true }),
+        reviewDocxParagraph(r.wentWell),
+        reviewDocxParagraph('なぜうまく行ったか', { bold: true, heading: true }),
+        reviewDocxParagraph(r.wentWellWhy),
+        reviewDocxParagraph('次も繰り返すための具体策', { bold: true, heading: true }),
+        reviewDocxParagraph(r.wentWellNext),
+        reviewDocxParagraph('今月うまくいかなかったこと', { bold: true, heading: true }),
+        reviewDocxParagraph(r.wentPoor),
+        reviewDocxParagraph('なぜうまくいかなかったか', { bold: true, heading: true }),
+        reviewDocxParagraph(r.wentPoorWhy),
+        reviewDocxParagraph('繰り返さないための具体策', { bold: true, heading: true }),
+        reviewDocxParagraph(r.wentPoorNext),
+        reviewDocxParagraph('向かいたい方向に向かう行動を取れているか', { bold: true, heading: true }),
+        reviewDocxParagraph(directionStatusLabel(r.directionStatus)),
+        reviewDocxParagraph(r.directionNote),
+        reviewDocxParagraph('向かいたい方向に向かうために、何が足りないのか／何を変える必要があるのか', { bold: true, heading: true }),
+        reviewDocxParagraph(r.directionGap),
+      ].join('');
+
+      const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        + '<w:body>' + body + '<w:sectPr/></w:body></w:document>';
+
+      const contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        + '<Default Extension="xml" ContentType="application/xml"/>'
+        + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+        + '</Types>';
+
+      const rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+        + '</Relationships>';
+
+      const docRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';
+
+      const files = [
+        { name: '[Content_Types].xml', data: contentTypes },
+        { name: '_rels/.rels', data: rels },
+        { name: 'word/document.xml', data: documentXml },
+        { name: 'word/_rels/document.xml.rels', data: docRels },
+      ];
+      return new Blob([zipStoreFiles(files)], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      });
+    }
+
+    function crc32Bytes(bytes) {
+      let c = 0 ^ (-1);
+      for (let i = 0; i < bytes.length; i++) {
+        c = (c >>> 8) ^ CRC32_TABLE[(c ^ bytes[i]) & 0xff];
+      }
+      return (c ^ (-1)) >>> 0;
+    }
+
+    const CRC32_TABLE = (function() {
+      const table = new Uint32Array(256);
+      for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+        table[n] = c >>> 0;
+      }
+      return table;
+    })();
+
+    function u16(n) { return new Uint8Array([n & 255, (n >>> 8) & 255]); }
+    function u32(n) {
+      return new Uint8Array([n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]);
+    }
+
+    function zipStoreFiles(files) {
+      const enc = new TextEncoder();
+      const locals = [];
+      const centrals = [];
+      let offset = 0;
+      files.forEach(function(file) {
+        const nameBytes = enc.encode(file.name);
+        const data = typeof file.data === 'string' ? enc.encode(file.data) : file.data;
+        const crc = crc32Bytes(data);
+        const local = new Uint8Array(30 + nameBytes.length + data.length);
+        local.set([0x50, 0x4b, 0x03, 0x04], 0);
+        local.set(u16(20), 4);
+        local.set(u16(0), 6);
+        local.set(u16(0), 8); // store
+        local.set(u16(0), 10);
+        local.set(u16(0), 12);
+        local.set(u32(crc), 14);
+        local.set(u32(data.length), 18);
+        local.set(u32(data.length), 22);
+        local.set(u16(nameBytes.length), 26);
+        local.set(u16(0), 28);
+        local.set(nameBytes, 30);
+        local.set(data, 30 + nameBytes.length);
+        locals.push(local);
+
+        const central = new Uint8Array(46 + nameBytes.length);
+        central.set([0x50, 0x4b, 0x01, 0x02], 0);
+        central.set(u16(20), 4);
+        central.set(u16(20), 6);
+        central.set(u16(0), 8);
+        central.set(u16(0), 10);
+        central.set(u16(0), 12);
+        central.set(u16(0), 14);
+        central.set(u32(crc), 16);
+        central.set(u32(data.length), 20);
+        central.set(u32(data.length), 24);
+        central.set(u16(nameBytes.length), 28);
+        central.set(u16(0), 30);
+        central.set(u16(0), 32);
+        central.set(u16(0), 34);
+        central.set(u16(0), 36);
+        central.set(u32(0), 38);
+        central.set(u32(offset), 42);
+        central.set(nameBytes, 46);
+        centrals.push(central);
+        offset += local.length;
+      });
+
+      const centralSize = centrals.reduce(function(s, a) { return s + a.length; }, 0);
+      const end = new Uint8Array(22);
+      end.set([0x50, 0x4b, 0x05, 0x06], 0);
+      end.set(u16(0), 4);
+      end.set(u16(0), 6);
+      end.set(u16(files.length), 8);
+      end.set(u16(files.length), 10);
+      end.set(u32(centralSize), 12);
+      end.set(u32(offset), 16);
+      end.set(u16(0), 20);
+
+      const total = offset + centralSize + end.length;
+      const out = new Uint8Array(total);
+      let p = 0;
+      locals.forEach(function(chunk) { out.set(chunk, p); p += chunk.length; });
+      centrals.forEach(function(chunk) { out.set(chunk, p); p += chunk.length; });
+      out.set(end, p);
+      return out;
     }
 
     function persistReviewDirHandle(handle) {
@@ -4263,21 +4441,22 @@ ${MAIL_FOOTER}`,
       const r = Object.assign(emptyReview(), state.reviews[monthKey] || {});
       if (!reviewHasContent(r) && !options.force) return null;
       const filename = reviewTextFileName(monthKey);
-      const md = buildReviewMarkdown(monthKey);
+      const blob = buildReviewDocxBlob(monthKey);
+      const mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       const reviewDir = await resolveReviewDirHandle();
       if (reviewDir) {
         try {
           const fileHandle = await reviewDir.getFileHandle(filename, { create: true });
           const writable = await fileHandle.createWritable();
-          await writable.write(new Blob([md], { type: 'text/plain;charset=utf-8' }));
+          await writable.write(blob);
           await writable.close();
-          if (options.download) downloadFile(filename, md, 'text/plain;charset=utf-8');
+          if (options.download) downloadFile(filename, blob, mime);
           return 'folder';
         } catch (_) {}
       }
-      const dest = await saveBackupFile(filename, md, 'text/plain;charset=utf-8');
+      const dest = await saveBackupFile(filename, blob, mime);
       if (options.download && dest === 'folder') {
-        downloadFile(filename, md, 'text/plain;charset=utf-8');
+        downloadFile(filename, blob, mime);
       }
       return dest;
     }
@@ -4339,8 +4518,8 @@ ${MAIL_FOOTER}`,
 
     function saveReviewTextNow() {
       saveReviewText(currentReviewMonthKey(), { force: true, download: true }).then(function(dest) {
-        if (dest === 'folder') toast('振り返りを 事業運営/振り返り に保存しました');
-        else toast('振り返りテキストをダウンロードしました。事業運営/振り返り に入れてください');
+        if (dest === 'folder') toast('振り返りを Word（.docx）で 事業運営/振り返り に保存しました');
+        else toast('振り返り Word をダウンロードしました。事業運営/振り返り に入れてください');
       });
     }
     window.saveReviewTextNow = saveReviewTextNow;
@@ -4466,7 +4645,9 @@ ${MAIL_FOOTER}`,
     }
 
     function downloadFile(filename, content, mimeType) {
-      const blob = new Blob([content], { type: mimeType });
+      const blob = content instanceof Blob
+        ? content
+        : new Blob([content], { type: mimeType || 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -4478,16 +4659,19 @@ ${MAIL_FOOTER}`,
     }
 
     async function saveBackupFile(filename, content, mimeType) {
+      const blob = content instanceof Blob
+        ? content
+        : new Blob([content], { type: mimeType || 'application/octet-stream' });
       if (backupDirHandle && await ensureBackupDirPermission(backupDirHandle)) {
         try {
           const fileHandle = await backupDirHandle.getFileHandle(filename, { create: true });
           const writable = await fileHandle.createWritable();
-          await writable.write(new Blob([content], { type: mimeType }));
+          await writable.write(blob);
           await writable.close();
           return 'folder';
         } catch (_) {}
       }
-      downloadFile(filename, content, mimeType);
+      downloadFile(filename, blob, mimeType);
       return 'download';
     }
 
