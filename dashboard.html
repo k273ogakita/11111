@@ -2256,7 +2256,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v120</div>
+        <div class="logo-sub">Business Dashboard · v121</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3253,7 +3253,6 @@ nark.visual.media@gmail.com
       render();
       initBackupDir().then(function() {
         runWeeklyAutoBackupIfDue();
-        saveAllReviewTexts();
       });
       setInterval(renderDateTime, 30000);
       setInterval(function() { runWeeklyAutoBackupIfDue(); }, 60000);
