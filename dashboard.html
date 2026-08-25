@@ -1541,12 +1541,19 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 14px 14px 12px;
+      transition: border-color .15s, box-shadow .15s, background .15s;
     }
     .milestone-month.current {
-      border-color: rgba(212,168,0,.55);
-      box-shadow: 0 0 0 1px rgba(212,168,0,.15);
+      background: linear-gradient(165deg, #fff8f3 0%, #fbe9e0 100%);
+      border: 2px solid var(--red);
+      box-shadow: 0 0 0 3px var(--red-glow), 0 6px 18px rgba(212,122,74,.12);
+      padding: 16px 15px 14px;
+      transform: translateY(-1px);
     }
     .milestone-month.done-all { border-color: rgba(42,138,94,.4); }
+    .milestone-month.current.done-all {
+      border-color: var(--red);
+    }
     .milestone-month-head {
       display: flex;
       align-items: baseline;
@@ -1559,18 +1566,29 @@
       font-weight: 800;
       color: var(--text);
     }
-    .milestone-month.current .milestone-month-label { color: #9a7a00; }
+    .milestone-month.current .milestone-month-label {
+      color: var(--red-dim);
+      font-size: 1.18rem;
+    }
     .milestone-month-sub {
       font-size: .68rem;
       color: var(--muted);
       flex: 1;
       min-width: 0;
     }
+    .milestone-month.current .milestone-month-sub {
+      color: var(--red-dim);
+      font-weight: 600;
+    }
     .milestone-month-count {
       font-size: .72rem;
       font-weight: 700;
       color: var(--muted);
       white-space: nowrap;
+    }
+    .milestone-month.current .milestone-month-count {
+      color: var(--red-dim);
+      font-size: .8rem;
     }
     .milestone-month-bar {
       height: 4px;
@@ -1579,13 +1597,17 @@
       margin-bottom: 12px;
       overflow: hidden;
     }
+    .milestone-month.current .milestone-month-bar {
+      height: 6px;
+      background: rgba(232,149,106,.2);
+    }
     .milestone-month-bar > div {
       height: 100%;
       background: #2a8a5e;
       border-radius: 99px;
       transition: width .25s;
     }
-    .milestone-month.current .milestone-month-bar > div { background: #d4a800; }
+    .milestone-month.current .milestone-month-bar > div { background: var(--red); }
     .milestone-list { display: flex; flex-direction: column; gap: 6px; }
     .milestone-item {
       display: flex;
@@ -1598,11 +1620,15 @@
       transition: background .12s;
     }
     .milestone-item:hover { background: rgba(0,0,0,.04); }
+    .milestone-month.current .milestone-item:hover { background: rgba(232,149,106,.12); }
     .milestone-item input[type="checkbox"] {
       margin-top: 2px;
       accent-color: #2a8a5e;
       flex-shrink: 0;
       cursor: pointer;
+    }
+    .milestone-month.current .milestone-item input[type="checkbox"] {
+      accent-color: var(--red);
     }
     .milestone-item span {
       font-size: .78rem;
@@ -1673,8 +1699,8 @@
       margin-top: 12px;
       border-radius: 12px;
       padding: 14px;
-      background: linear-gradient(165deg, #fff8e8 0%, #f5ead0 100%);
-      border: 1px solid #d4b56a;
+      background: linear-gradient(165deg, #fff8f3 0%, #fbe9e0 100%);
+      border: 1px solid rgba(232,149,106,.4);
     }
     .review-text-out[hidden] { display: none !important; }
     .review-text-out-head {
@@ -1685,7 +1711,7 @@
       margin-bottom: 8px;
       font-size: .82rem;
       font-weight: 700;
-      color: #6e5a40;
+      color: var(--red-dim);
     }
     .review-text-out-head .btn { margin-left: auto; }
     .review-text-out textarea {
@@ -1869,13 +1895,14 @@
       margin-top: 12px;
       border-radius: 12px;
       padding: 16px 16px 14px;
-      background: linear-gradient(165deg, #eaf6ee 0%, #d5eadc 100%);
-      border: 1px solid #8fc4a3;
+      background: linear-gradient(165deg, #fff8f3 0%, #fbe9e0 100%);
+      border: 1px solid rgba(232,149,106,.4);
     }
-    .path-card .horizon-title { color: #1f6b43; margin-bottom: 4px; }
+    .path-card .horizon-step,
+    .path-card .horizon-title { color: var(--red-dim); margin-bottom: 4px; }
     .path-card textarea {
       background: rgba(255,255,255,.72);
-      border-color: rgba(31,107,67,.15);
+      border-color: rgba(232,149,106,.25);
       min-height: 80px;
       font-size: .82rem;
       margin-top: 10px;
@@ -1887,10 +1914,10 @@
       margin-top: 12px;
     }
     .path-cat {
-      background: rgba(255,255,255,.72);
+      background: rgba(255,255,255,.78);
       border-radius: 10px;
       padding: 10px 12px 9px;
-      border: 1px solid rgba(31,107,67,.14);
+      border: 1px solid rgba(232,149,106,.2);
     }
     .path-cat.work { grid-column: 1 / -1; }
     .path-cat-head {
@@ -1901,6 +1928,15 @@
       margin-bottom: 6px;
     }
     .path-cat-head .vision-item-label { margin-bottom: 0; }
+    .path-card .vision-item-label,
+    .path-card .vision-item-label.health,
+    .path-card .vision-item-label.family,
+    .path-card .vision-item-label.money,
+    .path-card .vision-item-label.work,
+    .path-card .vision-item-label.hobby {
+      background: var(--red-glow);
+      color: var(--red-dim);
+    }
     .path-stance {
       font-size: .62rem;
       font-weight: 800;
@@ -1908,12 +1944,12 @@
       padding: 2px 8px;
       border-radius: 99px;
     }
-    .path-stance.keep { background: #e8f5ee; color: #176b3a; }
-    .path-stance.change { background: #fff1e0; color: #b54708; }
+    .path-stance.keep { background: rgba(232,149,106,.12); color: var(--red-dim); }
+    .path-stance.change { background: var(--red-glow); color: var(--red-dim); }
     .path-missing {
       font-size: .75rem;
       line-height: 1.45;
-      color: #4a5c50;
+      color: #6e5a40;
       margin: 0 0 8px;
     }
     .path-split {
@@ -1926,22 +1962,22 @@
       border-radius: 8px;
       padding: 8px 10px 6px;
     }
-    .path-rule.refuse { background: #fdeeee; }
-    .path-rule.accept { background: #eaf6ee; }
+    .path-rule.refuse { background: rgba(232,149,106,.1); }
+    .path-rule.accept { background: rgba(255,255,255,.7); border: 1px solid rgba(232,149,106,.18); }
     .path-rule-title {
       font-size: .62rem;
       font-weight: 800;
       letter-spacing: .08em;
       margin-bottom: 4px;
     }
-    .path-rule.refuse .path-rule-title { color: #b42318; }
-    .path-rule.accept .path-rule-title { color: #176b3a; }
+    .path-rule.refuse .path-rule-title { color: var(--red-dim); }
+    .path-rule.accept .path-rule-title { color: #8a6a40; }
     .path-group {
       margin-top: 8px;
       padding-top: 8px;
-      border-top: 1px solid rgba(31,107,67,.12);
+      border-top: 1px solid rgba(232,149,106,.18);
     }
-    .path-group .path-rule-title { color: #1f6b43; }
+    .path-group .path-rule-title { color: var(--red-dim); }
     .strength-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -1950,14 +1986,15 @@
     .strength-card {
       border-radius: 10px;
       padding: 12px 13px 10px;
-      border: 1px solid var(--border);
-      background: var(--surface-2);
+      border: 1px solid rgba(232,149,106,.25);
+      background: #fbf3ec;
       border-left: 4px solid var(--red);
     }
     .strength-card h4 {
       font-size: .78rem;
       font-weight: 800;
       margin-bottom: 8px;
+      color: var(--red-dim);
     }
     .strength-card ul {
       margin: 0;
@@ -1968,18 +2005,21 @@
       line-height: 1.5;
       margin-bottom: 4px;
     }
-    .strength-card.peach { border-left-color: #e8956a; background: #fbf3ec; }
-    .strength-card.peach h4 { color: #c45c28; }
-    .strength-card.clinic { border-left-color: #3b82c4; background: #eef5fb; }
-    .strength-card.clinic h4 { color: #245a8c; }
-    .strength-card.patient { border-left-color: #d4a800; background: #fbf6e6; }
-    .strength-card.patient h4 { color: #8a6c00; }
-    .strength-card.craft { border-left-color: #6b3fa0; background: #f4eef8; }
-    .strength-card.craft h4 { color: #5a2f88; }
-    .strength-card.skip { border-left-color: #8c8278; background: #f3efe9; }
-    .strength-card.skip h4 { color: #6a625a; }
-    .strength-card.life { border-left-color: #c45c8a; background: #f9eef4; }
-    .strength-card.life h4 { color: #9a3d6a; }
+    .strength-card.peach,
+    .strength-card.clinic,
+    .strength-card.patient,
+    .strength-card.craft,
+    .strength-card.skip,
+    .strength-card.life {
+      border-left-color: var(--red);
+      background: #fbf3ec;
+    }
+    .strength-card.peach h4,
+    .strength-card.clinic h4,
+    .strength-card.patient h4,
+    .strength-card.craft h4,
+    .strength-card.skip h4,
+    .strength-card.life h4 { color: var(--red-dim); }
     .review-nav {
       display: flex;
       align-items: center;
@@ -2016,26 +2056,26 @@
       background: rgba(255,255,255,.78);
     }
     .review-card.well {
-      background: linear-gradient(165deg, #eaf6ee 0%, #d8eedf 100%);
-      border-color: #8fc4a3;
+      background: linear-gradient(165deg, #fff8f3 0%, #fbe9e0 100%);
+      border-color: rgba(232,149,106,.4);
     }
-    .review-card.well h4 { color: #1f6b43; }
+    .review-card.well h4 { color: var(--red-dim); }
     .review-card.poor {
-      background: linear-gradient(165deg, #fdf0ea 0%, #f8ddd0 100%);
-      border-color: #e8a57a;
+      background: linear-gradient(165deg, #faf6f1 0%, #f3ebe3 100%);
+      border-color: rgba(212,122,74,.35);
     }
-    .review-card.poor h4 { color: #c45c28; }
+    .review-card.poor h4 { color: var(--red-dim); }
     .review-card.direction {
       margin-top: 12px;
-      background: linear-gradient(165deg, #eaf1fb 0%, #d5e3f6 100%);
-      border-color: #8fb0d8;
+      background: linear-gradient(165deg, #fffaf6 0%, #f7ebe2 100%);
+      border-color: rgba(232,149,106,.35);
     }
-    .review-card.direction h4 { color: #245a8c; }
+    .review-card.direction h4 { color: var(--red-dim); }
     .dir-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
     .dir-chip {
-      border: 1px solid rgba(36,90,140,.25);
+      border: 1px solid rgba(232,149,106,.35);
       background: rgba(255,255,255,.7);
-      color: #245a8c;
+      color: var(--red-dim);
       border-radius: 99px;
       padding: 5px 12px;
       font-size: .75rem;
@@ -2043,10 +2083,10 @@
       cursor: pointer;
       font-family: var(--font);
     }
-    .dir-chip:hover { border-color: #3278c8; }
+    .dir-chip:hover { border-color: var(--red); }
     .dir-chip.on {
-      background: #3278c8;
-      border-color: #3278c8;
+      background: var(--red);
+      border-color: var(--red);
       color: #fff;
     }
     .notice-jump {
@@ -2216,7 +2256,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v118</div>
+        <div class="logo-sub">Business Dashboard · v119</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -5410,7 +5450,7 @@ ${MAIL_FOOTER}`,
 
         <div class="compass-block-title">橋渡し<span class="compass-block-note">現状を、3年後の理想の状態にするためにするべきこと</span></div>
         <div class="path-card">
-          <div class="horizon-step" style="color:#1f6b43">橋渡し</div>
+          <div class="horizon-step">橋渡し</div>
           <div class="horizon-title">現状を、3年後の理想の状態にするためにするべきこと</div>
           <div class="compass-block-note">2026-08-25 いま足りないこと、変えること。詳細の行動分解はマインドマップで別管理する。</div>
           <div class="path-grid">${PATH_GAPS.map(pathCatHtml).join('')}</div>
