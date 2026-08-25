@@ -1110,9 +1110,16 @@
       border-left: 2px solid #2a8a5e;
       font-weight: 700;
     }
+    .cal-event.delivery {
+      background: rgba(232,180,60,.18);
+      color: #8a6a10;
+      border-left: 2px solid #d4a800;
+      font-weight: 700;
+    }
     .cal-legend-dot.invoice { background: #c85a3c; }
     .cal-legend-dot.payment { background: #2a8a5e; }
     .cal-legend-dot.monthly-review { background: #3278c8; }
+    .cal-legend-dot.delivery { background: #d4a800; }
     .cal-day.clickable {
       cursor: pointer;
       transition: background .12s;
@@ -2209,7 +2216,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v115</div>
+        <div class="logo-sub">Business Dashboard · v116</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2303,6 +2310,7 @@
           <div class="cal-legend-item"><div class="cal-legend-dot invoice"></div>🧾 請求書作成（毎月25日・土日祝は前倒し）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot payment"></div>💰 振込確認（請求日の翌々月末）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot monthly-review"></div>🪞 今月の振り返り（第4週火曜・30分）</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot delivery"></div>納品🎉</div>
         </div>
       </div>
     </section>
@@ -8051,6 +8059,17 @@ ${MAIL_FOOTER}`,
             client: p.deliveredDate ? `納品 ${p.deliveredDate}` : '',
             status: '',
           });
+        });
+      });
+      // 納品ボタンを押した日（deliveredDate）
+      state.projects.forEach(p => {
+        if (p.category === 'sns' || !p.deliveredDate) return;
+        if (!events[p.deliveredDate]) events[p.deliveredDate] = [];
+        events[p.deliveredDate].push({
+          label: `納品🎉 ${p.client || p.name}`,
+          category: 'delivery',
+          client: p.name || '',
+          status: p.status,
         });
       });
       state.projects.forEach(p => {
