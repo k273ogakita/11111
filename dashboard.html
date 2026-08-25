@@ -1867,6 +1867,68 @@
       font-size: .82rem;
       margin-top: 10px;
     }
+    .path-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .path-cat {
+      background: rgba(255,255,255,.72);
+      border-radius: 10px;
+      padding: 10px 12px 9px;
+      border: 1px solid rgba(31,107,67,.14);
+    }
+    .path-cat.work { grid-column: 1 / -1; }
+    .path-cat-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .path-cat-head .vision-item-label { margin-bottom: 0; }
+    .path-stance {
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+    .path-stance.keep { background: #e8f5ee; color: #176b3a; }
+    .path-stance.change { background: #fff1e0; color: #b54708; }
+    .path-missing {
+      font-size: .75rem;
+      line-height: 1.45;
+      color: #4a5c50;
+      margin: 0 0 8px;
+    }
+    .path-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .path-rule {
+      border-radius: 8px;
+      padding: 8px 10px 6px;
+    }
+    .path-rule.refuse { background: #fdeeee; }
+    .path-rule.accept { background: #eaf6ee; }
+    .path-rule-title {
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      margin-bottom: 4px;
+    }
+    .path-rule.refuse .path-rule-title { color: #b42318; }
+    .path-rule.accept .path-rule-title { color: #176b3a; }
+    .path-group {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(31,107,67,.12);
+    }
+    .path-group .path-rule-title { color: #1f6b43; }
     .strength-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -2112,7 +2174,8 @@
         font-size: .8rem;
         color: var(--red);
       }
-      .compass-timeline, .strength-grid { grid-template-columns: 1fr; }
+      .compass-timeline, .strength-grid, .path-grid { grid-template-columns: 1fr; }
+      .path-split { grid-template-columns: 1fr; }
       .compass-panel { padding: 16px; }
     }
   </style>
@@ -2139,7 +2202,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v109</div>
+        <div class="logo-sub">Business Dashboard · v110</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3407,6 +3470,93 @@ nark.visual.media@gmail.com
             '週2回の習い事をしている',
           ],
         },
+      },
+    ];
+
+    const PATH_GAPS = [
+      {
+        id: 'health',
+        stance: 'keep',
+        stanceLabel: '変えない',
+        missing: '足りていないというより、今のやり方を守る。',
+        items: [
+          'しっかり寝られている。透析も回避中で、現状維持できている',
+          '無理しない。ゆっくり寝ることを最優先にする',
+        ],
+      },
+      {
+        id: 'family',
+        stance: 'change',
+        stanceLabel: '変える',
+        missing: '収入も時間も限られていて、早めのお迎えができない。夜、夫とゆっくりする時間も取りにくい。',
+        items: [
+          '収入を増やす',
+          '仕事の時間を整理する',
+          '子どもを早めに迎えに行けるし、夜に夫とゆっくり過ごせるようにする',
+          '考え方も変える。仕事のシステムを構築し直す（効率化と、収入を増やす仕組み）',
+        ],
+      },
+      {
+        id: 'money',
+        stance: 'change',
+        stanceLabel: '変える',
+        missing: '収入がまだギリギリ。',
+        items: [
+          'まず案件獲得を増やす',
+          '自分の勉強・成長にならない仕事、低単価の仕事は断る',
+          'それを断っても案件が取れるシステム・作戦を考える',
+          '今は動画1本と看護師だけ。収入の柱を増やす',
+          '体力が限られるので、不労所得があった方がいい。その得方も考える',
+        ],
+      },
+      {
+        id: 'hobby',
+        stance: 'change',
+        stanceLabel: '変える',
+        missing: '収入と時間。趣味に回す時間もお金も、思考回路もない。',
+        items: [
+          '仕事の時間を整理する',
+          '収入を増やす（家族・お金と同じ）',
+        ],
+      },
+      {
+        id: 'work',
+        stance: 'change',
+        stanceLabel: '変える',
+        missing: '線引き、効率化、サービスの軌道、編集者、型。',
+        items: [
+          '編集だけの仕事は、受ける／受けないの線引きを決める',
+        ],
+        refuse: [
+          '低単価、ただの作業になる仕事',
+          '成長にならない仕事',
+        ],
+        accept: [
+          '成長できるもの',
+          '単価じゃなくても、自分の今後に意味があるもの',
+          '大切な人からの仕事（恩返しになりたいので受ける）',
+        ],
+        groups: [
+          {
+            title: '制作',
+            items: [
+              '編集に時間がかかりすぎている。効率化とクオリティアップが同時にできる対策を、細かく考える',
+              '自分で編集すると時間が圧迫される。信頼できる編集者を探す',
+              '信頼できる編集者の条件：人柄、締め切り、クオリティ、お互いに納得して仕事ができる条件',
+            ],
+          },
+          {
+            title: 'サービス',
+            items: [
+              '患者説明動画はまだ途中すぎる。軌道に乗せて、バックエンドにつなぐ道筋を作る',
+              'もし説明動画が乗らなかったら、違う切り口で医療系にアプローチする',
+              '高齢者がするような就活のサービスを構築する（B2C）',
+              '出産動画を構築する（B2C）。本人がレンタル機器を病院に持っていって撮影し、あとで自分が編集する',
+              'ナース向けのサービスも考える。動画でなくてもよい。ストレスや負担を減らせるもの',
+              '説明動画・就活・出産、どれもルーティン化・マニュアル化を整備しないとうまくいかない',
+            ],
+          },
+        ],
       },
     ];
 
@@ -5167,12 +5317,48 @@ ${MAIL_FOOTER}`,
         </div>`).join('')}</div>`;
     }
 
+    function pathCatLabel(id) {
+      const cat = VISION_CATS.find(c => c.id === id);
+      return cat ? cat.label : id;
+    }
+
+    function pathWorkExtraHtml(gap) {
+      if (gap.id !== 'work') return '';
+      return `
+        <div class="path-split">
+          <div class="path-rule refuse">
+            <div class="path-rule-title">断る</div>
+            ${visionBulletHtml(gap.refuse)}
+          </div>
+          <div class="path-rule accept">
+            <div class="path-rule-title">受ける</div>
+            ${visionBulletHtml(gap.accept)}
+          </div>
+        </div>
+        ${(gap.groups || []).map(g => `
+          <div class="path-group">
+            <div class="path-rule-title">${esc(g.title)}</div>
+            ${visionBulletHtml(g.items)}
+          </div>`).join('')}`;
+    }
+
+    function pathCatHtml(gap) {
+      return `<div class="path-cat ${gap.id} ${gap.stance}">
+        <div class="path-cat-head">
+          <span class="vision-item-label ${gap.id}">${esc(pathCatLabel(gap.id))}</span>
+          <span class="path-stance ${gap.stance}">${esc(gap.stanceLabel)}</span>
+        </div>
+        <div class="path-missing">${esc(gap.missing)}</div>
+        ${visionBulletHtml(gap.items)}
+        ${pathWorkExtraHtml(gap)}
+      </div>`;
+    }
+
     function renderCompass() {
       const el = document.getElementById('compassPanel');
       if (!el) return;
       if (isCompassFocused()) return;
       ensureVisionAndReviews(state);
-      const v = state.vision;
       const r = ensureCurrentReview();
       const monthKey = currentReviewMonthKey();
 
@@ -5210,8 +5396,8 @@ ${MAIL_FOOTER}`,
         <div class="path-card">
           <div class="horizon-step" style="color:#1f6b43">橋渡し</div>
           <div class="horizon-title">現状を、3年後の理想の状態にするためにするべきこと</div>
-          <div class="compass-block-note">概略だけここに書く。詳細はマインドマップで別管理する。</div>
-          <textarea placeholder="後で書く" oninput="onVisionInput('pathOverview', this)">${esc(v.pathOverview)}</textarea>
+          <div class="compass-block-note">2026-08-25 いま足りないこと、変えること。詳細の行動分解はマインドマップで別管理する。</div>
+          <div class="path-grid">${PATH_GAPS.map(pathCatHtml).join('')}</div>
         </div>
 
         <div class="compass-fold-header" onclick="toggleCompassStrengths()">
