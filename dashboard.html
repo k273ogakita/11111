@@ -2216,7 +2216,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v116</div>
+        <div class="logo-sub">Business Dashboard · v117</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3605,7 +3605,8 @@ nark.visual.media@gmail.com
     let modalTimeIds = [];
     let subsExpanded = false;
     let adsExpanded = false;
-    let compassStrengthsExpanded = false;
+    let compassDetailsExpanded = false;
+    let compassStrengthsExpanded = false; // 互換のため残置（詳細は一括折りたたみへ統合）
     let compassReviewExpanded = false;
     let compassVisionExpanded = false;
     let compassPathExpanded = false;
@@ -4264,7 +4265,7 @@ ${MAIL_FOOTER}`,
     }
 
     function generateReviewText() {
-      compassReviewExpanded = true;
+      compassDetailsExpanded = true;
       applyCompassFolds();
       const key = currentReviewMonthKey();
       const md = buildReviewMarkdown(key);
@@ -5286,7 +5287,7 @@ ${MAIL_FOOTER}`,
     window.resetReviewMonth = resetReviewMonth;
 
     function scrollToMonthlyReview() {
-      compassReviewExpanded = true;
+      compassDetailsExpanded = true;
       applyCompassFolds();
       const el = document.getElementById('compassReview');
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -5294,42 +5295,26 @@ ${MAIL_FOOTER}`,
     window.scrollToMonthlyReview = scrollToMonthlyReview;
 
     function applyCompassFolds() {
-      const pairs = [
-        ['visionCollapse', 'visionChevron', compassVisionExpanded],
-        ['pathCollapse', 'pathChevron', compassPathExpanded],
-        ['strengthCollapse', 'strengthChevron', compassStrengthsExpanded],
-        ['reviewCollapse', 'reviewChevron', compassReviewExpanded],
-      ];
-      pairs.forEach(([bodyId, chevId, on]) => {
-        const body = document.getElementById(bodyId);
-        const chev = document.getElementById(chevId);
-        if (body) body.classList.toggle('open', on);
-        if (chev) chev.textContent = on ? '▾' : '▸';
-      });
+      const body = document.getElementById('compassDetailsCollapse');
+      const chev = document.getElementById('compassDetailsChevron');
+      if (body) body.classList.toggle('open', compassDetailsExpanded);
+      if (chev) chev.textContent = compassDetailsExpanded ? '▾' : '▸';
     }
 
-    function toggleCompassVision() {
-      compassVisionExpanded = !compassVisionExpanded;
+    function toggleCompassDetails() {
+      compassDetailsExpanded = !compassDetailsExpanded;
       applyCompassFolds();
     }
+    window.toggleCompassDetails = toggleCompassDetails;
+
+    // 旧・個別トグル（呼び出し互換）。詳細パネルを開くだけにする
+    function toggleCompassVision() { compassDetailsExpanded = true; applyCompassFolds(); }
     window.toggleCompassVision = toggleCompassVision;
-
-    function toggleCompassPath() {
-      compassPathExpanded = !compassPathExpanded;
-      applyCompassFolds();
-    }
+    function toggleCompassPath() { compassDetailsExpanded = true; applyCompassFolds(); }
     window.toggleCompassPath = toggleCompassPath;
-
-    function toggleCompassStrengths() {
-      compassStrengthsExpanded = !compassStrengthsExpanded;
-      applyCompassFolds();
-    }
+    function toggleCompassStrengths() { compassDetailsExpanded = true; applyCompassFolds(); }
     window.toggleCompassStrengths = toggleCompassStrengths;
-
-    function toggleCompassReview() {
-      compassReviewExpanded = !compassReviewExpanded;
-      applyCompassFolds();
-    }
+    function toggleCompassReview() { compassDetailsExpanded = true; applyCompassFolds(); }
     window.toggleCompassReview = toggleCompassReview;
 
     function visionIllustHtml(era) {
@@ -5409,11 +5394,13 @@ ${MAIL_FOOTER}`,
             </div>`).join('')}
         </div>
 
-        <div class="compass-fold-header" onclick="toggleCompassVision()">
-          <div class="compass-block-title">時間の軸の詳細<span class="compass-block-note">健康・家族・お金・仕事・趣味</span></div>
-          <span class="collapse-chevron" id="visionChevron">▸</span>
+        <div class="compass-fold-header" onclick="toggleCompassDetails()">
+          <div class="compass-block-title">詳細を見る<span class="compass-block-note">時間の軸・橋渡し・強み・毎月の振り返り</span></div>
+          <span class="collapse-chevron" id="compassDetailsChevron">▸</span>
         </div>
-        <div class="collapse-body" id="visionCollapse">
+        <div class="collapse-body" id="compassDetailsCollapse">
+
+        <div class="compass-block-title">時間の軸の詳細<span class="compass-block-note">健康・家族・お金・仕事・趣味</span></div>
         <div class="vision-compare">
           ${VISION_CATS.map(cat => `
             <div class="vision-compare-cat"><span class="vision-item-label ${cat.id}">${esc(cat.label)}</span></div>
@@ -5430,44 +5417,31 @@ ${MAIL_FOOTER}`,
               ${visionItemsHtml(era)}
             </div>`).join('')}
         </div>
-        </div>
 
-        <div class="compass-fold-header" onclick="toggleCompassPath()">
-          <div class="compass-block-title">橋渡し<span class="compass-block-note">現状を、3年後の理想の状態にするためにするべきこと</span></div>
-          <span class="collapse-chevron" id="pathChevron">▸</span>
-        </div>
-        <div class="collapse-body" id="pathCollapse">
+        <div class="compass-block-title">橋渡し<span class="compass-block-note">現状を、3年後の理想の状態にするためにするべきこと</span></div>
         <div class="path-card">
           <div class="horizon-step" style="color:#1f6b43">橋渡し</div>
           <div class="horizon-title">現状を、3年後の理想の状態にするためにするべきこと</div>
           <div class="compass-block-note">2026-08-25 いま足りないこと、変えること。詳細の行動分解はマインドマップで別管理する。</div>
           <div class="path-grid">${PATH_GAPS.map(pathCatHtml).join('')}</div>
         </div>
+
+        <div class="compass-block-title">自分の強み・選ばれる理由</div>
+        <div class="strength-grid">
+          ${STRENGTH_CARDS.map(card => `
+            <div class="strength-card ${card.tone}">
+              <h4>${esc(card.title)}</h4>
+              <ul>${card.items.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
+            </div>`).join('')}
         </div>
 
-        <div class="compass-fold-header" onclick="toggleCompassStrengths()">
-          <div class="compass-block-title">自分の強み・選ばれる理由</div>
-          <span class="collapse-chevron" id="strengthChevron">▸</span>
+        <div class="compass-block-title" id="compassReview">毎月の振り返り<span class="compass-block-note">${esc(monthKey)}</span></div>
+        <div class="review-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px;align-items:center">
+          <button type="button" class="btn btn-primary" onclick="generateReviewText()">テキスト生成</button>
+          <button type="button" class="btn" onclick="saveReviewTextNow()">テキスト保存</button>
+          <button type="button" class="btn btn-ghost" onclick="pickReviewDirectory()" title="事業運営/振り返り フォルダを選ぶ">保存先</button>
         </div>
-        <div class="collapse-body" id="strengthCollapse">
-          <div class="strength-grid">
-            ${STRENGTH_CARDS.map(card => `
-              <div class="strength-card ${card.tone}">
-                <h4>${esc(card.title)}</h4>
-                <ul>${card.items.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
-              </div>`).join('')}
-          </div>
-        </div>
-
-        <div class="compass-fold-header" id="compassReview" onclick="toggleCompassReview()">
-          <div class="compass-block-title">毎月の振り返り<span class="compass-block-note">${esc(monthKey)}</span></div>
-          <button type="button" class="btn btn-primary" onclick="event.stopPropagation(); generateReviewText()">テキスト生成</button>
-          <button type="button" class="btn" onclick="event.stopPropagation(); saveReviewTextNow()">テキスト保存</button>
-          <button type="button" class="btn btn-ghost" onclick="event.stopPropagation(); pickReviewDirectory()" title="事業運営/振り返り フォルダを選ぶ">保存先</button>
-          <span class="collapse-chevron" id="reviewChevron">▸</span>
-        </div>
-        <div class="collapse-body" id="reviewCollapse">
-          <div class="review-nav" style="margin: 8px 0 10px; justify-content: flex-start;" onclick="event.stopPropagation()">
+          <div class="review-nav" style="margin: 8px 0 10px; justify-content: flex-start;">
             <button type="button" class="calendar-nav-btn" onclick="shiftReviewMonth(-1)" aria-label="前の月">‹</button>
             <div class="review-nav-title">${esc(reviewMonthLabel())}</div>
             <button type="button" class="calendar-nav-btn" onclick="shiftReviewMonth(1)" aria-label="次の月">›</button>
@@ -5528,6 +5502,7 @@ ${MAIL_FOOTER}`,
           </div>
           <textarea id="reviewTextOutput" readonly>${esc(lastGeneratedReviewMonth === monthKey ? lastGeneratedReviewText : '')}</textarea>
         </div>
+
         </div>
       `;
       applyCompassFolds();
