@@ -12,7 +12,7 @@ https://k273ogakita.github.io/11111/dashboard.html
 ## リポジトリ
 - remote: `https://github.com/k273ogakita/11111.git`
 - branch: `main`
-- デプロイ対象: `dashboard.html` のみ（GitHub Pages）
+- デプロイ対象: `dashboard.html` と時間の軸イラスト（`vision-*.jpg`）
 
 ## 必須ワークフロー
 `dashboard.html` を編集したら、**作業完了時に必ず**以下を実行する：

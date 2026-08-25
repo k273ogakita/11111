@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'dashboard.html'
+      - 'vision-*.jpg'
       - '.nojekyll'
       - '.github/workflows/deploy-pages.yml'
 
@@ -31,6 +32,7 @@ jobs:
           mkdir -p _site
           cp dashboard.html _site/dashboard.html
           cp dashboard.html _site/index.html
+          cp vision-*.jpg _site/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
