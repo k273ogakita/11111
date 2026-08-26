@@ -1104,6 +1104,12 @@
       border-left: 2px solid #3278c8;
       font-weight: 700;
     }
+    .cal-event.fb-post {
+      background: rgba(59,89,152,.12);
+      color: #2f4a7a;
+      border-left: 2px solid #3b5998;
+      font-weight: 700;
+    }
     .cal-event.payment-confirm {
       background: rgba(42,138,94,.12);
       color: #1f6b48;
@@ -1119,6 +1125,7 @@
     .cal-legend-dot.invoice { background: #c85a3c; }
     .cal-legend-dot.payment { background: #2a8a5e; }
     .cal-legend-dot.monthly-review { background: #3278c8; }
+    .cal-legend-dot.fb-post { background: #3b5998; }
     .cal-legend-dot.delivery { background: #d4a800; }
     .cal-day.clickable {
       cursor: pointer;
@@ -2256,7 +2263,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v121</div>
+        <div class="logo-sub">Business Dashboard · v123</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2350,6 +2357,7 @@
           <div class="cal-legend-item"><div class="cal-legend-dot invoice"></div>🧾 請求書作成（毎月25日・土日祝は前倒し）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot payment"></div>💰 振込確認（請求日の翌々月末）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot monthly-review"></div>🪞 今月の振り返り（第4週火曜・30分）</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot fb-post"></div>📘 Facebook投稿（毎月3日）</div>
           <div class="cal-legend-item"><div class="cal-legend-dot delivery"></div>納品🎉</div>
         </div>
       </div>
@@ -3283,6 +3291,9 @@ nark.visual.media@gmail.com
             { id: 'm08-2', text: 'Before/After（ロゴ差し替え例）作成' },
             { id: 'm08-3', text: '固定セット設計（待合室・白内障）' },
             { id: 'm08-4', text: '伴走の具体物（待合再生手順1枚）' },
+            { id: 'm08-5', text: 'サービス紹介資料の講座視聴' },
+            { id: 'm08-6', text: 'ど健在広告の講座視聴' },
+            { id: 'm08-7', text: 'プッシュアプローチの講座視聴' },
           ],
         },
         {
@@ -3294,6 +3305,7 @@ nark.visual.media@gmail.com
             { id: 'm09-2', text: '医療・責任の安心訴求をLP化' },
             { id: 'm09-3', text: 'フォーム営業：リスト・送信文面テンプレ' },
             { id: 'm09-4', text: 'Google検索広告：キーワード・月1万円の運用設計' },
+            { id: 'm09-5', text: '患者説明動画サービス紹介資料の完成' },
           ],
         },
       ],
@@ -4942,6 +4954,27 @@ ${MAIL_FOOTER}`,
       return !!(review && review.dateStr === dateStr);
     }
 
+    /** 毎月3日＝Facebook投稿ルーティン */
+    function getMonthlyFbPostDate(year, monthIndex) {
+      const y = year;
+      const m = monthIndex + 1;
+      const lastDay = new Date(y, m, 0).getDate();
+      const day = Math.min(3, lastDay);
+      return {
+        year: y,
+        month: m,
+        day,
+        dateStr: toDateStr(y, m, day),
+      };
+    }
+
+    function isMonthlyFbPostDay(dateStr) {
+      if (!dateStr) return false;
+      const [y, m] = dateStr.split('-').map(Number);
+      const fb = getMonthlyFbPostDate(y, m - 1);
+      return !!(fb && fb.dateStr === dateStr);
+    }
+
     function formatDateJP(iso) {
       const [y, m, d] = iso.split('-');
       const days = ['日','月','火','水','木','金','土'];
@@ -5365,6 +5398,7 @@ ${MAIL_FOOTER}`,
       });
       const invoiceDay = isInvoiceCreationDay(today);
       const reviewDay = isMonthlyReviewDay(today);
+      const fbPostDay = isMonthlyFbPostDay(today);
       let invoiceNotice = '';
       if (invoiceDay) {
         const [y, m] = today.split('-').map(Number);
@@ -5376,7 +5410,10 @@ ${MAIL_FOOTER}`,
       const reviewNotice = reviewDay
         ? `<div class="notice-bar-inner">🪞 <strong class="notice-jump" onclick="scrollToMonthlyReview()">今月の振り返り</strong> — 第4週火曜の朝イチに30分確保（本日）</div>`
         : '';
-      if (due.length === 0 && paymentDue.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && !invoiceDay && !reviewDay) {
+      const fbNotice = fbPostDay
+        ? `<div class="notice-bar-inner">📘 <strong>Facebook投稿</strong> — 毎月3日の投稿ルーティン（本日）</div>`
+        : '';
+      if (due.length === 0 && paymentDue.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && !invoiceDay && !reviewDay && !fbPostDay) {
         el.style.display = 'none';
         el.innerHTML = '';
         return;
@@ -5384,6 +5421,7 @@ ${MAIL_FOOTER}`,
       el.style.display = '';
       el.innerHTML = [
         reviewNotice,
+        fbNotice,
         ...due.map(({ project: p, contact: c }) =>
           `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — アフターフォロー（${esc(c.label)}）の日です（納品 ${esc(p.deliveredDate || '')}）</div>`
         ),
@@ -6449,6 +6487,12 @@ ${MAIL_FOOTER}`,
           item: { date: today, done: false, type: 'event' },
         });
       }
+      if (isMonthlyFbPostDay(today)) {
+        entries.push({
+          kind: 'monthlyFbPost',
+          item: { date: today, done: false },
+        });
+      }
       if (isInvoiceCreationDay(today)) {
         const [y, m] = today.split('-').map(Number);
         const issue = getMonthlyInvoiceIssueDate(y, m - 1);
@@ -6591,6 +6635,13 @@ ${MAIL_FOOTER}`,
           <span class="task-category イベント">朝イチ</span>
           <span class="task-category 運営">振り返り</span>
           <span class="task-text">今月の振り返り（30分）— 第4週火曜・一番最初に確保</span>
+        </div>`;
+        }
+        if (kind === 'monthlyFbPost') {
+          return `
+        <div class="task-item task-item-reminder">
+          <span class="task-category 集客">FB</span>
+          <span class="task-text">Facebook投稿（毎月3日ルーティン）</span>
         </div>`;
         }
         if (kind === 'invoiceTask') {
@@ -8322,6 +8373,19 @@ ${MAIL_FOOTER}`,
           label: '今月の振り返り（30分・朝イチ）',
           category: 'monthly-review',
           client: '第4週の火曜日',
+          status: '',
+          deadline: true,
+        });
+      });
+      // 毎月3日：Facebook投稿ルーティン
+      getCalendarDisplayMonths().forEach(({ year, month }) => {
+        const fb = getMonthlyFbPostDate(year, month);
+        if (!fb) return;
+        if (!events[fb.dateStr]) events[fb.dateStr] = [];
+        events[fb.dateStr].push({
+          label: 'Facebook投稿',
+          category: 'fb-post',
+          client: '毎月3日ルーティン',
           status: '',
           deadline: true,
         });
