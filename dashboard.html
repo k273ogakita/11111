@@ -1702,6 +1702,19 @@
       margin-left: 0;
       font-size: .85rem;
     }
+    .review-save-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .78rem;
+      font-weight: 700;
+      color: #1f6b48;
+      background: rgba(42,138,94,.1);
+      border: 1px solid rgba(42,138,94,.28);
+      border-radius: 99px;
+      padding: 4px 10px;
+    }
+    .review-save-status[hidden] { display: none !important; }
     .review-text-out {
       margin-top: 12px;
       border-radius: 12px;
@@ -2263,7 +2276,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v123</div>
+        <div class="logo-sub">Business Dashboard · v124</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3681,6 +3694,7 @@ nark.visual.media@gmail.com
         milestoneDone: {},
         vision: emptyVision(),
         reviews: {},
+        reviewTextSaved: {},
       };
     }
 
@@ -3712,7 +3726,45 @@ nark.visual.media@gmail.com
       if (!data.vision || typeof data.vision !== 'object') data.vision = emptyVision();
       else data.vision = Object.assign(emptyVision(), data.vision);
       if (!data.reviews || typeof data.reviews !== 'object') data.reviews = {};
+      if (!data.reviewTextSaved || typeof data.reviewTextSaved !== 'object') data.reviewTextSaved = {};
       return data;
+    }
+
+    function isReviewTextSaved(monthKey) {
+      ensureVisionAndReviews(state);
+      return !!(state.reviewTextSaved && state.reviewTextSaved[monthKey]);
+    }
+
+    function reviewTextSavedLabel(monthKey) {
+      const savedAt = state.reviewTextSaved && state.reviewTextSaved[monthKey];
+      if (!savedAt) return '';
+      const [y, m] = String(monthKey).split('-');
+      const isCurrent = monthKey === todayStr().slice(0, 7);
+      const base = isCurrent ? '今月分テキスト保存済' : (Number(m) + '月分テキスト保存済');
+      const [sy, sm, sd] = String(savedAt).split('-');
+      const when = (sy && sm && sd) ? `（${Number(sm)}/${Number(sd)}）` : '';
+      return base + when;
+    }
+
+    function markReviewTextSaved(monthKey) {
+      ensureVisionAndReviews(state);
+      state.reviewTextSaved[monthKey] = todayStr();
+      persistStateQuiet();
+      updateReviewSaveStatusUI(monthKey);
+    }
+
+    function updateReviewSaveStatusUI(monthKey) {
+      const el = document.getElementById('reviewSaveStatus');
+      if (!el) return;
+      const key = monthKey || currentReviewMonthKey();
+      const label = reviewTextSavedLabel(key);
+      if (label) {
+        el.hidden = false;
+        el.textContent = '✓ ' + label;
+      } else {
+        el.hidden = true;
+        el.textContent = '';
+      }
     }
 
     function ensureMilestones(data) {
@@ -4528,9 +4580,17 @@ ${MAIL_FOOTER}`,
     window.copyReviewText = copyReviewText;
 
     function saveReviewTextNow() {
-      saveReviewText(currentReviewMonthKey(), { force: true, download: true }).then(function(dest) {
+      const key = currentReviewMonthKey();
+      saveReviewText(key, { force: true, download: true }).then(function(dest) {
+        if (!dest) {
+          toast('保存に失敗しました');
+          return;
+        }
+        markReviewTextSaved(key);
         if (dest === 'folder') toast('振り返りを Word（.docx）で 事業運営/振り返り に保存しました');
         else toast('振り返り Word をダウンロードしました。事業運営/振り返り に入れてください');
+      }).catch(function() {
+        toast('保存に失敗しました');
       });
     }
     window.saveReviewTextNow = saveReviewTextNow;
@@ -5691,6 +5751,7 @@ ${MAIL_FOOTER}`,
           <button type="button" class="btn btn-primary" onclick="generateReviewText()">テキスト生成</button>
           <button type="button" class="btn" onclick="saveReviewTextNow()">テキスト保存</button>
           <button type="button" class="btn btn-ghost" onclick="pickReviewDirectory()" title="事業運営/振り返り フォルダを選ぶ">保存先</button>
+          <span class="review-save-status" id="reviewSaveStatus"${isReviewTextSaved(monthKey) ? '' : ' hidden'}>${isReviewTextSaved(monthKey) ? '✓ ' + esc(reviewTextSavedLabel(monthKey)) : ''}</span>
         </div>
           <div class="review-nav" style="margin: 8px 0 10px; justify-content: flex-start;">
             <button type="button" class="calendar-nav-btn" onclick="shiftReviewMonth(-1)" aria-label="前の月">‹</button>
