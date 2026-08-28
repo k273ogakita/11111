@@ -1703,7 +1703,7 @@
       font-size: .85rem;
     }
     .review-save-status {
-      display: inline-flex;
+      display: none;
       align-items: center;
       gap: 6px;
       font-size: .78rem;
@@ -1714,7 +1714,19 @@
       border-radius: 99px;
       padding: 4px 10px;
     }
-    .review-save-status[hidden] { display: none !important; }
+    .review-save-status.is-on { display: inline-flex; }
+    .review-saved-banner {
+      display: none;
+      margin: 0 0 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: rgba(42,138,94,.12);
+      border: 1px solid rgba(42,138,94,.35);
+      color: #1f6b48;
+      font-size: .88rem;
+      font-weight: 800;
+    }
+    .review-saved-banner.is-on { display: block; }
     .review-text-out {
       margin-top: 12px;
       border-radius: 12px;
@@ -2276,7 +2288,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v124</div>
+        <div class="logo-sub">Business Dashboard · v125</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3127,6 +3139,7 @@ nark.visual.media@gmail.com
     const AUTO_BACKUP_LAST_KEY = 'nark_dashboard_auto_backup_last';
     const BACKUP_DIR_LABEL_KEY = 'nark_backup_dir_label';
     const REVIEW_DIR_LABEL_KEY = 'nark_review_dir_label';
+    const REVIEW_SAVED_MAP_KEY = 'nark_review_text_saved_v1';
     const AUTH_SESSION_KEY = 'nark_dashboard_session';
     const AUTH_TRUSTED_KEY = 'nark_dashboard_trusted';
     const AUTH_TRUSTED_DAYS = 90;
@@ -3727,6 +3740,15 @@ nark.visual.media@gmail.com
       else data.vision = Object.assign(emptyVision(), data.vision);
       if (!data.reviews || typeof data.reviews !== 'object') data.reviews = {};
       if (!data.reviewTextSaved || typeof data.reviewTextSaved !== 'object') data.reviewTextSaved = {};
+      // 別キーにも保存済み月を持つ（state 復元で消えても残す）
+      try {
+        const extra = JSON.parse(localStorage.getItem(REVIEW_SAVED_MAP_KEY) || '{}');
+        if (extra && typeof extra === 'object') {
+          Object.keys(extra).forEach(function(k) {
+            if (!data.reviewTextSaved[k] && extra[k]) data.reviewTextSaved[k] = extra[k];
+          });
+        }
+      } catch (_) {}
       return data;
     }
 
@@ -3738,32 +3760,54 @@ nark.visual.media@gmail.com
     function reviewTextSavedLabel(monthKey) {
       const savedAt = state.reviewTextSaved && state.reviewTextSaved[monthKey];
       if (!savedAt) return '';
-      const [y, m] = String(monthKey).split('-');
+      const m = String(monthKey).split('-')[1];
       const isCurrent = monthKey === todayStr().slice(0, 7);
       const base = isCurrent ? '今月分テキスト保存済' : (Number(m) + '月分テキスト保存済');
-      const [sy, sm, sd] = String(savedAt).split('-');
-      const when = (sy && sm && sd) ? `（${Number(sm)}/${Number(sd)}）` : '';
+      const parts = String(savedAt).split('-');
+      const when = (parts.length === 3) ? `（${Number(parts[1])}/${Number(parts[2])}）` : '';
       return base + when;
     }
 
     function markReviewTextSaved(monthKey) {
       ensureVisionAndReviews(state);
-      state.reviewTextSaved[monthKey] = todayStr();
+      const when = todayStr();
+      state.reviewTextSaved[monthKey] = when;
+      try {
+        const map = JSON.parse(localStorage.getItem(REVIEW_SAVED_MAP_KEY) || '{}');
+        map[monthKey] = when;
+        localStorage.setItem(REVIEW_SAVED_MAP_KEY, JSON.stringify(map));
+      } catch (_) {}
       persistStateQuiet();
       updateReviewSaveStatusUI(monthKey);
     }
 
     function updateReviewSaveStatusUI(monthKey) {
-      const el = document.getElementById('reviewSaveStatus');
-      if (!el) return;
       const key = monthKey || currentReviewMonthKey();
       const label = reviewTextSavedLabel(key);
-      if (label) {
-        el.hidden = false;
-        el.textContent = '✓ ' + label;
-      } else {
-        el.hidden = true;
-        el.textContent = '';
+      const pill = document.getElementById('reviewSaveStatus');
+      const banner = document.getElementById('reviewSavedBanner');
+      const btn = document.getElementById('reviewSaveBtn');
+      if (pill) {
+        if (label) {
+          pill.textContent = '✓ ' + label;
+          pill.classList.add('is-on');
+          pill.removeAttribute('hidden');
+        } else {
+          pill.textContent = '';
+          pill.classList.remove('is-on');
+        }
+      }
+      if (banner) {
+        if (label) {
+          banner.textContent = '✓ ' + label;
+          banner.classList.add('is-on');
+        } else {
+          banner.textContent = '';
+          banner.classList.remove('is-on');
+        }
+      }
+      if (btn) {
+        btn.textContent = label ? 'テキスト保存済' : 'テキスト保存';
       }
     }
 
@@ -4581,17 +4625,35 @@ ${MAIL_FOOTER}`,
 
     function saveReviewTextNow() {
       const key = currentReviewMonthKey();
-      saveReviewText(key, { force: true, download: true }).then(function(dest) {
-        if (!dest) {
+      const btn = document.getElementById('reviewSaveBtn');
+      if (btn) btn.textContent = '保存中…';
+      // フォーカス中だと renderCompass がスキップされるため外す
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+      Promise.resolve()
+        .then(function() { return saveReviewText(key, { force: true, download: true }); })
+        .then(function(dest) {
+          if (!dest) {
+            if (btn) btn.textContent = 'テキスト保存';
+            toast('保存に失敗しました');
+            return;
+          }
+          markReviewTextSaved(key);
+          // 折りたたみ状態を保ったまま表示を確実に更新
+          compassDetailsExpanded = true;
+          renderCompass();
+          applyCompassFolds();
+          updateReviewSaveStatusUI(key);
+          const label = reviewTextSavedLabel(key) || '今月分テキスト保存済';
+          toast(label);
+          showBackupToast('<strong>' + escapeHtml(label) + '</strong><br>Word（.docx）を保存しました。');
+        })
+        .catch(function(err) {
+          console.error(err);
+          if (btn) btn.textContent = 'テキスト保存';
           toast('保存に失敗しました');
-          return;
-        }
-        markReviewTextSaved(key);
-        if (dest === 'folder') toast('振り返りを Word（.docx）で 事業運営/振り返り に保存しました');
-        else toast('振り返り Word をダウンロードしました。事業運営/振り返り に入れてください');
-      }).catch(function() {
-        toast('保存に失敗しました');
-      });
+        });
     }
     window.saveReviewTextNow = saveReviewTextNow;
 
@@ -5747,11 +5809,12 @@ ${MAIL_FOOTER}`,
         </div>
 
         <div class="compass-block-title" id="compassReview">毎月の振り返り<span class="compass-block-note">${esc(monthKey)}</span></div>
+        <div class="review-saved-banner${isReviewTextSaved(monthKey) ? ' is-on' : ''}" id="reviewSavedBanner">${isReviewTextSaved(monthKey) ? '✓ ' + esc(reviewTextSavedLabel(monthKey)) : ''}</div>
         <div class="review-toolbar" style="display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px;align-items:center">
           <button type="button" class="btn btn-primary" onclick="generateReviewText()">テキスト生成</button>
-          <button type="button" class="btn" onclick="saveReviewTextNow()">テキスト保存</button>
+          <button type="button" class="btn" id="reviewSaveBtn" onclick="saveReviewTextNow()">${isReviewTextSaved(monthKey) ? 'テキスト保存済' : 'テキスト保存'}</button>
           <button type="button" class="btn btn-ghost" onclick="pickReviewDirectory()" title="事業運営/振り返り フォルダを選ぶ">保存先</button>
-          <span class="review-save-status" id="reviewSaveStatus"${isReviewTextSaved(monthKey) ? '' : ' hidden'}>${isReviewTextSaved(monthKey) ? '✓ ' + esc(reviewTextSavedLabel(monthKey)) : ''}</span>
+          <span class="review-save-status${isReviewTextSaved(monthKey) ? ' is-on' : ''}" id="reviewSaveStatus">${isReviewTextSaved(monthKey) ? '✓ ' + esc(reviewTextSavedLabel(monthKey)) : ''}</span>
         </div>
           <div class="review-nav" style="margin: 8px 0 10px; justify-content: flex-start;">
             <button type="button" class="calendar-nav-btn" onclick="shiftReviewMonth(-1)" aria-label="前の月">‹</button>
