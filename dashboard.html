@@ -2147,6 +2147,21 @@
       padding: 12px 14px;
     }
     .sub-item.renewal-soon { border-color: rgba(232,149,106,.55); background: var(--red-glow); }
+    .sub-item.cancelled {
+      opacity: .72;
+      background: rgba(58,53,48,.03);
+      border-style: dashed;
+    }
+    .sub-item.cancelled .sub-name { text-decoration: line-through; color: var(--muted); }
+    .sub-cancelled-label {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .04em;
+      margin: 14px 0 4px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+    }
     .sub-info { flex: 1; min-width: 0; }
     .sub-name { font-weight: 600; font-size: .88rem; }
     .sub-meta { font-size: .72rem; color: var(--muted); margin-top: 3px; }
@@ -2297,7 +2312,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v127</div>
+        <div class="logo-sub">Business Dashboard · v128</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2743,7 +2758,7 @@
         <div class="form-group">
           <label>解約日</label>
           <input type="date" id="subEndDate">
-          <div class="form-hint">空欄＝継続中</div>
+          <div class="form-hint">空欄＝継続中。一覧の「解約」からも設定できます</div>
         </div>
       </div>
       <div class="form-group">
@@ -5417,8 +5432,19 @@ ${MAIL_FOOTER}`,
       `;
     }
 
+    function isSubCancelled(sub) {
+      return !!(sub && sub.endDate);
+    }
+
     function renderSubscriptions() {
       const subs = (state.subscriptions || []).slice().sort((a, b) => {
+        const aDone = isSubCancelled(a);
+        const bDone = isSubCancelled(b);
+        if (aDone !== bDone) return aDone ? 1 : -1; // 解約済みは下へ
+        if (aDone && bDone) {
+          // 解約日が新しい順
+          return String(b.endDate || '').localeCompare(String(a.endDate || ''));
+        }
         if (!a.renewalDate) return 1;
         if (!b.renewalDate) return -1;
         return a.renewalDate.localeCompare(b.renewalDate);
@@ -5435,25 +5461,43 @@ ${MAIL_FOOTER}`,
         el.innerHTML = '<div class="sub-empty">サブスクが登録されていません。「+ 追加」から入力してください。</div>';
         return;
       }
+      let cancelledHeaderShown = false;
       el.innerHTML = subs.map(sub => {
+        const cancelled = isSubCancelled(sub);
+        let header = '';
+        if (cancelled && !cancelledHeaderShown) {
+          cancelledHeaderShown = true;
+          header = `<div class="sub-cancelled-label">解約済み</div>`;
+        }
         const days = daysUntil(sub.renewalDate);
-        const soon = days !== null && days >= 0 && days <= 7;
+        const soon = !cancelled && days !== null && days >= 0 && days <= 7;
         const monthly = subMonthlyAmount(sub);
         const cycleLabel = sub.cycle === 'annual' ? '年払い' : '月払い';
-        const statusLabel = sub.endDate ? `解約 ${sub.endDate}` : '継続中';
-        const renewalLabel = sub.renewalDate
-          ? `次回更新 ${sub.renewalDate}${soon ? '（あと' + days + '日）' : ''}`
-          : '更新日未設定';
+        const statusLabel = cancelled
+          ? `解約 ${formatDateJa(sub.endDate) || sub.endDate}`
+          : '継続中';
+        const renewalLabel = cancelled
+          ? ''
+          : (sub.renewalDate
+            ? `次回更新 ${sub.renewalDate}${soon ? '（あと' + days + '日）' : ''} · `
+            : '更新日未設定 · ');
+        const actions = cancelled
+          ? `<button class="btn btn-ghost" onclick="openSubModal('${sub.id}')">編集</button>
+             <button class="btn btn-ghost" onclick="uncancelSub('${sub.id}')">再開</button>
+             <button class="btn btn-ghost btn-danger" onclick="deleteSub('${sub.id}')">削除</button>`
+          : `<button class="btn btn-ghost" onclick="openSubModal('${sub.id}')">編集</button>
+             <button class="btn btn-ghost" onclick="cancelSub('${sub.id}')">解約</button>
+             <button class="btn btn-ghost btn-danger" onclick="deleteSub('${sub.id}')">削除</button>`;
         return `
-          <div class="sub-item${soon && !sub.endDate ? ' renewal-soon' : ''}">
+          ${header}
+          <div class="sub-item${soon ? ' renewal-soon' : ''}${cancelled ? ' cancelled' : ''}">
             <div class="sub-info">
               <div class="sub-name">${esc(sub.name)}</div>
-              <div class="sub-meta">${cycleLabel} · 月割 ${formatYen(monthly)} · ${renewalLabel} · ${statusLabel}${sub.memo ? ' · ' + esc(sub.memo) : ''}</div>
+              <div class="sub-meta">${cycleLabel} · 月割 ${formatYen(monthly)} · ${renewalLabel}${statusLabel}${sub.memo ? ' · ' + esc(sub.memo) : ''}</div>
             </div>
             <div class="sub-amount">${formatYen(Number(sub.amount) || 0)}</div>
             <div class="sub-actions">
-              <button class="btn btn-ghost" onclick="openSubModal('${sub.id}')">編集</button>
-              <button class="btn btn-ghost btn-danger" onclick="deleteSub('${sub.id}')">削除</button>
+              ${actions}
             </div>
           </div>
         `;
@@ -8259,6 +8303,32 @@ ${MAIL_FOOTER}`,
       closeSubModal();
       saveState();
     }
+
+    function cancelSub(id) {
+      const sub = state.subscriptions.find(s => s.id === id);
+      if (!sub) return;
+      const raw = prompt(`「${sub.name}」の解約日を入力してください（YYYY-MM-DD）`, todayStr());
+      if (raw === null) return;
+      const date = String(raw).trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        toast('日付は YYYY-MM-DD 形式で入力してください');
+        return;
+      }
+      sub.endDate = date;
+      saveState();
+      toast(`「${sub.name}」を解約しました（${formatDateJa(date) || date}）`);
+    }
+    window.cancelSub = cancelSub;
+
+    function uncancelSub(id) {
+      const sub = state.subscriptions.find(s => s.id === id);
+      if (!sub) return;
+      if (!confirm(`「${sub.name}」の解約を取り消して継続中に戻しますか？`)) return;
+      sub.endDate = '';
+      saveState();
+      toast(`「${sub.name}」を継続中に戻しました`);
+    }
+    window.uncancelSub = uncancelSub;
 
     function deleteSub(id) {
       if (!confirm('このサブスクを削除しますか？')) return;
