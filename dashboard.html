@@ -1468,27 +1468,22 @@
       background: rgba(42,138,94,.45);
     }
     .revenue-bar-col.positive .revenue-bar { background: rgba(42,138,94,.55); }
-    .revenue-bar-col.positive.current .revenue-bar { background: rgba(42,138,94,.85); }
     .revenue-bar-col.positive.has-value .revenue-bar-value { color: #2a8a5e; }
     .revenue-bar-col.negative .revenue-bar { background: rgba(200,80,80,.55); }
     .revenue-bar-col.negative .revenue-bar-value { color: var(--red-dim); }
-    /* 選択中は positive / negative / current より優先して黄色 */
-    .revenue-bar-col.selected .revenue-bar,
-    .revenue-bar-col.positive.selected .revenue-bar,
-    .revenue-bar-col.positive.current.selected .revenue-bar,
-    .revenue-bar-col.negative.selected .revenue-bar {
-      background: #d4a800;
+    /* 今月・選択中は色ではなく枠で示す（損益の色は変えない） */
+    .revenue-bar-col.current {
+      outline: 1.5px dashed rgba(58,53,48,.5);
+      outline-offset: 3px;
+      background: rgba(58,53,48,.03);
     }
-    .revenue-bar-col.selected .revenue-bar-value,
-    .revenue-bar-col.positive.selected .revenue-bar-value,
-    .revenue-bar-col.positive.has-value.selected .revenue-bar-value,
-    .revenue-bar-col.negative.selected .revenue-bar-value {
-      color: #9a7a00;
-      font-weight: 700;
+    .revenue-bar-col.selected:not(.current) {
+      outline: 1.5px solid rgba(58,53,48,.35);
+      outline-offset: 3px;
     }
-    .revenue-bar-col.selected .revenue-bar-label {
-      font-weight: 700;
-      color: #9a7a00;
+    .revenue-bar-col.current.selected {
+      outline: 2px dashed rgba(58,53,48,.6);
+      outline-offset: 3px;
     }
     .revenue-bar-label {
       font-size: .62rem;
@@ -1496,8 +1491,11 @@
       margin-top: 6px;
       line-height: 1;
     }
-    .revenue-bar-col.current .revenue-bar-label { font-weight: 700; color: var(--text); }
-    .revenue-bar-col.selected .revenue-bar-label { font-weight: 700; color: #9a7a00; }
+    .revenue-bar-col.current .revenue-bar-label,
+    .revenue-bar-col.selected .revenue-bar-label {
+      font-weight: 700;
+      color: var(--text);
+    }
     .finance-hero-item.annual {
       border-color: rgba(42,138,94,.35);
       background: rgba(42,138,94,.08);
@@ -2312,7 +2310,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v128</div>
+        <div class="logo-sub">Business Dashboard · v129</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
