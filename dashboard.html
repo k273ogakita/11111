@@ -1473,16 +1473,16 @@
     .revenue-bar-col.negative .revenue-bar-value { color: var(--red-dim); }
     /* 今月・選択中は色ではなく枠で示す（損益の色は変えない） */
     .revenue-bar-col.current {
-      outline: 1.5px dashed rgba(58,53,48,.5);
+      outline: 1.5px dashed #e8b86d;
       outline-offset: 3px;
-      background: rgba(58,53,48,.03);
+      background: rgba(232,184,109,.08);
     }
     .revenue-bar-col.selected:not(.current) {
-      outline: 1.5px solid rgba(58,53,48,.35);
+      outline: 1.5px solid #e8c48a;
       outline-offset: 3px;
     }
     .revenue-bar-col.current.selected {
-      outline: 2px dashed rgba(58,53,48,.6);
+      outline: 2px dashed #e0a85a;
       outline-offset: 3px;
     }
     .revenue-bar-label {
@@ -2310,7 +2310,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v129</div>
+        <div class="logo-sub">Business Dashboard · v130</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
