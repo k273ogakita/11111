@@ -2288,7 +2288,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v125</div>
+        <div class="logo-sub">Business Dashboard · v126</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4014,15 +4014,40 @@ ${MAIL_FOOTER}`,
     }
 
     function buildFollowupMail(p, contactKey) {
+      const doctor = (p.mailDirector || '').trim() || '〇〇';
+      const topic = (p.name || p.client || '患者説明').trim();
+      // 1ヶ月後：アンケート＋1箇所無料修正の案内
+      if (contactKey === 'm1' || (!contactKey && p.followUpTiming === '1month')) {
+        return {
+          subject: '患者説明動画のご活用状況について｜nARK 緒方',
+          body: `${doctor}先生
+
+お世話になっております。
+先日、${topic}の説明動画の制作ご依頼を頂きました、nARKの緒方です。
+納品から1ヶ月ほど経ちましたが、院内でのご活用はいかがでしょうか。
+
+修正したい箇所などがありましたら、ご遠慮なくお申し付けください。
+今回まで１か所まで無料で修正させていただきます。
+
+また、もし${doctor}先生がよろしければ、
+この度の動画制作に関しましての
+簡単なアンケートにご返答いただけますと幸いです。
+
+以下に、アンケートフォームを作成しております。(所要時間：約3分)
+お忙しいところ恐縮ですが、ご記入いただけますと幸いです。
+https://docs.google.com/forms/d/e/1FAIpQLScAD_3uWR-sK7Mi8d-NWnROF10AqbgQENHLdYX0GNTy63PPvg/viewform?usp=header
+
+今後とも、どうぞよろしくお願いいたします。
+
+${MAIL_FOOTER}`,
+        };
+      }
       const openings = {
-        m1: '納品から1ヶ月ほど経ちましたが、院内でのご活用はいかがでしょうか。',
         m6: '納品から半年ほど経ちましたが、院内でのご活用はいかがでしょうか。',
         y1: '納品から1年ほど経ちましたが、院内でのご活用はいかがでしょうか。',
       };
       const opening = openings[contactKey]
-        || (p.followUpTiming === '1month'
-          ? openings.m1
-          : '先日お届けした患者説明動画、院内でのご活用はいかがでしょうか。');
+        || '先日お届けした患者説明動画、院内でのご活用はいかがでしょうか。';
       return {
         subject: '患者説明動画のご活用状況について｜nARK 緒方',
         body: `${mailAddressBlock(p)}
