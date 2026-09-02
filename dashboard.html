@@ -459,6 +459,15 @@
       color: #b4531f;
       font-weight: 700;
     }
+    .phase-btn.af-unknown {
+      border-style: dashed;
+      color: var(--muted);
+    }
+    .phase-btn.af-unknown:hover {
+      border-color: #9b7ad0;
+      color: #6b4fa0;
+      background: rgba(155,122,208,.08);
+    }
     .col-afterfollow .column-header {
       background: rgba(155,122,208,.12);
     }
@@ -2288,7 +2297,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v126</div>
+        <div class="logo-sub">Business Dashboard · v127</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -6119,24 +6128,53 @@ ${MAIL_FOOTER}`,
       </div>`;
     }
 
-    // 納品日起点の連絡（1ヶ月後/半年後/1年後）
+    // 納品日起点の連絡（1ヶ月後/半年後/1年後）＋連絡先不明
     function renderAfterFollowSchedule(p) {
       const today = todayStr();
       const contacts = getAfterFollowContacts(p);
       if (!contacts.length) return '';
-      return `<div class="after-follow-section">
-        <div class="after-follow-label">連絡（納品日から）</div>
-        <div class="phase-btns interactive">${contacts.map(c => {
-          const due = !c.done && c.date && c.date <= today;
-          const cls = c.done ? ' done' : (due ? ' due' : '');
-          const dateStr = c.date ? formatDateJa(c.date) : '';
-          return `<button type="button" class="phase-btn af-contact${cls}"
+      const contactBtns = contacts.map(c => {
+        const due = !c.done && c.date && c.date <= today;
+        const cls = c.done ? ' done' : (due ? ' due' : '');
+        const dateStr = c.date ? formatDateJa(c.date) : '';
+        return `<button type="button" class="phase-btn af-contact${cls}"
                     data-follow-mail="1" data-follow-id="${p.id}" data-follow-step="${c.key}"
                     onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
                     title="クリックでメールアプリを開き、連絡済みにします">${c.done ? '✓ ' : ''}${c.label}${dateStr ? `<span class="af-contact-date">${dateStr}</span>` : ''}</button>`;
-        }).join('')}</div>
+      }).join('');
+      const unknownBtn = `<button type="button" class="phase-btn af-unknown"
+                    onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
+                    onclick="event.stopPropagation();markAfterFollowContactUnknown('${p.id}')"
+                    title="ココナラ等でメール不明のとき。アフターフォローを終了し完了へ移します">連絡先不明</button>`;
+      return `<div class="after-follow-section">
+        <div class="after-follow-label">連絡（納品日から）</div>
+        <div class="phase-btns interactive">${contactBtns}${unknownBtn}</div>
       </div>`;
     }
+
+    /** 連絡先不明：追跡不可のためアフターフォローを打ち切り、完了へ */
+    function markAfterFollowContactUnknown(id) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p) {
+        toast('案件が見つかりません');
+        return;
+      }
+      if (!confirm(`「${p.name}」を連絡先不明としてアフターフォローを終了し、完了へ移しますか？`)) return;
+      ensureProjectFinance(p);
+      if (!p.afterFollowSchedule || typeof p.afterFollowSchedule !== 'object') {
+        p.afterFollowSchedule = { m1: false, m6: false, y1: false };
+      }
+      AFTER_FOLLOW_CONTACTS.forEach(c => { p.afterFollowSchedule[c.key] = true; });
+      p.afterFollowContactUnknown = true;
+      p.afterFollow = false;
+      p.status = 'done';
+      p.phase = '';
+      doneExpanded = true;
+      if (p.category === 'sns') p.snsStatus = 'published';
+      saveState();
+      toast(`「${p.name}」→ 完了（連絡先不明）`);
+    }
+    window.markAfterFollowContactUnknown = markAfterFollowContactUnknown;
 
     // アフターフォロー列に重複表示する簡易カード（ドラッグ不可）
     function renderAfterFollowCard(p) {
