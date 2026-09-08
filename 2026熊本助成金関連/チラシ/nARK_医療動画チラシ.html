@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --dark:        #1e1e1e;
+    --dark-soft:   #4a4a4a;
+    --green:       #3d8c62;
+    --green-light: #6db88a;
+    --green-pale:  #eaf5ef;
+    --terra:       #c8704a;
+    --terra-light: #e09870;
+    --terra-pale:  #fdf0e8;
+    --white:       #ffffff;
+    --off-white:   #f8f7f5;
+    --text:        #1e1e1e;
+    --text-mid:    #6e6e6e;
+    --text-light:  #a6a6a4;
+    --line:        rgba(61,140,98,0.14);
+  }
+
+  html, body {
+    width: 210mm; height: 297mm;
+    background: var(--white);
+    color: var(--text);
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    width: 210mm; height: 297mm;
+    padding: 13mm 15mm 10mm;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+  .page > section, .page > div { flex-shrink: 0; }
+  .page::before {
+    content:''; position:absolute; top:-90mm; right:-70mm;
+    width:180mm; height:180mm; border-radius:50%;
+    background: radial-gradient(circle, rgba(61,140,98,0.06), transparent 62%);
+  }
+  .page::after {
+    content:''; position:absolute; bottom:-80mm; left:-70mm;
+    width:170mm; height:170mm; border-radius:50%;
+    background: radial-gradient(circle, rgba(200,112,74,0.06), transparent 62%);
+  }
+  .page > * { position: relative; z-index: 1; }
+
+  /* ── HEADER ── */
+  header { display:flex; justify-content:space-between; align-items:flex-start; }
+  .brand .logo {
+    font-family: "Georgia", "Times New Roman", serif;
+    font-size: 44px; font-weight: 400; letter-spacing: 0.02em; line-height:1;
+    color: var(--dark);
+  }
+  .brand .logo strong { color: var(--terra); font-weight: 700; }
+  .brand .tagline {
+    margin-top: 8px; font-size: 12px; letter-spacing: 0.14em; color: var(--dark-soft);
+    font-family: "Hiragino Mincho ProN", "Noto Serif JP", serif;
+  }
+  .brand .tagline b { color: var(--green); font-weight: 600; }
+  .acronym { text-align:right; padding-top:4px; }
+  .acronym li { list-style:none; display:flex; align-items:baseline; justify-content:flex-end; gap:8px; margin-bottom:3px; }
+  .acronym .l { font-family:"Georgia", serif; font-size:15px; font-weight:700; color:var(--terra); width:14px; text-align:center; }
+  .acronym .w { font-family:"Georgia", serif; font-style:italic; font-size:12.5px; color:var(--dark-soft); }
+  .rule { height:2px; background:linear-gradient(90deg, var(--green), var(--terra) 70%, transparent); margin: 11px 0 0; }
+
+  /* ── HERO ── */
+  .hero { margin-top: 11px; }
+  .hero .kicker {
+    display:inline-block; font-size:11px; letter-spacing:0.14em; color:#fff;
+    background:var(--green); padding:5px 13px; border-radius:20px; font-weight:600;
+  }
+  .hero h1 {
+    font-family:"Hiragino Mincho ProN", "Noto Serif JP", serif;
+    font-weight:400; font-size:25px; line-height:1.48; color:var(--dark); margin-top:10px;
+  }
+  .hero h1 em { font-style:normal; color:var(--green); }
+  .hero h1 u { text-decoration:none; border-bottom:3px solid var(--terra-light); padding-bottom:1px; }
+  .hero p.lead { margin-top:9px; font-size:12px; line-height:1.8; color:var(--text-mid); max-width:158mm; }
+
+  /* ── section title ── */
+  .sec-title { display:flex; align-items:center; gap:10px; margin: 13px 0 9px; }
+  .sec-title .en { font-family:"Georgia", serif; font-style:italic; font-size:12px; color:var(--terra); }
+  .sec-title .ja { font-size:15px; font-weight:700; letter-spacing:0.06em; color:var(--dark); }
+  .sec-title .bar { flex:1; height:1px; background:var(--line); }
+
+  /* ── main service ── */
+  .main-card {
+    border:1px solid var(--green-light); border-radius:10px; overflow:hidden;
+    display:flex; background:var(--green-pale);
+  }
+  .main-card .accent { width:6px; background:linear-gradient(180deg,var(--green-light),var(--green)); }
+  .main-card .body { padding:14px 18px; flex:1; }
+  .main-card .top { display:flex; justify-content:space-between; align-items:baseline; }
+  .main-card .name { font-size:17px; font-weight:700; color:var(--green); letter-spacing:0.02em; }
+  .main-card .price { font-size:15px; font-weight:700; color:var(--green); white-space:nowrap; }
+  .main-card .price small { font-size:11px; font-weight:500; }
+  .main-card .desc { margin-top:6px; font-size:12px; line-height:1.75; color:var(--dark-soft); }
+  .main-card .tags { margin-top:9px; display:flex; gap:6px; flex-wrap:wrap; }
+  .main-card .tags span { font-size:10px; color:var(--green); background:#fff; border:1px solid var(--line); border-radius:14px; padding:3px 9px; }
+
+  /* ── beyond video ── */
+  .beyond-note { font-size:11.5px; line-height:1.7; color:var(--text-mid); margin:-2px 0 10px; }
+  .beyond-note b { color:var(--terra); font-weight:700; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .mini { border:1px solid var(--line); border-left:3px solid var(--terra); border-radius:7px; padding:10px 11px; }
+  .mini .n { font-size:12px; font-weight:700; color:var(--dark); line-height:1.35; }
+  .mini .p { font-size:11px; font-weight:700; color:var(--terra); margin-top:4px; }
+  .mini .d { font-size:9.5px; line-height:1.55; color:var(--text-mid); margin-top:4px; }
+
+  /* ── sets ── */
+  .chips { display:flex; flex-wrap:wrap; gap:7px; }
+  .chip { font-size:11px; color:var(--dark-soft); background:var(--off-white); border:1px solid var(--line); border-radius:16px; padding:6px 13px; }
+  .chip b { color:var(--green); font-weight:700; }
+
+  /* ── profile ── */
+  .profile { display:flex; gap:16px; align-items:center; background:var(--off-white); border-radius:10px; padding:13px 18px; margin-top:12px; }
+  .photo {
+    width:26mm; height:26mm; border-radius:50%; flex-shrink:0; overflow:hidden;
+    border:3px solid var(--white); box-shadow:0 2px 10px rgba(0,0,0,0.12);
+    background:
+      repeating-linear-gradient(45deg,#e9e7e3,#e9e7e3 8px,#f2f0ec 8px,#f2f0ec 16px);
+    display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .photo img { width:100%; height:100%; object-fit:cover; display:block; }
+  .photo .ph { font-size:10px; color:var(--text-light); text-align:center; line-height:1.5; letter-spacing:0.05em; }
+  .profile .txt .role { font-size:11px; color:var(--green); font-weight:600; letter-spacing:0.06em; }
+  .profile .txt .nm { font-size:16px; font-weight:700; color:var(--dark); margin-top:2px; }
+  .profile .txt .nm span { font-size:11px; font-weight:400; color:var(--text-mid); margin-left:8px; }
+  .profile .txt .msg { font-size:11px; line-height:1.75; color:var(--dark-soft); margin-top:6px; }
+  .profile .txt .msg b { color:var(--terra); }
+
+  /* ── footer ── */
+  .footer { margin-top:auto; background:var(--dark); border-radius:10px; color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; }
+  .footer .left .cta { font-family:"Hiragino Mincho ProN", serif; font-size:15px; letter-spacing:0.04em; }
+  .footer .left .cta b { color:var(--terra-light); }
+  .footer .left .who { margin-top:6px; font-size:10.5px; color:rgba(255,255,255,0.6); letter-spacing:0.05em; }
+  .footer .right { text-align:right; }
+  .footer .tel { font-family:"Georgia", serif; font-size:23px; font-weight:700; letter-spacing:0.03em; }
+  .footer .tel span { font-size:11px; color:var(--green-light); font-family:"Hiragino Sans",sans-serif; margin-right:6px; }
+  .footer .meta { margin-top:5px; font-size:9.5px; color:rgba(255,255,255,0.6); line-height:1.7; }
+  .footer .meta b { color:rgba(255,255,255,0.9); font-weight:400; }
+  .note { text-align:center; font-size:9px; color:var(--text-light); margin-top:7px; letter-spacing:0.04em; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="logo">n<strong>ARK</strong></div>
+      <div class="tagline"><b>看護師</b>が原点。誠実さと、確かな実力。</div>
+    </div>
+    <ul class="acronym">
+      <li><span class="l">n</span><span class="w">Nurse</span></li>
+      <li><span class="l">A</span><span class="w">Accuracy &amp; Articulate</span></li>
+      <li><span class="l">R</span><span class="w">ROI improvement</span></li>
+      <li><span class="l">K</span><span class="w">Kindness &amp; care</span></li>
+    </ul>
+  </header>
+  <div class="rule"></div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <span class="kicker">医療機関向け ｜ 患者説明動画サービス</span>
+    <h1><em>看護師</em>が、院長の一言から<br>患者さんに<u>「伝わる」説明動画</u>をつくる。</h1>
+    <p class="lead">
+      現役看護師として医療現場を理解しているから、少ない打ち合わせでも医療的に正確な説明動画に。
+      忙しい先生の時間を奪わず、待合・説明業務の負担を軽くします。買い切りで永続使用、短納期で対応します。
+    </p>
+  </section>
+
+  <!-- MAIN SERVICE -->
+  <div class="sec-title"><span class="en">Service</span><span class="ja">患者説明動画</span><span class="bar"></span></div>
+  <div class="main-card">
+    <div class="accent"></div>
+    <div class="body">
+      <div class="top">
+        <span class="name">カスタマイズ型 患者説明動画</span>
+        <span class="price">¥24,000〜<small>／本</small></span>
+      </div>
+      <div class="desc">診療科・治療内容に合わせて制作。AIナレーション込み・院名／ロゴ差し替え・短納期・買い切り永続使用。待合室での放映や、診察前後の説明にそのまま使えます。</div>
+      <div class="tags"><span>AIナレーション込み</span><span>ロゴ差し替え可</span><span>買い切り永続</span><span>短納期</span><span>バージョンアップサポート ¥8,800／年〜</span></div>
+    </div>
+  </div>
+
+  <!-- BEYOND VIDEO -->
+  <div class="sec-title"><span class="en">Beyond video</span><span class="ja">動画だけにとどまりません</span><span class="bar"></span></div>
+  <div class="beyond-note">
+    動画制作にあわせて、<b>術後の日常生活の説明資料</b>や、家で見返せる手術の流れの用紙もご用意できます。看護師ならではの現場理解力で、動画にとどまらず<b>医療現場そのもの</b>のお役に立ちます。
+  </div>
+  <div class="grid4">
+    <div class="mini"><div class="n">術前・術後の<br>日常生活資料</div><div class="p">¥5,000〜</div><div class="d">退院後の過ごし方をまとめた印刷用データ。</div></div>
+    <div class="mini"><div class="n">自宅用説明<br>（PNG）</div><div class="p">¥5,000〜¥15,000</div><div class="d">内容による。当日まで・帰宅後・家族向け。動画と同時。</div></div>
+    <div class="mini"><div class="n">資料丸投げ<br>構成作成費</div><div class="p">¥4,700</div><div class="d">資料・HPをもとにこちらで構成を作成。</div></div>
+    <div class="mini"><div class="n">バージョンアップ<br>サポート</div><div class="p">¥8,800〜／年</div><div class="d">作った動画を、最新の状態で使い続けられます。</div></div>
+  </div>
+
+  <!-- SETS -->
+  <div class="sec-title"><span class="en">Line-up</span><span class="ja">選べる説明セット</span><span class="bar"></span></div>
+  <div class="chips">
+    <span class="chip"><b>①</b> 待合室セット（内科・眼科・歯科・皮膚科・整形外科・小児科ほか）</span>
+    <span class="chip"><b>②</b> 白内障手術</span>
+    <span class="chip"><b>③</b> インプラント</span>
+    <span class="chip"><b>④</b> 入所説明</span>
+    <span class="chip"><b>⑤</b> 入院説明</span>
+    <span class="chip"><b>⑥</b> 内視鏡検査</span>
+    <span class="chip">＋ 採用動画（開業医 ¥130,000／大手病院 ¥200,000）</span>
+  </div>
+
+  <!-- PROFILE (face photo placeholder) -->
+  <div class="profile">
+    <div class="photo">
+      <!-- 顔写真を入れるとき: このフォルダに「顔写真.png」を置くだけで反映されます -->
+      <img src="顔写真.png" alt="緒方 和奈" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <div class="ph" style="display:none;">写真<br>PHOTO</div>
+    </div>
+    <div class="txt">
+      <div class="role">現役看護師 × 動画クリエイター</div>
+      <div class="nm">緒方 和奈 <span>nARK 代表</span></div>
+      <div class="msg">
+        看護師として現場に立ち続けているからこそ、<b>一言いただければ意図の八割は汲み取れます</b>。
+        「作って終わり」ではなく、院内での使い方や業務効率化まで<b>伴走</b>。全国オンライン対応で、開業直後でも始めやすい価格でご提供します。
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="left">
+      <div class="cta">まずは<b>15分の無料相談</b>から。</div>
+      <div class="who">nARK ／ 緒方 和奈　｜　全国オンライン対応</div>
+    </div>
+    <div class="right">
+      <div class="tel"><span>TEL</span>080-2732-5456</div>
+      <div class="meta"><b>拠点</b>：熊本市北区梶尾町837-2　｜　インボイス登録番号 T7810008112154</div>
+    </div>
+  </div>
+  <div class="note">価格はすべて税抜表示（別途消費税10%）。内容・規模により変動する場合があります。</div>
+
+</div>
+</body>
+</html>
