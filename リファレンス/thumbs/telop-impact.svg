@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <rect width="1920" height="1080" fill="#111"/>
+  <rect y="390" width="1920" height="300" fill="#e23b2f"/>
+  <text x="960" y="590" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-weight="900" font-size="96" fill="#fff">まだ、そのままでいい？</text>
+</svg>

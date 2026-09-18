@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <rect width="1920" height="1080" fill="#fff6ea"/>
+  <circle cx="1680" cy="140" r="220" fill="#ffd6a3"/>
+  <circle cx="120" cy="980" r="180" fill="#b8e0d2"/>
+  <rect x="480" y="430" width="960" height="220" rx="110" fill="#fff" stroke="#f2b56b" stroke-width="8"/>
+  <text x="960" y="570" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-weight="700" font-size="64" fill="#e07a3d">まずは、気軽に相談してみて</text>
+</svg>

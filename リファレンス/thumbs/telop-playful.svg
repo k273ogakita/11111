@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <rect width="1920" height="1080" fill="#fff9c8"/>
+  <rect x="360" y="340" width="1200" height="400" rx="40" fill="#fff" transform="rotate(-2 960 540)"/>
+  <text x="960" y="500" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-weight="700" font-size="58" fill="#2b2b2b" transform="rotate(-2 960 500)">え、こんなにカンタンなの？</text>
+  <text x="960" y="620" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="36" fill="#e07a3d" transform="rotate(-2 960 620)">※ちょっと盛ってます</text>
+</svg>

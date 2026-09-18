@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" width="1920" height="1080">
+  <rect width="1920" height="1080" fill="#f4eee6"/>
+  <rect x="120" y="120" width="1680" height="840" rx="8" fill="#faf7f2" stroke="#e4d9cc" stroke-width="2"/>
+  <rect x="840" y="420" width="240" height="4" fill="#c4a882"/>
+  <text x="960" y="390" text-anchor="middle" font-family="Hiragino Mincho ProN, YuMincho, serif" font-size="54" fill="#5c5348">白内障手術とは</text>
+  <text x="960" y="500" text-anchor="middle" font-family="Hiragino Sans, sans-serif" font-size="28" fill="#8c8278">濁った水晶体を、新しいレンズに置きかえる手術です</text>
+</svg>
