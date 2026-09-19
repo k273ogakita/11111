@@ -295,6 +295,47 @@
       margin-bottom: 4px;
     }
     .card-name { font-weight: 600; font-size: .88rem; flex: 1; min-width: 0; line-height: 1.35; }
+    .card-name-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .card-flag {
+      flex-shrink: 0;
+      margin-top: 1px;
+      padding: 2px 7px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: .58rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      color: var(--muted);
+      cursor: pointer;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .card-flag:hover { border-color: #c9bfb0; }
+    .card-flag.pending {
+      background: rgba(200,80,80,.08);
+      border-color: rgba(200,80,80,.35);
+      color: #a04848;
+    }
+    .card-flag.done {
+      background: rgba(42,138,94,.1);
+      border-color: rgba(42,138,94,.35);
+      color: #1f6b48;
+    }
+    .card-asset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .card-asset-row .phase-btn { font-size: .62rem; }
     .card-meta { font-size: .72rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
     .card-tag {
       display: inline-block;
@@ -2310,7 +2351,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v130</div>
+        <div class="logo-sub">Business Dashboard · v131</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3916,6 +3957,81 @@ nark.visual.media@gmail.com
       if (p.prepayPhase === undefined) p.prepayPhase = isAdOpsType(p) ? '作成未' : '';
       if (p.opsMonth === undefined) p.opsMonth = isAdOpsType(p) ? (parseOpsMonthFromName(p.name) || 1) : 0;
       if (p.opsBaseName === undefined) p.opsBaseName = isAdOpsType(p) ? getOpsBaseName(p) : '';
+      // 素材バックアップ（クライアント案件）: pending / done
+      if (p.materialBackup === undefined) {
+        p.materialBackup = (p.category === 'client') ? 'pending' : '';
+      }
+      // HDD移行: 納品後に pending。未納品は空
+      if (p.hddMigrate === undefined) {
+        if (p.category === 'client' && p.deliveredDate && (p.status === 'billing' || p.status === 'unpaid')) {
+          p.hddMigrate = 'pending';
+        } else {
+          p.hddMigrate = '';
+        }
+      }
+    }
+
+    function needsMaterialBackupTrack(p) {
+      return !!(p && p.category === 'client' && !isAdOpsType(p));
+    }
+
+    function needsHddMigrateTrack(p) {
+      return !!(p && p.category === 'client' && !isAdOpsType(p) && p.deliveredDate && p.hddMigrate);
+    }
+
+    function isMaterialBackupDone(p) {
+      return !!(p && p.materialBackup === 'done');
+    }
+
+    function isHddMigrated(p) {
+      return !!(p && p.hddMigrate === 'done');
+    }
+
+    function toggleMaterialBackup(id) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p || !needsMaterialBackupTrack(p)) return;
+      ensureProjectFinance(p);
+      p.materialBackup = isMaterialBackupDone(p) ? 'pending' : 'done';
+      saveState();
+      toast(isMaterialBackupDone(p)
+        ? `「${p.name}」→ 素材バックアップ済`
+        : `「${p.name}」→ 素材バックアップ未`);
+    }
+    window.toggleMaterialBackup = toggleMaterialBackup;
+
+    function setHddMigrate(id, value) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p) return;
+      ensureProjectFinance(p);
+      p.hddMigrate = value === 'done' ? 'done' : 'pending';
+      saveState();
+      toast(value === 'done'
+        ? `「${p.name}」→ HDD移行済`
+        : `「${p.name}」→ HDD移行未`);
+    }
+    window.setHddMigrate = setHddMigrate;
+
+    function renderMaterialBackupFlag(p) {
+      if (!needsMaterialBackupTrack(p)) return '';
+      const done = isMaterialBackupDone(p);
+      return `<button type="button" class="card-flag ${done ? 'done' : 'pending'}"
+                onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
+                onclick="event.stopPropagation();toggleMaterialBackup('${p.id}')"
+                title="クリックで素材バックアップ済／未を切替">${done ? '素材BK済' : '素材BK未'}</button>`;
+    }
+
+    function renderHddMigrateButtons(p) {
+      if (!needsHddMigrateTrack(p)) return '';
+      const pending = p.hddMigrate === 'pending';
+      const done = p.hddMigrate === 'done';
+      return `<div class="card-asset-row">
+        <button type="button" class="phase-btn${pending ? ' active' : ''}"
+          onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
+          onclick="event.stopPropagation();setHddMigrate('${p.id}','pending')">HDD移行未</button>
+        <button type="button" class="phase-btn${done ? ' done' : ''}"
+          onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
+          onclick="event.stopPropagation();setHddMigrate('${p.id}','done')">HDD移行済</button>
+      </div>`;
     }
 
     function checkAdOpsClosingDates() {
@@ -5594,6 +5710,7 @@ ${MAIL_FOOTER}`,
           projectDeadlines.push({ project: p, label: '最終納品', date: p.finalDueDate });
         }
       });
+      const hddPending = state.projects.filter(p => needsHddMigrateTrack(p) && p.hddMigrate === 'pending');
       const invoiceDay = isInvoiceCreationDay(today);
       const reviewDay = isMonthlyReviewDay(today);
       const fbPostDay = isMonthlyFbPostDay(today);
@@ -5611,7 +5728,7 @@ ${MAIL_FOOTER}`,
       const fbNotice = fbPostDay
         ? `<div class="notice-bar-inner">📘 <strong>Facebook投稿</strong> — 毎月3日の投稿ルーティン（本日）</div>`
         : '';
-      if (due.length === 0 && paymentDue.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && !invoiceDay && !reviewDay && !fbPostDay) {
+      if (due.length === 0 && paymentDue.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && hddPending.length === 0 && !invoiceDay && !reviewDay && !fbPostDay) {
         el.style.display = 'none';
         el.innerHTML = '';
         return;
@@ -5636,6 +5753,9 @@ ${MAIL_FOOTER}`,
         ),
         ...projectDeadlines.map(({ project: p, label, date }) =>
           `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — ${esc(label)}の日です（${esc(formatDateJa(date))}）</div>`
+        ),
+        ...hddPending.map(p =>
+          `<div class="notice-bar-inner">💾 <strong>${esc(p.client || p.name)}</strong> — HDD移行がまだです（納品 ${esc(formatDateJa(p.deliveredDate) || p.deliveredDate)}）</div>`
         ),
         invoiceNotice,
       ].filter(Boolean).join('');
@@ -6226,7 +6346,10 @@ ${MAIL_FOOTER}`,
       return `
         <div class="card af-card" data-id="${p.id}">
           <div class="card-header">
-            <div class="card-name">${esc(p.name)}</div>
+            <div class="card-name-row">
+              <div class="card-name">${esc(p.name)}</div>
+              ${renderMaterialBackupFlag(p)}
+            </div>
             <div class="card-actions has-edit">
               <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
             </div>
@@ -6234,6 +6357,7 @@ ${MAIL_FOOTER}`,
           <div class="card-meta">${client}${statusLabel ? `<span class="card-tag">${esc(statusLabel)}</span>` : ''}</div>
           ${delivered}
           ${renderAfterFollowSchedule(p)}
+          ${renderHddMigrateButtons(p)}
         </div>
       `;
     }
@@ -6352,7 +6476,10 @@ ${MAIL_FOOTER}`,
              onclick="if(!justDragged&&${hasWf})openChecklist('${p.id}')"
              style="${hasWf ? 'cursor:pointer' : ''}">
           <div class="card-header">
-            <div class="card-name">${esc(p.name)}</div>
+            <div class="card-name-row">
+              <div class="card-name">${esc(p.name)}</div>
+              ${renderMaterialBackupFlag(p)}
+            </div>
             ${actions}
           </div>
           <div class="card-meta">${meta}</div>
@@ -6363,6 +6490,7 @@ ${MAIL_FOOTER}`,
           ${phaseLabel}
           ${financeBlock}
           ${renderPhaseButtons(p)}
+          ${renderHddMigrateButtons(p)}
           ${path}
         </div>
       `;
@@ -6436,11 +6564,12 @@ ${MAIL_FOOTER}`,
       p.phase = phase;
       if (phase === '納品済' && !isAdOpsType(p)) {
         if (!p.deliveredDate) p.deliveredDate = todayStr();
+        if (!p.hddMigrate) p.hddMigrate = 'pending';
         p.status = 'billing';
         p.phase = '作成未';
         ensureBillingDate(p);
         saveState();
-        toast(`「${p.name}」→ 請求`);
+        toast(`「${p.name}」→ 請求（HDD移行がTODOに追加）`);
         return;
       }
       if (phase === '広告開始' && isAdOpsType(p)) {
@@ -6460,6 +6589,7 @@ ${MAIL_FOOTER}`,
       const p = state.projects.find(x => x.id === id);
       if (!p) return;
       if (!p.deliveredDate) p.deliveredDate = todayStr();
+      if (!p.hddMigrate) p.hddMigrate = 'pending';
       p.afterFollow = !!withSupport;
       p.status = 'billing';
       p.phase = '作成未';
@@ -6467,8 +6597,8 @@ ${MAIL_FOOTER}`,
       if (p.category === 'sns') p.snsStatus = 'scheduled';
       saveState();
       toast(withSupport
-        ? `「${p.name}」→ 請求（アフターサポート有・アフターフォローへ）`
-        : `「${p.name}」→ 請求（アフターサポートなし）`);
+        ? `「${p.name}」→ 請求（アフターサポート有・HDD移行TODO）`
+        : `「${p.name}」→ 請求（HDD移行TODO）`);
     }
     window.deliverProject = deliverProject;
 
@@ -6668,6 +6798,7 @@ ${MAIL_FOOTER}`,
     function entryDate(entry) {
       if (entry.kind === 'editorDraft') return entry.date || entry.item.editorDraftDueDate || '';
       if (entry.kind === 'projectDeadline') return entry.date || '';
+      if (entry.kind === 'hddMigrate') return entry.date || entry.item.deliveredDate || '';
       if (entry.kind === 'followUp') return entry.contact ? (entry.contact.date || '') : '';
       if (entry.kind === 'paymentConfirm') return entry.date || getPaymentDueDate(entry.item.invoiceDate) || '';
       return entry.item.date || entry.item.dueDate || '';
@@ -6709,6 +6840,14 @@ ${MAIL_FOOTER}`,
         if (p.finalDueDate && p.finalDueDate <= today && !p.finalDueDone) {
           entries.push({ kind: 'projectDeadline', item: p, date: p.finalDueDate, label: '最終納品', deadlineKind: 'final' });
         }
+      });
+      state.projects.forEach(p => {
+        if (!needsHddMigrateTrack(p) || p.hddMigrate !== 'pending') return;
+        entries.push({
+          kind: 'hddMigrate',
+          item: p,
+          date: p.deliveredDate || today,
+        });
       });
       if (isMonthlyReviewDay(today)) {
         entries.push({
@@ -6855,6 +6994,15 @@ ${MAIL_FOOTER}`,
           <span class="task-category 未完了">${overdue ? '未完了' : '今日'}</span>
           <span class="task-category 依頼">${esc(label || '期日')}</span>
           <span class="task-text">${esc(t.client || t.name)} — ${esc(label || '期日')}（${formatDateJa(date)}）</span>
+          <button type="button" class="btn btn-ghost" onclick="editProject('${t.id}')">案件を開く</button>
+        </div>`;
+        }
+        if (kind === 'hddMigrate') {
+          return `
+        <div class="task-item task-item-reminder">
+          <span class="task-category 運営">HDD</span>
+          <span class="task-text">${esc(t.client || t.name)} — HDDへ移行（納品 ${formatDateJa(t.deliveredDate) || ''}）</span>
+          <button type="button" class="btn btn-primary" onclick="setHddMigrate('${t.id}','done')">移行済にする</button>
           <button type="button" class="btn btn-ghost" onclick="editProject('${t.id}')">案件を開く</button>
         </div>`;
         }
