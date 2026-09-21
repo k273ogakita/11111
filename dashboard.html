@@ -2351,7 +2351,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v131</div>
+        <div class="logo-sub">Business Dashboard · v132</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3961,13 +3961,21 @@ nark.visual.media@gmail.com
       if (p.materialBackup === undefined) {
         p.materialBackup = (p.category === 'client') ? 'pending' : '';
       }
-      // HDD移行: 納品後に pending。未納品は空
+      // HDD移行: 納品後は未移行から開始（請求/入金未/完了どの列でも追跡）
       if (p.hddMigrate === undefined) {
-        if (p.category === 'client' && p.deliveredDate && (p.status === 'billing' || p.status === 'unpaid')) {
+        if (p.category === 'client' && !isAdOpsType(p) && p.deliveredDate) {
           p.hddMigrate = 'pending';
         } else {
           p.hddMigrate = '';
         }
+      } else if (
+        !p.hddMigrate
+        && p.category === 'client'
+        && !isAdOpsType(p)
+        && p.deliveredDate
+      ) {
+        // 旧データで空文字になっていた納品済み案件を復旧
+        p.hddMigrate = 'pending';
       }
     }
 
@@ -3976,7 +3984,7 @@ nark.visual.media@gmail.com
     }
 
     function needsHddMigrateTrack(p) {
-      return !!(p && p.category === 'client' && !isAdOpsType(p) && p.deliveredDate && p.hddMigrate);
+      return !!(p && p.category === 'client' && !isAdOpsType(p) && p.deliveredDate);
     }
 
     function isMaterialBackupDone(p) {
@@ -4017,17 +4025,20 @@ nark.visual.media@gmail.com
       return `<button type="button" class="card-flag ${done ? 'done' : 'pending'}"
                 onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
                 onclick="event.stopPropagation();toggleMaterialBackup('${p.id}')"
-                title="クリックで素材バックアップ済／未を切替">${done ? '素材BK済' : '素材BK未'}</button>`;
+                title="クリックで素材バックアップ済／未を切替">${done ? '素材バックアップ済' : '素材バックアップ未'}</button>`;
     }
 
     function renderHddMigrateButtons(p) {
       if (!needsHddMigrateTrack(p)) return '';
-      const pending = p.hddMigrate === 'pending';
+      ensureProjectFinance(p);
+      if (!p.hddMigrate) p.hddMigrate = 'pending';
+      const pending = p.hddMigrate !== 'done';
       const done = p.hddMigrate === 'done';
       return `<div class="card-asset-row">
+        <span class="after-follow-label" style="width:100%;margin:0 0 2px">納品後のHDD移行</span>
         <button type="button" class="phase-btn${pending ? ' active' : ''}"
           onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
-          onclick="event.stopPropagation();setHddMigrate('${p.id}','pending')">HDD移行未</button>
+          onclick="event.stopPropagation();setHddMigrate('${p.id}','pending')">HDDに移行未</button>
         <button type="button" class="phase-btn${done ? ' done' : ''}"
           onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
           onclick="event.stopPropagation();setHddMigrate('${p.id}','done')">HDD移行済</button>
