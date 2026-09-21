@@ -2351,7 +2351,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v132</div>
+        <div class="logo-sub">Business Dashboard · v133</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -6034,30 +6034,30 @@ ${MAIL_FOOTER}`,
             <h4>今月うまく行ったこと</h4>
             <div class="review-field">
               <label>何がうまく行ったか</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentWell', this)">${esc(r.wentWell)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentWell', this)">${esc(r.wentWell)}</textarea>
             </div>
             <div class="review-field">
               <label>なぜうまく行ったか</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentWellWhy', this)">${esc(r.wentWellWhy)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentWellWhy', this)">${esc(r.wentWellWhy)}</textarea>
             </div>
             <div class="review-field">
               <label>次も繰り返すための具体策</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentWellNext', this)">${esc(r.wentWellNext)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentWellNext', this)">${esc(r.wentWellNext)}</textarea>
             </div>
           </div>
           <div class="review-card poor">
             <h4>今月うまくいかなかったこと</h4>
             <div class="review-field">
               <label>何がうまくいかなかったか</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentPoor', this)">${esc(r.wentPoor)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentPoor', this)">${esc(r.wentPoor)}</textarea>
             </div>
             <div class="review-field">
               <label>なぜうまくいかなかったか</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentPoorWhy', this)">${esc(r.wentPoorWhy)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentPoorWhy', this)">${esc(r.wentPoorWhy)}</textarea>
             </div>
             <div class="review-field">
               <label>繰り返さないための具体策</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentPoorNext', this)">${esc(r.wentPoorNext)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentPoorNext', this)">${esc(r.wentPoorNext)}</textarea>
             </div>
           </div>
         </div>
@@ -6070,11 +6070,11 @@ ${MAIL_FOOTER}`,
               <button type="button" class="dir-chip${r.directionStatus === 'partial' ? ' on' : ''}" data-dir-chip="partial" onclick="setReviewDirection('partial')">一部取れている</button>
               <button type="button" class="dir-chip${r.directionStatus === 'no' ? ' on' : ''}" data-dir-chip="no" onclick="setReviewDirection('no')">取れていない</button>
             </div>
-            <textarea placeholder="後で書く" oninput="onReviewInput('directionNote', this)">${esc(r.directionNote)}</textarea>
+            <textarea placeholder="記入" oninput="onReviewInput('directionNote', this)">${esc(r.directionNote)}</textarea>
           </div>
           <div class="review-field">
             <label>向かいたい方向に向かうために、何が足りないのか／何を変える必要があるのか</label>
-            <textarea placeholder="後で書く" oninput="onReviewInput('directionGap', this)">${esc(r.directionGap)}</textarea>
+            <textarea placeholder="記入" oninput="onReviewInput('directionGap', this)">${esc(r.directionGap)}</textarea>
           </div>
         </div>
         <div class="review-text-out" id="reviewTextOut"${lastGeneratedReviewText && lastGeneratedReviewMonth === monthKey ? '' : ' hidden'}>
