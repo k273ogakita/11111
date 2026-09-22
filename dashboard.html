@@ -295,6 +295,47 @@
       margin-bottom: 4px;
     }
     .card-name { font-weight: 600; font-size: .88rem; flex: 1; min-width: 0; line-height: 1.35; }
+    .card-name-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .card-flag {
+      flex-shrink: 0;
+      margin-top: 1px;
+      padding: 2px 7px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: .58rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      color: var(--muted);
+      cursor: pointer;
+      line-height: 1.3;
+      white-space: nowrap;
+    }
+    .card-flag:hover { border-color: #c9bfb0; }
+    .card-flag.pending {
+      background: rgba(200,80,80,.08);
+      border-color: rgba(200,80,80,.35);
+      color: #a04848;
+    }
+    .card-flag.done {
+      background: rgba(42,138,94,.1);
+      border-color: rgba(42,138,94,.35);
+      color: #1f6b48;
+    }
+    .card-asset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .card-asset-row .phase-btn { font-size: .62rem; }
     .card-meta { font-size: .72rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
     .card-tag {
       display: inline-block;
@@ -1654,6 +1695,160 @@
       color: var(--muted);
     }
 
+    /* ── Weekly Goals（1週間の目標） ── */
+    .weekly-goals-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px 20px;
+      margin-bottom: 18px;
+    }
+    .wg-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .wg-heading {
+      font-size: .95rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .wg-sub {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .wg-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .wg-nav-title {
+      font-size: .82rem;
+      font-weight: 700;
+      min-width: 12em;
+      text-align: center;
+    }
+    .wg-progress {
+      font-size: .72rem;
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .wg-list { display: flex; flex-direction: column; gap: 10px; }
+    .wg-goal {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px 12px;
+      background: rgba(255,255,255,.55);
+    }
+    .wg-goal.done {
+      opacity: .78;
+      background: rgba(42,138,94,.04);
+      border-color: rgba(42,138,94,.28);
+    }
+    .wg-goal-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .wg-goal-row input[type="checkbox"] {
+      margin-top: 8px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--red);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .wg-goal-text {
+      flex: 1;
+      min-width: 0;
+      font-size: .92rem;
+      font-weight: 700;
+      line-height: 1.4;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 6px 8px;
+      background: transparent;
+      color: var(--text);
+      resize: vertical;
+      min-height: 38px;
+      font-family: inherit;
+    }
+    .wg-goal-text:focus {
+      outline: none;
+      border-color: rgba(232,149,106,.55);
+      background: #fff;
+    }
+    .wg-goal.done .wg-goal-text {
+      text-decoration: line-through;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .wg-goal-del { flex-shrink: 0; margin-top: 4px; }
+    .wg-label-steps {
+      font-size: .68rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .04em;
+      margin: 8px 0 2px 26px;
+    }
+    .wg-steps {
+      margin: 4px 0 0 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-left: 10px;
+      border-left: 2px solid rgba(232,149,106,.35);
+    }
+    .wg-step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .wg-step-row input[type="checkbox"] {
+      margin-top: 7px;
+      width: 16px;
+      height: 16px;
+      accent-color: #2a8a5e;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .wg-step-text {
+      flex: 1;
+      min-width: 0;
+      font-size: .82rem;
+      line-height: 1.4;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 5px 8px;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+    }
+    .wg-step-text:focus {
+      outline: none;
+      border-color: rgba(42,138,94,.4);
+      background: #fff;
+    }
+    .wg-step-row.done .wg-step-text {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    .wg-step-add { margin-top: 4px; }
+    .wg-goal-add { margin-top: 10px; }
+    .wg-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: .82rem;
+      padding: 18px 8px 4px;
+      line-height: 1.5;
+    }
+
     /* ── Compass（理想・現状・強み・月次振り返り） ── */
     .compass-panel {
       background: var(--surface);
@@ -2310,7 +2505,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v130</div>
+        <div class="logo-sub">Business Dashboard · v135</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2341,6 +2536,8 @@
     <section class="compass-panel" id="compassPanel"></section>
 
     <div class="stats" id="stats"></div>
+
+    <section class="weekly-goals-panel" id="weeklyGoalsPanel"></section>
 
     <section class="milestone-panel" id="milestonePanel"></section>
 
@@ -3715,6 +3912,7 @@ nark.visual.media@gmail.com
     let bizTodoFilter = 'open';
     let bizTodoShowDone = false;
     let reviewMonthOffset = 0;
+    let weeklyGoalOffset = 0; // 0＝今週。±1で前後の週
 
     function defaultState() {
       return {
@@ -3726,6 +3924,7 @@ nark.visual.media@gmail.com
         subscriptions: [],
         adExpenses: [],
         bizTodos: [],
+        weeklyGoals: {},
         milestoneDone: {},
         vision: emptyVision(),
         reviews: {},
@@ -3916,6 +4115,92 @@ nark.visual.media@gmail.com
       if (p.prepayPhase === undefined) p.prepayPhase = isAdOpsType(p) ? '作成未' : '';
       if (p.opsMonth === undefined) p.opsMonth = isAdOpsType(p) ? (parseOpsMonthFromName(p.name) || 1) : 0;
       if (p.opsBaseName === undefined) p.opsBaseName = isAdOpsType(p) ? getOpsBaseName(p) : '';
+      // 素材バックアップ（クライアント案件）: pending / done
+      if (p.materialBackup === undefined) {
+        p.materialBackup = (p.category === 'client') ? 'pending' : '';
+      }
+      // HDD移行: 納品後は未移行から開始（請求/入金未/完了どの列でも追跡）
+      if (p.hddMigrate === undefined) {
+        if (p.category === 'client' && !isAdOpsType(p) && p.deliveredDate) {
+          p.hddMigrate = 'pending';
+        } else {
+          p.hddMigrate = '';
+        }
+      } else if (
+        !p.hddMigrate
+        && p.category === 'client'
+        && !isAdOpsType(p)
+        && p.deliveredDate
+      ) {
+        // 旧データで空文字になっていた納品済み案件を復旧
+        p.hddMigrate = 'pending';
+      }
+    }
+
+    function needsMaterialBackupTrack(p) {
+      return !!(p && p.category === 'client' && !isAdOpsType(p));
+    }
+
+    function needsHddMigrateTrack(p) {
+      return !!(p && p.category === 'client' && !isAdOpsType(p) && p.deliveredDate);
+    }
+
+    function isMaterialBackupDone(p) {
+      return !!(p && p.materialBackup === 'done');
+    }
+
+    function isHddMigrated(p) {
+      return !!(p && p.hddMigrate === 'done');
+    }
+
+    function toggleMaterialBackup(id) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p || !needsMaterialBackupTrack(p)) return;
+      ensureProjectFinance(p);
+      p.materialBackup = isMaterialBackupDone(p) ? 'pending' : 'done';
+      saveState();
+      toast(isMaterialBackupDone(p)
+        ? `「${p.name}」→ 素材バックアップ済`
+        : `「${p.name}」→ 素材バックアップ未`);
+    }
+    window.toggleMaterialBackup = toggleMaterialBackup;
+
+    function setHddMigrate(id, value) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p) return;
+      ensureProjectFinance(p);
+      p.hddMigrate = value === 'done' ? 'done' : 'pending';
+      saveState();
+      toast(value === 'done'
+        ? `「${p.name}」→ HDD移行済`
+        : `「${p.name}」→ HDD移行未`);
+    }
+    window.setHddMigrate = setHddMigrate;
+
+    function renderMaterialBackupFlag(p) {
+      if (!needsMaterialBackupTrack(p)) return '';
+      const done = isMaterialBackupDone(p);
+      return `<button type="button" class="card-flag ${done ? 'done' : 'pending'}"
+                onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
+                onclick="event.stopPropagation();toggleMaterialBackup('${p.id}')"
+                title="クリックで素材バックアップ済／未を切替">${done ? '素材バックアップ済' : '素材バックアップ未'}</button>`;
+    }
+
+    function renderHddMigrateButtons(p) {
+      if (!needsHddMigrateTrack(p)) return '';
+      ensureProjectFinance(p);
+      if (!p.hddMigrate) p.hddMigrate = 'pending';
+      const pending = p.hddMigrate !== 'done';
+      const done = p.hddMigrate === 'done';
+      return `<div class="card-asset-row">
+        <span class="after-follow-label" style="width:100%;margin:0 0 2px">納品後のHDD移行</span>
+        <button type="button" class="phase-btn${pending ? ' active' : ''}"
+          onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
+          onclick="event.stopPropagation();setHddMigrate('${p.id}','pending')">HDDに移行未</button>
+        <button type="button" class="phase-btn${done ? ' done' : ''}"
+          onmousedown="stopCardDrag(event)" ontouchstart="stopCardDrag(event)"
+          onclick="event.stopPropagation();setHddMigrate('${p.id}','done')">HDD移行済</button>
+      </div>`;
     }
 
     function checkAdOpsClosingDates() {
@@ -4205,6 +4490,7 @@ ${MAIL_FOOTER}`,
       if (!data.subscriptions) data.subscriptions = [];
       if (!data.adExpenses) data.adExpenses = [];
       if (!data.bizTodos) data.bizTodos = [];
+      if (!data.weeklyGoals || typeof data.weeklyGoals !== 'object') data.weeklyGoals = {};
       ensureMilestones(data);
       ensureVisionAndReviews(data);
       data.projects.forEach(p => {
@@ -5325,6 +5611,7 @@ ${MAIL_FOOTER}`,
       renderNotices();
       renderCompass();
       renderStats();
+      renderWeeklyGoals();
       renderMilestones();
       renderFinance();
       renderSubscriptions();
@@ -5594,6 +5881,7 @@ ${MAIL_FOOTER}`,
           projectDeadlines.push({ project: p, label: '最終納品', date: p.finalDueDate });
         }
       });
+      const hddPending = state.projects.filter(p => needsHddMigrateTrack(p) && p.hddMigrate === 'pending');
       const invoiceDay = isInvoiceCreationDay(today);
       const reviewDay = isMonthlyReviewDay(today);
       const fbPostDay = isMonthlyFbPostDay(today);
@@ -5611,7 +5899,7 @@ ${MAIL_FOOTER}`,
       const fbNotice = fbPostDay
         ? `<div class="notice-bar-inner">📘 <strong>Facebook投稿</strong> — 毎月3日の投稿ルーティン（本日）</div>`
         : '';
-      if (due.length === 0 && paymentDue.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && !invoiceDay && !reviewDay && !fbPostDay) {
+      if (due.length === 0 && paymentDue.length === 0 && adOpsClosing.length === 0 && editorDrafts.length === 0 && projectDeadlines.length === 0 && hddPending.length === 0 && !invoiceDay && !reviewDay && !fbPostDay) {
         el.style.display = 'none';
         el.innerHTML = '';
         return;
@@ -5637,6 +5925,9 @@ ${MAIL_FOOTER}`,
         ...projectDeadlines.map(({ project: p, label, date }) =>
           `<div class="notice-bar-inner">📌 <strong>${esc(p.client || p.name)}</strong> — ${esc(label)}の日です（${esc(formatDateJa(date))}）</div>`
         ),
+        ...hddPending.map(p =>
+          `<div class="notice-bar-inner">💾 <strong>${esc(p.client || p.name)}</strong> — HDD移行がまだです（納品 ${esc(formatDateJa(p.deliveredDate) || p.deliveredDate)}）</div>`
+        ),
         invoiceNotice,
       ].filter(Boolean).join('');
     }
@@ -5650,6 +5941,8 @@ ${MAIL_FOOTER}`,
       const todayTasks = getTodayTaskEntries().length;
       const openBizTodos = (state.bizTodos || []).filter(t => !t.done).length;
       const ms = getMilestoneStats();
+      const thisWeekKey = weekStartKey(0);
+      const wg = weekGoalStats(thisWeekKey);
 
       document.getElementById('stats').innerHTML = `
         <span class="stat-chip">未着手 <strong>${todo}</strong></span>
@@ -5663,6 +5956,8 @@ ${MAIL_FOOTER}`,
         <span class="stat-chip highlight">今日のタスク <strong id="todayTaskCount">${todayTasks}</strong></span>
         <span class="stat-divider"></span>
         <span class="stat-chip">事業TODO <strong>${openBizTodos}</strong></span>
+        <span class="stat-divider"></span>
+        <span class="stat-chip highlight">今週の目標 <strong>${wg.done}/${wg.total || 0}</strong></span>
         <span class="stat-divider"></span>
         <span class="stat-chip highlight">マイルストーン <strong>${ms.done}/${ms.total}</strong></span>
       `;
@@ -5903,30 +6198,30 @@ ${MAIL_FOOTER}`,
             <h4>今月うまく行ったこと</h4>
             <div class="review-field">
               <label>何がうまく行ったか</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentWell', this)">${esc(r.wentWell)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentWell', this)">${esc(r.wentWell)}</textarea>
             </div>
             <div class="review-field">
               <label>なぜうまく行ったか</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentWellWhy', this)">${esc(r.wentWellWhy)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentWellWhy', this)">${esc(r.wentWellWhy)}</textarea>
             </div>
             <div class="review-field">
               <label>次も繰り返すための具体策</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentWellNext', this)">${esc(r.wentWellNext)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentWellNext', this)">${esc(r.wentWellNext)}</textarea>
             </div>
           </div>
           <div class="review-card poor">
             <h4>今月うまくいかなかったこと</h4>
             <div class="review-field">
               <label>何がうまくいかなかったか</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentPoor', this)">${esc(r.wentPoor)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentPoor', this)">${esc(r.wentPoor)}</textarea>
             </div>
             <div class="review-field">
               <label>なぜうまくいかなかったか</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentPoorWhy', this)">${esc(r.wentPoorWhy)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentPoorWhy', this)">${esc(r.wentPoorWhy)}</textarea>
             </div>
             <div class="review-field">
               <label>繰り返さないための具体策</label>
-              <textarea placeholder="後で書く" oninput="onReviewInput('wentPoorNext', this)">${esc(r.wentPoorNext)}</textarea>
+              <textarea placeholder="記入" oninput="onReviewInput('wentPoorNext', this)">${esc(r.wentPoorNext)}</textarea>
             </div>
           </div>
         </div>
@@ -5939,11 +6234,11 @@ ${MAIL_FOOTER}`,
               <button type="button" class="dir-chip${r.directionStatus === 'partial' ? ' on' : ''}" data-dir-chip="partial" onclick="setReviewDirection('partial')">一部取れている</button>
               <button type="button" class="dir-chip${r.directionStatus === 'no' ? ' on' : ''}" data-dir-chip="no" onclick="setReviewDirection('no')">取れていない</button>
             </div>
-            <textarea placeholder="後で書く" oninput="onReviewInput('directionNote', this)">${esc(r.directionNote)}</textarea>
+            <textarea placeholder="記入" oninput="onReviewInput('directionNote', this)">${esc(r.directionNote)}</textarea>
           </div>
           <div class="review-field">
             <label>向かいたい方向に向かうために、何が足りないのか／何を変える必要があるのか</label>
-            <textarea placeholder="後で書く" oninput="onReviewInput('directionGap', this)">${esc(r.directionGap)}</textarea>
+            <textarea placeholder="記入" oninput="onReviewInput('directionGap', this)">${esc(r.directionGap)}</textarea>
           </div>
         </div>
         <div class="review-text-out" id="reviewTextOut"${lastGeneratedReviewText && lastGeneratedReviewMonth === monthKey ? '' : ' hidden'}>
@@ -5957,6 +6252,244 @@ ${MAIL_FOOTER}`,
         </div>
       `;
       applyCompassFolds();
+    }
+
+    /* ── Weekly Goals（1週間の目標＋到達目標） ── */
+    function ensureWeeklyGoals(data) {
+      if (!data.weeklyGoals || typeof data.weeklyGoals !== 'object') data.weeklyGoals = {};
+      return data;
+    }
+
+    function getMondayDate(base) {
+      const d = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diff);
+      return d;
+    }
+
+    function weekStartKey(offset) {
+      const mon = getMondayDate(new Date());
+      mon.setDate(mon.getDate() + (Number(offset) || 0) * 7);
+      return toDateStr(mon.getFullYear(), mon.getMonth() + 1, mon.getDate());
+    }
+
+    function currentWeekStartKey() {
+      return weekStartKey(weeklyGoalOffset);
+    }
+
+    function weekRangeLabel(weekKey) {
+      const [y, m, d] = weekKey.split('-').map(Number);
+      const mon = new Date(y, m - 1, d);
+      const sun = new Date(y, m - 1, d + 6);
+      const days = ['日', '月', '火', '水', '木', '金', '土'];
+      const a = `${mon.getMonth() + 1}/${mon.getDate()}（${days[mon.getDay()]}）`;
+      const b = `${sun.getMonth() + 1}/${sun.getDate()}（${days[sun.getDay()]}）`;
+      const suffix = weeklyGoalOffset === 0 ? ' · 今週' : (weeklyGoalOffset === -1 ? ' · 先週' : (weeklyGoalOffset === 1 ? ' · 来週' : ''));
+      return `${a} 〜 ${b}${suffix}`;
+    }
+
+    function getWeekGoals(weekKey) {
+      ensureWeeklyGoals(state);
+      if (!Array.isArray(state.weeklyGoals[weekKey])) state.weeklyGoals[weekKey] = [];
+      return state.weeklyGoals[weekKey];
+    }
+
+    function findWeekGoal(weekKey, goalId) {
+      return getWeekGoals(weekKey).find(g => g.id === goalId) || null;
+    }
+
+    function findWeekStep(goal, stepId) {
+      if (!goal || !Array.isArray(goal.steps)) return null;
+      return goal.steps.find(s => s.id === stepId) || null;
+    }
+
+    function weekGoalStats(weekKey) {
+      const goals = getWeekGoals(weekKey);
+      const total = goals.length;
+      const done = goals.filter(g => g.done).length;
+      let stepTotal = 0;
+      let stepDone = 0;
+      goals.forEach(g => {
+        (g.steps || []).forEach(s => {
+          stepTotal++;
+          if (s.done) stepDone++;
+        });
+      });
+      return { total, done, stepTotal, stepDone };
+    }
+
+    function isWeeklyGoalsTextFocused() {
+      const el = document.activeElement;
+      if (!el || !el.closest || !el.closest('#weeklyGoalsPanel')) return false;
+      const tag = (el.tagName || '').toLowerCase();
+      return tag === 'textarea' || (tag === 'input' && el.type === 'text');
+    }
+
+    function shiftWeeklyGoalWeek(delta) {
+      weeklyGoalOffset += delta;
+      renderWeeklyGoals();
+    }
+    window.shiftWeeklyGoalWeek = shiftWeeklyGoalWeek;
+
+    function resetWeeklyGoalWeek() {
+      weeklyGoalOffset = 0;
+      renderWeeklyGoals();
+    }
+    window.resetWeeklyGoalWeek = resetWeeklyGoalWeek;
+
+    function addWeeklyGoal() {
+      const key = currentWeekStartKey();
+      getWeekGoals(key).push({
+        id: uid(),
+        text: '',
+        done: false,
+        steps: [],
+      });
+      saveState();
+      setTimeout(function() {
+        const list = document.querySelectorAll('#weeklyGoalsPanel .wg-goal-text');
+        const last = list[list.length - 1];
+        if (last) { last.focus(); last.select(); }
+      }, 40);
+    }
+    window.addWeeklyGoal = addWeeklyGoal;
+
+    function deleteWeeklyGoal(goalId) {
+      const key = currentWeekStartKey();
+      if (!confirm('この週の目標を削除しますか？')) return;
+      state.weeklyGoals[key] = getWeekGoals(key).filter(g => g.id !== goalId);
+      saveState();
+    }
+    window.deleteWeeklyGoal = deleteWeeklyGoal;
+
+    function toggleWeeklyGoalDone(goalId, weekKey) {
+      const key = weekKey || currentWeekStartKey();
+      const g = findWeekGoal(key, goalId);
+      if (!g) return;
+      g.done = !g.done;
+      if (g.done && Array.isArray(g.steps)) {
+        g.steps.forEach(s => { s.done = true; });
+      }
+      saveState();
+    }
+    window.toggleWeeklyGoalDone = toggleWeeklyGoalDone;
+
+    function onWeeklyGoalText(goalId, el) {
+      const key = currentWeekStartKey();
+      const g = findWeekGoal(key, goalId);
+      if (!g) return;
+      g.text = el.value;
+      persistStateQuiet();
+    }
+    window.onWeeklyGoalText = onWeeklyGoalText;
+
+    function addWeeklyStep(goalId) {
+      const key = currentWeekStartKey();
+      const g = findWeekGoal(key, goalId);
+      if (!g) return;
+      if (!Array.isArray(g.steps)) g.steps = [];
+      g.steps.push({ id: uid(), text: '', done: false });
+      if (g.done) g.done = false;
+      saveState();
+      setTimeout(function() {
+        const rows = document.querySelectorAll('#weeklyGoalsPanel [data-goal-id="' + goalId + '"] .wg-step-text');
+        const last = rows[rows.length - 1];
+        if (last) { last.focus(); last.select(); }
+      }, 40);
+    }
+    window.addWeeklyStep = addWeeklyStep;
+
+    function deleteWeeklyStep(goalId, stepId) {
+      const key = currentWeekStartKey();
+      const g = findWeekGoal(key, goalId);
+      if (!g || !Array.isArray(g.steps)) return;
+      g.steps = g.steps.filter(s => s.id !== stepId);
+      saveState();
+    }
+    window.deleteWeeklyStep = deleteWeeklyStep;
+
+    function toggleWeeklyStepDone(goalId, stepId, weekKey) {
+      const key = weekKey || currentWeekStartKey();
+      const g = findWeekGoal(key, goalId);
+      const s = findWeekStep(g, stepId);
+      if (!s) return;
+      s.done = !s.done;
+      if (g.steps && g.steps.length) {
+        g.done = g.steps.every(x => x.done);
+      }
+      saveState();
+    }
+    window.toggleWeeklyStepDone = toggleWeeklyStepDone;
+
+    function onWeeklyStepText(goalId, stepId, el) {
+      const key = currentWeekStartKey();
+      const g = findWeekGoal(key, goalId);
+      const s = findWeekStep(g, stepId);
+      if (!s) return;
+      s.text = el.value;
+      persistStateQuiet();
+    }
+    window.onWeeklyStepText = onWeeklyStepText;
+
+    function renderWeeklyGoals() {
+      const el = document.getElementById('weeklyGoalsPanel');
+      if (!el) return;
+      if (isWeeklyGoalsTextFocused()) return;
+      ensureWeeklyGoals(state);
+      const key = currentWeekStartKey();
+      const goals = getWeekGoals(key);
+      const st = weekGoalStats(key);
+      const progressLabel = st.total
+        ? ('目標 ' + st.done + '/' + st.total + (st.stepTotal ? ' · 到達 ' + st.stepDone + '/' + st.stepTotal : ''))
+        : 'まだ目標なし';
+
+      const goalsHtml = goals.length === 0
+        ? '<div class="wg-empty">この週の目標を書いてみましょう。<br>大きな目標の下に、達成のための到達目標を細かく足せます。</div>'
+        : goals.map(g => {
+          const steps = Array.isArray(g.steps) ? g.steps : [];
+          const stepsHtml = steps.map(s => `
+            <div class="wg-step-row${s.done ? ' done' : ''}">
+              <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleWeeklyStepDone('${g.id}','${s.id}')" title="完了">
+              <input type="text" class="wg-step-text" value="${attr(s.text || '')}" placeholder="到達目標を記入"
+                     oninput="onWeeklyStepText('${g.id}','${s.id}', this)">
+              <button type="button" class="btn btn-ghost btn-danger wg-goal-del" onclick="deleteWeeklyStep('${g.id}','${s.id}')" title="削除">×</button>
+            </div>
+          `).join('');
+          return `
+            <div class="wg-goal${g.done ? ' done' : ''}" data-goal-id="${g.id}">
+              <div class="wg-goal-row">
+                <input type="checkbox" ${g.done ? 'checked' : ''} onchange="toggleWeeklyGoalDone('${g.id}')" title="目標を完了">
+                <textarea class="wg-goal-text" rows="1" placeholder="この週の目標を記入"
+                          oninput="onWeeklyGoalText('${g.id}', this)">${esc(g.text || '')}</textarea>
+                <button type="button" class="btn btn-ghost btn-danger wg-goal-del" onclick="deleteWeeklyGoal('${g.id}')" title="目標を削除">削除</button>
+              </div>
+              <div class="wg-label-steps">到達目標（細分化）</div>
+              <div class="wg-steps">
+                ${stepsHtml}
+                <button type="button" class="btn btn-ghost wg-step-add" onclick="addWeeklyStep('${g.id}')">+ 到達目標を追加</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      el.innerHTML = `
+        <div class="wg-header">
+          <div>
+            <div class="wg-heading">1週間の目標</div>
+            <div class="wg-sub">週ごとに目標を立て、下に到達目標を細分化してチェック</div>
+          </div>
+          <div class="wg-nav">
+            <button type="button" class="calendar-nav-btn" onclick="shiftWeeklyGoalWeek(-1)" aria-label="前の週">‹</button>
+            <div class="wg-nav-title">${esc(weekRangeLabel(key))}</div>
+            <button type="button" class="calendar-nav-btn" onclick="shiftWeeklyGoalWeek(1)" aria-label="次の週">›</button>
+            ${weeklyGoalOffset !== 0 ? '<button type="button" class="calendar-nav-today" onclick="resetWeeklyGoalWeek()">今週</button>' : ''}
+            <span class="wg-progress">${esc(progressLabel)}</span>
+          </div>
+        </div>
+        <div class="wg-list">${goalsHtml}</div>
+        <button type="button" class="btn btn-primary wg-goal-add" onclick="addWeeklyGoal()">+ この週の目標を追加</button>
+      `;
     }
 
     function renderMilestones() {
@@ -6226,7 +6759,10 @@ ${MAIL_FOOTER}`,
       return `
         <div class="card af-card" data-id="${p.id}">
           <div class="card-header">
-            <div class="card-name">${esc(p.name)}</div>
+            <div class="card-name-row">
+              <div class="card-name">${esc(p.name)}</div>
+              ${renderMaterialBackupFlag(p)}
+            </div>
             <div class="card-actions has-edit">
               <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
             </div>
@@ -6234,6 +6770,7 @@ ${MAIL_FOOTER}`,
           <div class="card-meta">${client}${statusLabel ? `<span class="card-tag">${esc(statusLabel)}</span>` : ''}</div>
           ${delivered}
           ${renderAfterFollowSchedule(p)}
+          ${renderHddMigrateButtons(p)}
         </div>
       `;
     }
@@ -6352,7 +6889,10 @@ ${MAIL_FOOTER}`,
              onclick="if(!justDragged&&${hasWf})openChecklist('${p.id}')"
              style="${hasWf ? 'cursor:pointer' : ''}">
           <div class="card-header">
-            <div class="card-name">${esc(p.name)}</div>
+            <div class="card-name-row">
+              <div class="card-name">${esc(p.name)}</div>
+              ${renderMaterialBackupFlag(p)}
+            </div>
             ${actions}
           </div>
           <div class="card-meta">${meta}</div>
@@ -6363,6 +6903,7 @@ ${MAIL_FOOTER}`,
           ${phaseLabel}
           ${financeBlock}
           ${renderPhaseButtons(p)}
+          ${renderHddMigrateButtons(p)}
           ${path}
         </div>
       `;
@@ -6436,11 +6977,12 @@ ${MAIL_FOOTER}`,
       p.phase = phase;
       if (phase === '納品済' && !isAdOpsType(p)) {
         if (!p.deliveredDate) p.deliveredDate = todayStr();
+        if (!p.hddMigrate) p.hddMigrate = 'pending';
         p.status = 'billing';
         p.phase = '作成未';
         ensureBillingDate(p);
         saveState();
-        toast(`「${p.name}」→ 請求`);
+        toast(`「${p.name}」→ 請求（HDD移行がTODOに追加）`);
         return;
       }
       if (phase === '広告開始' && isAdOpsType(p)) {
@@ -6460,6 +7002,7 @@ ${MAIL_FOOTER}`,
       const p = state.projects.find(x => x.id === id);
       if (!p) return;
       if (!p.deliveredDate) p.deliveredDate = todayStr();
+      if (!p.hddMigrate) p.hddMigrate = 'pending';
       p.afterFollow = !!withSupport;
       p.status = 'billing';
       p.phase = '作成未';
@@ -6467,8 +7010,8 @@ ${MAIL_FOOTER}`,
       if (p.category === 'sns') p.snsStatus = 'scheduled';
       saveState();
       toast(withSupport
-        ? `「${p.name}」→ 請求（アフターサポート有・アフターフォローへ）`
-        : `「${p.name}」→ 請求（アフターサポートなし）`);
+        ? `「${p.name}」→ 請求（アフターサポート有・HDD移行TODO）`
+        : `「${p.name}」→ 請求（HDD移行TODO）`);
     }
     window.deliverProject = deliverProject;
 
@@ -6668,6 +7211,7 @@ ${MAIL_FOOTER}`,
     function entryDate(entry) {
       if (entry.kind === 'editorDraft') return entry.date || entry.item.editorDraftDueDate || '';
       if (entry.kind === 'projectDeadline') return entry.date || '';
+      if (entry.kind === 'hddMigrate') return entry.date || entry.item.deliveredDate || '';
       if (entry.kind === 'followUp') return entry.contact ? (entry.contact.date || '') : '';
       if (entry.kind === 'paymentConfirm') return entry.date || getPaymentDueDate(entry.item.invoiceDate) || '';
       return entry.item.date || entry.item.dueDate || '';
@@ -6710,6 +7254,14 @@ ${MAIL_FOOTER}`,
           entries.push({ kind: 'projectDeadline', item: p, date: p.finalDueDate, label: '最終納品', deadlineKind: 'final' });
         }
       });
+      state.projects.forEach(p => {
+        if (!needsHddMigrateTrack(p) || p.hddMigrate !== 'pending') return;
+        entries.push({
+          kind: 'hddMigrate',
+          item: p,
+          date: p.deliveredDate || today,
+        });
+      });
       if (isMonthlyReviewDay(today)) {
         entries.push({
           kind: 'monthlyReview',
@@ -6731,10 +7283,29 @@ ${MAIL_FOOTER}`,
           shifted: !!(issue && issue.shifted),
         });
       }
+      // 今週の未完了目標・到達目標
+      getWeekGoals(weekStartKey(0)).forEach(g => {
+        if (!g.done && String(g.text || '').trim()) {
+          entries.push({
+            kind: 'weeklyGoal',
+            item: { id: g.id, text: g.text, done: false, date: today, type: 'event' },
+          });
+        }
+        (g.steps || []).forEach(s => {
+          if (!s.done && String(s.text || '').trim()) {
+            entries.push({
+              kind: 'weeklyStep',
+              item: { id: s.id, goalId: g.id, text: s.text, goalText: g.text || '', done: false, date: today },
+            });
+          }
+        });
+      });
       entries.sort((a, b) => {
         // 振り返りは「1番最初」に固定
         if (a.kind === 'monthlyReview' && b.kind !== 'monthlyReview') return -1;
         if (b.kind === 'monthlyReview' && a.kind !== 'monthlyReview') return 1;
+        if (a.kind === 'weeklyGoal' && b.kind !== 'weeklyGoal' && b.kind !== 'monthlyReview') return -1;
+        if (b.kind === 'weeklyGoal' && a.kind !== 'weeklyGoal' && a.kind !== 'monthlyReview') return 1;
         if (a.item.done !== b.item.done) return a.item.done ? 1 : -1;
         const aDate = entryDate(a);
         const bDate = entryDate(b);
@@ -6858,12 +7429,39 @@ ${MAIL_FOOTER}`,
           <button type="button" class="btn btn-ghost" onclick="editProject('${t.id}')">案件を開く</button>
         </div>`;
         }
+        if (kind === 'hddMigrate') {
+          return `
+        <div class="task-item task-item-reminder">
+          <span class="task-category 運営">HDD</span>
+          <span class="task-text">${esc(t.client || t.name)} — HDDへ移行（納品 ${formatDateJa(t.deliveredDate) || ''}）</span>
+          <button type="button" class="btn btn-primary" onclick="setHddMigrate('${t.id}','done')">移行済にする</button>
+          <button type="button" class="btn btn-ghost" onclick="editProject('${t.id}')">案件を開く</button>
+        </div>`;
+        }
         if (kind === 'monthlyReview') {
           return `
         <div class="task-item task-item-reminder">
           <span class="task-category イベント">朝イチ</span>
           <span class="task-category 運営">振り返り</span>
           <span class="task-text">今月の振り返り（30分）— 第4週火曜・一番最初に確保</span>
+        </div>`;
+        }
+        if (kind === 'weeklyGoal') {
+          const wk = weekStartKey(0);
+          return `
+        <div class="task-item">
+          <input type="checkbox" class="task-check" onchange="toggleWeeklyGoalDone('${t.id}','${wk}')">
+          <span class="task-category 運営">週目標</span>
+          <span class="task-text">${esc(t.text)}</span>
+        </div>`;
+        }
+        if (kind === 'weeklyStep') {
+          const wk = weekStartKey(0);
+          return `
+        <div class="task-item">
+          <input type="checkbox" class="task-check" onchange="toggleWeeklyStepDone('${t.goalId}','${t.id}','${wk}')">
+          <span class="task-category 運営">到達</span>
+          <span class="task-text">${esc(t.text)}${t.goalText ? ` <span style="color:var(--muted);font-size:.85em">（${esc(t.goalText)}）</span>` : ''}</span>
         </div>`;
         }
         if (kind === 'monthlyFbPost') {
