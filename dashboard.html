@@ -1557,8 +1557,15 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 16px;
-      margin-bottom: 18px;
+      margin-bottom: 0;
       flex-wrap: wrap;
+    }
+    .milestone-header.collapsible-header { cursor: pointer; user-select: none; }
+    .milestone-heading .collapse-chevron {
+      display: inline-block;
+      margin-left: 6px;
+      font-size: .85em;
+      color: var(--muted);
     }
     .milestone-heading { font-size: .95rem; font-weight: 800; letter-spacing: .04em; }
     .milestone-period { font-size: .75rem; color: var(--muted); margin-top: 4px; }
@@ -2505,7 +2512,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v136</div>
+        <div class="logo-sub">Business Dashboard · v137</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3902,6 +3909,7 @@ nark.visual.media@gmail.com
     let subsExpanded = false;
     let adsExpanded = false;
     let compassDetailsExpanded = false;
+    let milestonesExpanded = false; // 達成済みのため通常は折りたたみ
     let compassStrengthsExpanded = false; // 互換のため残置（詳細は一括折りたたみへ統合）
     let compassReviewExpanded = false;
     let compassVisionExpanded = false;
@@ -6492,17 +6500,28 @@ ${MAIL_FOOTER}`,
       `;
     }
 
+    function toggleMilestones() {
+      milestonesExpanded = !milestonesExpanded;
+      renderMilestones();
+    }
+    window.toggleMilestones = toggleMilestones;
+
     function renderMilestones() {
       const el = document.getElementById('milestonePanel');
       if (!el) return;
       const ms = getMilestoneStats();
       const currentMonthId = getCurrentMilestoneMonthId();
+      const allDone = ms.total > 0 && ms.done === ms.total;
+      const summary = allDone
+        ? `${ms.done}/${ms.total} · 達成済み`
+        : `${ms.done}/${ms.total} · 全体 ${ms.pct}%`;
 
       el.innerHTML = `
-        <div class="milestone-header">
+        <div class="milestone-header collapsible-header" onclick="toggleMilestones()" title="クリックで開閉">
           <div>
-            <div class="milestone-heading">3ヶ月マイルストーン</div>
+            <div class="milestone-heading">3ヶ月マイルストーン<span class="collapse-chevron">${milestonesExpanded ? '▾' : '▸'}</span></div>
             <div class="milestone-period">${MILESTONE_PLAN.period} · 患者説明動画 立ち上げ期</div>
+            ${milestonesExpanded ? '' : `<div class="collapse-summary">${esc(summary)}</div>`}
           </div>
           <div class="milestone-overall">
             <div class="milestone-overall-count">${ms.done}<span style="font-size:.85rem;color:var(--muted)"> / ${ms.total}</span></div>
@@ -6510,33 +6529,35 @@ ${MAIL_FOOTER}`,
             <div class="milestone-overall-bar"><div style="width:${ms.pct}%"></div></div>
           </div>
         </div>
-        <div class="milestone-grid">
-          ${MILESTONE_PLAN.months.map(month => {
-            const monthDone = month.items.filter(i => isMilestoneDone(i.id)).length;
-            const monthTotal = month.items.length;
-            const monthPct = monthTotal ? Math.round((monthDone / monthTotal) * 100) : 0;
-            const isCurrent = month.id === currentMonthId;
-            const allDone = monthDone === monthTotal && monthTotal > 0;
-            return `
-              <div class="milestone-month${isCurrent ? ' current' : ''}${allDone ? ' done-all' : ''}">
-                <div class="milestone-month-head">
-                  <span class="milestone-month-label">${month.label}${isCurrent ? '（今月）' : ''}</span>
-                  <span class="milestone-month-sub">${esc(month.subtitle)}</span>
-                  <span class="milestone-month-count">${monthDone}/${monthTotal}</span>
-                </div>
-                <div class="milestone-month-bar"><div style="width:${monthPct}%"></div></div>
-                <div class="milestone-list">
-                  ${month.items.map(item => {
-                    const done = isMilestoneDone(item.id);
-                    return `
-                      <label class="milestone-item${done ? ' done' : ''}">
-                        <input type="checkbox"${done ? ' checked' : ''} onchange="toggleMilestone('${item.id}')">
-                        <span>${esc(item.text)}</span>
-                      </label>`;
-                  }).join('')}
-                </div>
-              </div>`;
-          }).join('')}
+        <div class="collapse-body${milestonesExpanded ? ' open' : ''}" id="milestoneCollapse">
+          <div class="milestone-grid">
+            ${MILESTONE_PLAN.months.map(month => {
+              const monthDone = month.items.filter(i => isMilestoneDone(i.id)).length;
+              const monthTotal = month.items.length;
+              const monthPct = monthTotal ? Math.round((monthDone / monthTotal) * 100) : 0;
+              const isCurrent = month.id === currentMonthId;
+              const monthAllDone = monthDone === monthTotal && monthTotal > 0;
+              return `
+                <div class="milestone-month${isCurrent ? ' current' : ''}${monthAllDone ? ' done-all' : ''}">
+                  <div class="milestone-month-head">
+                    <span class="milestone-month-label">${month.label}${isCurrent ? '（今月）' : ''}</span>
+                    <span class="milestone-month-sub">${esc(month.subtitle)}</span>
+                    <span class="milestone-month-count">${monthDone}/${monthTotal}</span>
+                  </div>
+                  <div class="milestone-month-bar"><div style="width:${monthPct}%"></div></div>
+                  <div class="milestone-list">
+                    ${month.items.map(item => {
+                      const done = isMilestoneDone(item.id);
+                      return `
+                        <label class="milestone-item${done ? ' done' : ''}" onclick="event.stopPropagation()">
+                          <input type="checkbox"${done ? ' checked' : ''} onchange="toggleMilestone('${item.id}')">
+                          <span>${esc(item.text)}</span>
+                        </label>`;
+                    }).join('')}
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
         </div>
       `;
     }
