@@ -1862,8 +1862,16 @@
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 12px;
+      margin-bottom: 0;
     }
+    .sns-ideas-header.collapsible-header { cursor: pointer; user-select: none; }
+    .sns-ideas-heading .collapse-chevron {
+      display: inline-block;
+      margin-left: 6px;
+      font-size: .85em;
+      color: var(--muted);
+    }
+    .sns-ideas-panel .collapse-body { margin-top: 12px; }
     .sns-ideas-heading {
       font-size: .95rem;
       font-weight: 800;
@@ -2659,7 +2667,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v139</div>
+        <div class="logo-sub">Business Dashboard · v140</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4059,6 +4067,7 @@ nark.visual.media@gmail.com
     let adsExpanded = false;
     let compassDetailsExpanded = false;
     let milestonesExpanded = false; // 達成済みのため通常は折りたたみ
+    let snsIdeasExpanded = false; // 普段は折りたたみ
     let compassStrengthsExpanded = false; // 互換のため残置（詳細は一括折りたたみへ統合）
     let compassReviewExpanded = false;
     let compassVisionExpanded = false;
@@ -6781,6 +6790,12 @@ ${MAIL_FOOTER}`,
     }
     window.deleteSnsIdea = deleteSnsIdea;
 
+    function toggleSnsIdeas() {
+      snsIdeasExpanded = !snsIdeasExpanded;
+      renderSnsIdeas();
+    }
+    window.toggleSnsIdeas = toggleSnsIdeas;
+
     function renderSnsIdeas() {
       const el = document.getElementById('snsIdeasPanel');
       if (!el) return;
@@ -6790,6 +6805,9 @@ ${MAIL_FOOTER}`,
       const filtered = snsIdeaFilter === 'all'
         ? all
         : all.filter(x => x.category === snsIdeaFilter);
+      const summary = all.length === 0
+        ? 'ストックなし · 週1投稿を目指す'
+        : `ストック ${all.length}件 · 週1投稿を目指す`;
 
       const filtersHtml = [
         { id: 'all', label: 'すべて' },
@@ -6832,20 +6850,24 @@ ${MAIL_FOOTER}`,
         }).join('');
 
       el.innerHTML = `
-        <div class="sns-ideas-header">
+        <div class="sns-ideas-header collapsible-header" onclick="toggleSnsIdeas()" title="クリックで開閉">
           <div>
-            <div class="sns-ideas-heading">SNS投稿ネタ（自分用）</div>
-            <div class="sns-ideas-sub">Facebook / Instagram。人柄・想い・実績・サービスリリースをストック。<br>投稿したら「投稿した」で消す。週1投稿を目指す。</div>
+            <div class="sns-ideas-heading">SNS投稿ネタ（自分用）<span class="collapse-chevron">${snsIdeasExpanded ? '▾' : '▸'}</span></div>
+            ${snsIdeasExpanded
+              ? '<div class="sns-ideas-sub">Facebook / Instagram。人柄・想い・実績・サービスリリースをストック。<br>投稿したら「投稿した」で消す。週1投稿を目指す。</div>'
+              : `<div class="collapse-summary">${esc(summary)}</div>`}
           </div>
           <div class="sns-ideas-count">ストック ${all.length}件</div>
         </div>
-        <div class="sns-ideas-add">
-          <select id="snsIdeaCatNew">${catOptions}</select>
-          <textarea id="snsIdeaTitleNew" rows="2" placeholder="例: 患者説明動画のサービスを公開した日のこと"></textarea>
-          <button type="button" class="btn btn-primary" onclick="addSnsIdea()">+ 追加</button>
+        <div class="collapse-body${snsIdeasExpanded ? ' open' : ''}" id="snsIdeasCollapse">
+          <div class="sns-ideas-add" onclick="event.stopPropagation()">
+            <select id="snsIdeaCatNew">${catOptions}</select>
+            <textarea id="snsIdeaTitleNew" rows="2" placeholder="例: 患者説明動画のサービスを公開した日のこと"></textarea>
+            <button type="button" class="btn btn-primary" onclick="addSnsIdea()">+ 追加</button>
+          </div>
+          <div class="sns-ideas-filters" onclick="event.stopPropagation()">${filtersHtml}</div>
+          <div class="sns-ideas-list" onclick="event.stopPropagation()">${listHtml}</div>
         </div>
-        <div class="sns-ideas-filters">${filtersHtml}</div>
-        <div class="sns-ideas-list">${listHtml}</div>
       `;
     }
 
