@@ -1848,6 +1848,148 @@
     }
     .wg-step-add { margin-top: 4px; }
     .wg-goal-add { margin-top: 10px; }
+    /* ── SNS投稿ネタ（自分用ストック） ── */
+    .sns-ideas-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px 20px;
+      margin-bottom: 18px;
+    }
+    .sns-ideas-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .sns-ideas-heading {
+      font-size: .95rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+    }
+    .sns-ideas-sub {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+    .sns-ideas-count {
+      font-size: .72rem;
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+      padding-top: 4px;
+    }
+    .sns-ideas-add {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .sns-ideas-add select {
+      width: auto;
+      min-width: 7.5em;
+      padding: 8px 10px;
+      font-size: .82rem;
+    }
+    .sns-ideas-add input[type="text"] {
+      flex: 1;
+      min-width: 12em;
+    }
+    .sns-ideas-filters {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .sns-ideas-list { display: flex; flex-direction: column; gap: 8px; }
+    .sns-idea-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.55);
+    }
+    .sns-idea-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .sns-idea-cat {
+      flex-shrink: 0;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      padding: 4px 8px;
+      border-radius: 6px;
+      margin-top: 4px;
+      background: var(--surface-2);
+      color: var(--muted);
+    }
+    .sns-idea-cat.cat-想い { background: rgba(232,149,106,.15); color: var(--red-dim); }
+    .sns-idea-cat.cat-実績 { background: rgba(42,138,94,.12); color: #2a8a5e; }
+    .sns-idea-cat.cat-サービス { background: rgba(70,120,180,.12); color: #3a6ea5; }
+    .sns-idea-cat.cat-その他 { background: var(--surface-2); color: var(--muted); }
+    .sns-idea-title {
+      flex: 1;
+      min-width: 0;
+      font-size: .9rem;
+      font-weight: 700;
+      line-height: 1.4;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 4px 8px;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+    }
+    .sns-idea-title:focus {
+      outline: none;
+      border-color: rgba(232,149,106,.55);
+      background: #fff;
+    }
+    .sns-idea-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .sns-idea-note {
+      width: 100%;
+      margin-top: 6px;
+      margin-left: 0;
+      font-size: .8rem;
+      line-height: 1.45;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 6px 8px;
+      background: transparent;
+      color: var(--text);
+      resize: vertical;
+      min-height: 36px;
+      font-family: inherit;
+    }
+    .sns-idea-note:focus {
+      outline: none;
+      border-color: rgba(42,138,94,.35);
+      background: #fff;
+    }
+    .sns-idea-meta {
+      font-size: .68rem;
+      color: var(--muted);
+      margin-top: 4px;
+      padding-left: 8px;
+    }
+    .sns-ideas-empty {
+      text-align: center;
+      color: var(--muted);
+      font-size: .82rem;
+      padding: 16px 8px 4px;
+      line-height: 1.5;
+    }
+
     .wg-empty {
       text-align: center;
       color: var(--muted);
@@ -2512,7 +2654,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v137</div>
+        <div class="logo-sub">Business Dashboard · v138</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -2626,6 +2768,8 @@
     </section>
 
     <section class="weekly-goals-panel" id="weeklyGoalsPanel"></section>
+
+    <section class="sns-ideas-panel" id="snsIdeasPanel"></section>
 
     <section class="section tasks-section">
       <div class="section-header">
@@ -3921,6 +4065,7 @@ nark.visual.media@gmail.com
     let bizTodoShowDone = false;
     let reviewMonthOffset = 0;
     let weeklyGoalOffset = 0; // 0＝今週。±1で前後の週
+    let snsIdeaFilter = 'all';
 
     function defaultState() {
       return {
@@ -3933,11 +4078,33 @@ nark.visual.media@gmail.com
         adExpenses: [],
         bizTodos: [],
         weeklyGoals: {},
+        snsIdeas: defaultSnsIdeas(),
         milestoneDone: {},
         vision: emptyVision(),
         reviews: {},
         reviewTextSaved: {},
       };
+    }
+
+    const SNS_IDEA_CATEGORIES = ['想い', '実績', 'サービス', 'その他'];
+
+    function defaultSnsIdeas() {
+      return [
+        {
+          id: uid(),
+          category: '想い',
+          title: 'プロフィール写真を撮ってもらったときの気持ち・意気込み',
+          note: '撮ってもらったときの気持ち、意気込み',
+          created: todayStr(),
+        },
+        {
+          id: uid(),
+          category: '想い',
+          title: 'この世のいろんな人への尊敬',
+          note: 'ママたち、経営者、いろんな人',
+          created: todayStr(),
+        },
+      ];
     }
 
     function emptyVision() {
@@ -4499,6 +4666,11 @@ ${MAIL_FOOTER}`,
       if (!data.adExpenses) data.adExpenses = [];
       if (!data.bizTodos) data.bizTodos = [];
       if (!data.weeklyGoals || typeof data.weeklyGoals !== 'object') data.weeklyGoals = {};
+      if (!Object.prototype.hasOwnProperty.call(data, 'snsIdeas') || data.snsIdeas === undefined) {
+        data.snsIdeas = defaultSnsIdeas();
+      } else if (!Array.isArray(data.snsIdeas)) {
+        data.snsIdeas = [];
+      }
       ensureMilestones(data);
       ensureVisionAndReviews(data);
       data.projects.forEach(p => {
@@ -5620,6 +5792,7 @@ ${MAIL_FOOTER}`,
       renderCompass();
       renderStats();
       renderWeeklyGoals();
+      renderSnsIdeas();
       renderMilestones();
       renderFinance();
       renderSubscriptions();
@@ -5966,6 +6139,8 @@ ${MAIL_FOOTER}`,
         <span class="stat-chip">事業TODO <strong>${openBizTodos}</strong></span>
         <span class="stat-divider"></span>
         <span class="stat-chip highlight">今週の目標 <strong>${wg.done}/${wg.total || 0}</strong></span>
+        <span class="stat-divider"></span>
+        <span class="stat-chip">SNSネタ <strong>${(state.snsIdeas || []).length}</strong></span>
         <span class="stat-divider"></span>
         <span class="stat-chip highlight">マイルストーン <strong>${ms.done}/${ms.total}</strong></span>
       `;
@@ -6497,6 +6672,176 @@ ${MAIL_FOOTER}`,
         </div>
         <div class="wg-list">${goalsHtml}</div>
         <button type="button" class="btn btn-primary wg-goal-add" onclick="addWeeklyGoal()">+ この週の目標を追加</button>
+      `;
+    }
+
+    /* ── SNS投稿ネタ（自分用ストック） ── */
+    function ensureSnsIdeas(data) {
+      if (!Object.prototype.hasOwnProperty.call(data, 'snsIdeas') || data.snsIdeas === undefined) {
+        data.snsIdeas = defaultSnsIdeas();
+      } else if (!Array.isArray(data.snsIdeas)) {
+        data.snsIdeas = [];
+      }
+      return data;
+    }
+
+    function isSnsIdeasTextFocused() {
+      const el = document.activeElement;
+      if (!el || !el.closest || !el.closest('#snsIdeasPanel')) return false;
+      const tag = (el.tagName || '').toLowerCase();
+      return tag === 'textarea' || (tag === 'input' && el.type === 'text');
+    }
+
+    function getSnsIdeas() {
+      ensureSnsIdeas(state);
+      return state.snsIdeas;
+    }
+
+    function findSnsIdea(id) {
+      return getSnsIdeas().find(x => x.id === id) || null;
+    }
+
+    function setSnsIdeaFilter(id) {
+      snsIdeaFilter = id || 'all';
+      renderSnsIdeas();
+    }
+    window.setSnsIdeaFilter = setSnsIdeaFilter;
+
+    function addSnsIdea() {
+      const catEl = document.getElementById('snsIdeaCatNew');
+      const titleEl = document.getElementById('snsIdeaTitleNew');
+      const title = (titleEl && titleEl.value || '').trim();
+      if (!title) {
+        toast('ネタのタイトルを入力してください');
+        if (titleEl) titleEl.focus();
+        return;
+      }
+      const category = (catEl && catEl.value) || '想い';
+      getSnsIdeas().unshift({
+        id: uid(),
+        category: SNS_IDEA_CATEGORIES.includes(category) ? category : 'その他',
+        title,
+        note: '',
+        created: todayStr(),
+      });
+      if (titleEl) titleEl.value = '';
+      saveState();
+      setTimeout(function() {
+        const first = document.querySelector('#snsIdeasPanel .sns-idea-note');
+        if (first) first.focus();
+      }, 40);
+    }
+    window.addSnsIdea = addSnsIdea;
+
+    function onSnsIdeaTitle(id, el) {
+      const item = findSnsIdea(id);
+      if (!item) return;
+      item.title = el.value;
+      persistStateQuiet();
+    }
+    window.onSnsIdeaTitle = onSnsIdeaTitle;
+
+    function onSnsIdeaNote(id, el) {
+      const item = findSnsIdea(id);
+      if (!item) return;
+      item.note = el.value;
+      persistStateQuiet();
+    }
+    window.onSnsIdeaNote = onSnsIdeaNote;
+
+    function onSnsIdeaCategory(id, el) {
+      const item = findSnsIdea(id);
+      if (!item) return;
+      item.category = el.value;
+      saveState();
+    }
+    window.onSnsIdeaCategory = onSnsIdeaCategory;
+
+    function markSnsIdeaPosted(id) {
+      const item = findSnsIdea(id);
+      if (!item) return;
+      if (!confirm('「' + (item.title || 'このネタ') + '」を投稿済みとしてストックから消しますか？')) return;
+      state.snsIdeas = getSnsIdeas().filter(x => x.id !== id);
+      saveState();
+      toast('投稿済みとしてストックから削除しました');
+    }
+    window.markSnsIdeaPosted = markSnsIdeaPosted;
+
+    function deleteSnsIdea(id) {
+      const item = findSnsIdea(id);
+      if (!item) return;
+      if (!confirm('このネタを削除しますか？（投稿せずに消す場合）')) return;
+      state.snsIdeas = getSnsIdeas().filter(x => x.id !== id);
+      saveState();
+    }
+    window.deleteSnsIdea = deleteSnsIdea;
+
+    function renderSnsIdeas() {
+      const el = document.getElementById('snsIdeasPanel');
+      if (!el) return;
+      if (isSnsIdeasTextFocused()) return;
+      ensureSnsIdeas(state);
+      const all = getSnsIdeas();
+      const filtered = snsIdeaFilter === 'all'
+        ? all
+        : all.filter(x => x.category === snsIdeaFilter);
+
+      const filtersHtml = [
+        { id: 'all', label: 'すべて' },
+        ...SNS_IDEA_CATEGORIES.map(c => ({ id: c, label: c })),
+      ].map(f => `
+        <button type="button" class="filter-chip${snsIdeaFilter === f.id ? ' active' : ''}"
+                onclick="setSnsIdeaFilter('${f.id}')">${f.label}${f.id === 'all' ? ' ' + all.length : ''}</button>
+      `).join('');
+
+      const catOptions = SNS_IDEA_CATEGORIES.map(c =>
+        `<option value="${c}">${c}</option>`
+      ).join('');
+
+      const listHtml = filtered.length === 0
+        ? `<div class="sns-ideas-empty">${all.length === 0
+            ? '思いついたらここにストック。<br>想い・実績・サービスリリースなど、投稿したら「投稿した」で消していきます。'
+            : 'この分類のネタはまだありません。'}</div>`
+        : filtered.map(item => {
+          const cat = item.category || 'その他';
+          const catSelect = SNS_IDEA_CATEGORIES.map(c =>
+            `<option value="${c}"${c === cat ? ' selected' : ''}>${c}</option>`
+          ).join('');
+          const created = item.created ? formatDateJa(item.created) : '';
+          return `
+            <div class="sns-idea-card" data-idea-id="${item.id}">
+              <div class="sns-idea-top">
+                <select class="sns-idea-cat cat-${esc(cat)}" onchange="onSnsIdeaCategory('${item.id}', this)" title="分類">${catSelect}</select>
+                <input type="text" class="sns-idea-title" value="${attr(item.title || '')}" placeholder="ネタのタイトル"
+                       oninput="onSnsIdeaTitle('${item.id}', this)">
+                <div class="sns-idea-actions">
+                  <button type="button" class="btn btn-primary" onclick="markSnsIdeaPosted('${item.id}')" title="投稿したら消す">投稿した</button>
+                  <button type="button" class="btn btn-ghost btn-danger" onclick="deleteSnsIdea('${item.id}')" title="削除">×</button>
+                </div>
+              </div>
+              <textarea class="sns-idea-note" rows="2" placeholder="メモ・想いの断片・写真のヒントなど"
+                        oninput="onSnsIdeaNote('${item.id}', this)">${esc(item.note || '')}</textarea>
+              ${created ? `<div class="sns-idea-meta">ストック ${esc(created)}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+
+      el.innerHTML = `
+        <div class="sns-ideas-header">
+          <div>
+            <div class="sns-ideas-heading">SNS投稿ネタ（自分用）</div>
+            <div class="sns-ideas-sub">Facebook / Instagram。人柄・想い・実績・サービスリリースをストック。<br>投稿したら「投稿した」で消す。週1投稿を目指す。</div>
+          </div>
+          <div class="sns-ideas-count">ストック ${all.length}件</div>
+        </div>
+        <div class="sns-ideas-add">
+          <select id="snsIdeaCatNew">${catOptions}</select>
+          <input type="text" id="snsIdeaTitleNew" placeholder="例: 患者説明動画のサービスを公開した日のこと" autocomplete="off"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();addSnsIdea();}">
+          <button type="button" class="btn btn-primary" onclick="addSnsIdea()">+ 追加</button>
+        </div>
+        <div class="sns-ideas-filters">${filtersHtml}</div>
+        <div class="sns-ideas-list">${listHtml}</div>
       `;
     }
 
