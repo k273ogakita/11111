@@ -1895,9 +1895,12 @@
       padding: 8px 10px;
       font-size: .82rem;
     }
-    .sns-ideas-add input[type="text"] {
+    .sns-ideas-add textarea {
       flex: 1;
       min-width: 12em;
+      min-height: 38px;
+      resize: vertical;
+      line-height: 1.4;
     }
     .sns-ideas-filters {
       display: flex;
@@ -1944,6 +1947,8 @@
       background: transparent;
       color: var(--text);
       font-family: inherit;
+      resize: vertical;
+      min-height: 38px;
     }
     .sns-idea-title:focus {
       outline: none;
@@ -2654,7 +2659,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v138</div>
+        <div class="logo-sub">Business Dashboard · v139</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -6812,8 +6817,8 @@ ${MAIL_FOOTER}`,
             <div class="sns-idea-card" data-idea-id="${item.id}">
               <div class="sns-idea-top">
                 <select class="sns-idea-cat cat-${esc(cat)}" onchange="onSnsIdeaCategory('${item.id}', this)" title="分類">${catSelect}</select>
-                <input type="text" class="sns-idea-title" value="${attr(item.title || '')}" placeholder="ネタのタイトル"
-                       oninput="onSnsIdeaTitle('${item.id}', this)">
+                <textarea class="sns-idea-title" rows="2" placeholder="ネタのタイトル"
+                          oninput="onSnsIdeaTitle('${item.id}', this)">${esc(item.title || '')}</textarea>
                 <div class="sns-idea-actions">
                   <button type="button" class="btn btn-primary" onclick="markSnsIdeaPosted('${item.id}')" title="投稿したら消す">投稿した</button>
                   <button type="button" class="btn btn-ghost btn-danger" onclick="deleteSnsIdea('${item.id}')" title="削除">×</button>
@@ -6836,8 +6841,7 @@ ${MAIL_FOOTER}`,
         </div>
         <div class="sns-ideas-add">
           <select id="snsIdeaCatNew">${catOptions}</select>
-          <input type="text" id="snsIdeaTitleNew" placeholder="例: 患者説明動画のサービスを公開した日のこと" autocomplete="off"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault();addSnsIdea();}">
+          <textarea id="snsIdeaTitleNew" rows="2" placeholder="例: 患者説明動画のサービスを公開した日のこと"></textarea>
           <button type="button" class="btn btn-primary" onclick="addSnsIdea()">+ 追加</button>
         </div>
         <div class="sns-ideas-filters">${filtersHtml}</div>
