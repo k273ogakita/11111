@@ -1702,150 +1702,97 @@
       color: var(--muted);
     }
 
-    /* ── Weekly Goals（1週間の目標・3週並び） ── */
+    /* ── Weekly Goals（1週間の目標・3週並び・シンプル） ── */
     .weekly-goals-panel {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 18px 20px 20px;
+      border-radius: 10px;
+      padding: 16px 18px 18px;
       margin-bottom: 18px;
     }
     .wg-header {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
     .wg-heading {
-      font-size: .95rem;
-      font-weight: 800;
-      letter-spacing: .04em;
+      font-size: .92rem;
+      font-weight: 700;
     }
-    .wg-sub {
-      font-size: .75rem;
-      color: var(--muted);
-      margin-top: 4px;
-    }
+    .wg-sub { display: none; }
     .wg-nav {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
     }
     .wg-nav-title {
-      font-size: .82rem;
-      font-weight: 700;
-      min-width: 8em;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--muted);
+      min-width: 7em;
       text-align: center;
     }
     .wg-progress {
       font-size: .72rem;
       color: var(--muted);
-      font-weight: 600;
       white-space: nowrap;
     }
     .wg-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
+      gap: 0;
+      border-top: 1px solid var(--border);
     }
     .wg-week {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 14px 12px;
-      transition: border-color .15s, box-shadow .15s, background .15s;
+      padding: 12px 14px 10px;
       min-width: 0;
+      border-right: 1px solid var(--border);
     }
+    .wg-week:last-child { border-right: none; }
     .wg-week.current {
-      background: linear-gradient(165deg, #fff8f3 0%, #fbe9e0 100%);
-      border: 2px solid var(--red);
-      box-shadow: 0 0 0 3px var(--red-glow), 0 6px 18px rgba(212,122,74,.12);
-      padding: 16px 15px 14px;
-      transform: translateY(-1px);
+      background: transparent;
+      box-shadow: inset 3px 0 0 var(--red);
     }
-    .wg-week.done-all { border-color: rgba(42,138,94,.4); }
-    .wg-week.current.done-all { border-color: var(--red); }
+    .wg-week.done-all .wg-week-count { color: #2a8a5e; }
     .wg-week-head {
       display: flex;
       align-items: baseline;
+      justify-content: space-between;
       gap: 8px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
+      margin-bottom: 10px;
     }
     .wg-week-label {
-      font-size: 1.02rem;
-      font-weight: 800;
+      font-size: .88rem;
+      font-weight: 700;
       color: var(--text);
     }
-    .wg-week.current .wg-week-label {
-      color: var(--red-dim);
-      font-size: 1.12rem;
-    }
-    .wg-week-sub {
-      font-size: .68rem;
-      color: var(--muted);
-      flex: 1;
-      min-width: 0;
-    }
-    .wg-week.current .wg-week-sub {
-      color: var(--red-dim);
-      font-weight: 600;
-    }
+    .wg-week.current .wg-week-label { color: var(--red-dim); }
     .wg-week-count {
       font-size: .72rem;
-      font-weight: 700;
       color: var(--muted);
       white-space: nowrap;
     }
-    .wg-week.current .wg-week-count {
-      color: var(--red-dim);
-      font-size: .8rem;
-    }
-    .wg-week-bar {
-      height: 4px;
-      background: rgba(0,0,0,.06);
-      border-radius: 99px;
-      margin-bottom: 12px;
-      overflow: hidden;
-    }
-    .wg-week.current .wg-week-bar {
-      height: 6px;
-      background: rgba(232,149,106,.2);
-    }
-    .wg-week-bar > div {
-      height: 100%;
-      background: #2a8a5e;
-      border-radius: 99px;
-      transition: width .25s;
-    }
-    .wg-week.current .wg-week-bar > div { background: var(--red); }
-    .wg-list { display: flex; flex-direction: column; gap: 8px; }
+    .wg-list { display: flex; flex-direction: column; gap: 10px; }
     .wg-goal {
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px 8px 10px;
-      background: rgba(255,255,255,.55);
+      border: none;
+      border-radius: 0;
+      padding: 0;
+      background: transparent;
     }
-    .wg-week.current .wg-goal {
-      background: rgba(255,255,255,.72);
-    }
-    .wg-goal.done {
-      opacity: .78;
-      background: rgba(42,138,94,.04);
-      border-color: rgba(42,138,94,.28);
-    }
+    .wg-goal.done { opacity: .65; }
     .wg-goal-row {
       display: flex;
       align-items: flex-start;
       gap: 6px;
     }
     .wg-goal-row input[type="checkbox"] {
-      margin-top: 7px;
-      width: 16px;
-      height: 16px;
+      margin-top: 6px;
+      width: 15px;
+      height: 15px;
       accent-color: var(--red);
       flex-shrink: 0;
       cursor: pointer;
@@ -1854,42 +1801,42 @@
       flex: 1;
       min-width: 0;
       font-size: .82rem;
-      font-weight: 700;
+      font-weight: 600;
       line-height: 1.4;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      padding: 4px 6px;
+      border: none;
+      border-radius: 0;
+      padding: 4px 0;
       background: transparent;
       color: var(--text);
       resize: vertical;
-      min-height: 34px;
+      min-height: 28px;
       font-family: inherit;
     }
     .wg-goal-text:focus {
       outline: none;
-      border-color: rgba(232,149,106,.55);
-      background: #fff;
+      box-shadow: 0 1px 0 rgba(232,149,106,.7);
     }
     .wg-goal.done .wg-goal-text {
       text-decoration: line-through;
       color: var(--muted);
-      font-weight: 600;
+      font-weight: 500;
     }
-    .wg-goal-del { flex-shrink: 0; margin-top: 2px; font-size: .75rem; padding: 4px 6px; }
-    .wg-label-steps {
-      font-size: .62rem;
-      font-weight: 700;
-      color: var(--muted);
-      letter-spacing: .04em;
-      margin: 6px 0 2px 22px;
+    .wg-goal-del {
+      flex-shrink: 0;
+      margin-top: 2px;
+      font-size: .75rem;
+      padding: 2px 5px;
+      opacity: 0;
     }
+    .wg-goal:hover .wg-goal-del,
+    .wg-step-row:hover .wg-goal-del { opacity: 1; }
     .wg-steps {
-      margin: 2px 0 0 22px;
+      margin: 2px 0 0 21px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      padding-left: 8px;
-      border-left: 2px solid rgba(232,149,106,.35);
+      gap: 2px;
+      padding: 0;
+      border: none;
     }
     .wg-step-row {
       display: flex;
@@ -1897,9 +1844,9 @@
       gap: 6px;
     }
     .wg-step-row input[type="checkbox"] {
-      margin-top: 6px;
-      width: 14px;
-      height: 14px;
+      margin-top: 5px;
+      width: 13px;
+      height: 13px;
       accent-color: #2a8a5e;
       flex-shrink: 0;
       cursor: pointer;
@@ -1909,29 +1856,38 @@
       min-width: 0;
       font-size: .75rem;
       line-height: 1.4;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      padding: 4px 6px;
+      border: none;
+      border-radius: 0;
+      padding: 3px 0;
       background: transparent;
       color: var(--text);
       font-family: inherit;
     }
     .wg-step-text:focus {
       outline: none;
-      border-color: rgba(42,138,94,.4);
-      background: #fff;
+      box-shadow: 0 1px 0 rgba(42,138,94,.45);
     }
     .wg-step-row.done .wg-step-text {
       text-decoration: line-through;
       color: var(--muted);
     }
-    .wg-step-add { margin-top: 2px; font-size: .72rem; }
-    .wg-goal-add { margin-top: 8px; width: 100%; font-size: .78rem; }
+    .wg-step-add {
+      margin-top: 2px;
+      margin-left: 19px;
+      font-size: .7rem;
+      padding: 2px 4px;
+      color: var(--muted);
+    }
+    .wg-goal-add {
+      margin-top: 8px;
+      width: auto;
+      font-size: .75rem;
+      padding: 4px 8px;
+    }
     .wg-week-empty {
-      text-align: center;
       color: var(--muted);
       font-size: .75rem;
-      padding: 10px 4px 6px;
+      padding: 4px 0 2px;
       line-height: 1.45;
     }
     /* ── SNS投稿ネタ（自分用ストック） ── */
@@ -2708,6 +2664,9 @@
       .finance-breakdown-4 { grid-template-columns: repeat(2, 1fr); }
       .milestone-grid { grid-template-columns: 1fr; }
       .wg-grid { grid-template-columns: 1fr; }
+      .wg-week { border-right: none; border-bottom: 1px solid var(--border); }
+      .wg-week:last-child { border-bottom: none; }
+      .wg-week.current { box-shadow: inset 0 3px 0 var(--red); }
       .compass-timeline { grid-template-columns: 1fr 1fr; }
       .strength-grid { grid-template-columns: 1fr 1fr; }
       .review-grid { grid-template-columns: 1fr; }
@@ -2754,7 +2713,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v145</div>
+        <div class="logo-sub">Business Dashboard · v146</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -6747,19 +6706,17 @@ ${MAIL_FOOTER}`,
       const st = weekGoalStats(weekKey);
       const isCurrent = weekKey === weekStartKey(0);
       const allDone = st.total > 0 && st.done === st.total;
-      const pct = st.total ? Math.round((st.done / st.total) * 100) : 0;
       const suffix = weekColumnSuffix(weekKey);
       const label = weekColumnLabel(weekKey) + (suffix ? `（${suffix}）` : '');
-      const range = weekRangeLabel(weekKey).replace(/ · (今週|先週|来週)$/, '');
 
       const goalsHtml = goals.length === 0
-        ? '<div class="wg-week-empty">この週の目標を書いてみましょう</div>'
+        ? '<div class="wg-week-empty">まだ目標なし</div>'
         : goals.map(g => {
           const steps = Array.isArray(g.steps) ? g.steps : [];
           const stepsHtml = steps.map(s => `
             <div class="wg-step-row${s.done ? ' done' : ''}">
               <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleWeeklyStepDone('${g.id}','${s.id}','${weekKey}')" title="完了">
-              <input type="text" class="wg-step-text" value="${attr(s.text || '')}" placeholder="到達目標を記入"
+              <input type="text" class="wg-step-text" value="${attr(s.text || '')}" placeholder="到達目標"
                      oninput="onWeeklyStepText('${g.id}','${s.id}','${weekKey}', this)">
               <button type="button" class="btn btn-ghost btn-danger wg-goal-del" onclick="deleteWeeklyStep('${g.id}','${s.id}','${weekKey}')" title="削除">×</button>
             </div>
@@ -6768,11 +6725,10 @@ ${MAIL_FOOTER}`,
             <div class="wg-goal${g.done ? ' done' : ''}" data-goal-id="${g.id}">
               <div class="wg-goal-row">
                 <input type="checkbox" ${g.done ? 'checked' : ''} onchange="toggleWeeklyGoalDone('${g.id}','${weekKey}')" title="目標を完了">
-                <textarea class="wg-goal-text" rows="1" placeholder="この週の目標を記入"
+                <textarea class="wg-goal-text" rows="1" placeholder="目標を記入"
                           oninput="onWeeklyGoalText('${g.id}','${weekKey}', this)">${esc(g.text || '')}</textarea>
-                <button type="button" class="btn btn-ghost btn-danger wg-goal-del" onclick="deleteWeeklyGoal('${g.id}','${weekKey}')" title="目標を削除">×</button>
+                <button type="button" class="btn btn-ghost btn-danger wg-goal-del" onclick="deleteWeeklyGoal('${g.id}','${weekKey}')" title="削除">×</button>
               </div>
-              <div class="wg-label-steps">到達目標</div>
               <div class="wg-steps">
                 ${stepsHtml}
                 <button type="button" class="btn btn-ghost wg-step-add" onclick="addWeeklyStep('${g.id}','${weekKey}')">+ 到達目標</button>
@@ -6785,12 +6741,10 @@ ${MAIL_FOOTER}`,
         <div class="wg-week${isCurrent ? ' current' : ''}${allDone ? ' done-all' : ''}" data-week-key="${weekKey}">
           <div class="wg-week-head">
             <span class="wg-week-label">${esc(label)}</span>
-            <span class="wg-week-sub">${esc(range)}</span>
             <span class="wg-week-count">${st.done}/${st.total || 0}</span>
           </div>
-          <div class="wg-week-bar"><div style="width:${pct}%"></div></div>
           <div class="wg-list">${goalsHtml}</div>
-          <button type="button" class="btn btn-primary wg-goal-add" onclick="addWeeklyGoal('${weekKey}')">+ 目標を追加</button>
+          <button type="button" class="btn btn-ghost wg-goal-add" onclick="addWeeklyGoal('${weekKey}')">+ 目標</button>
         </div>
       `;
     }
@@ -6808,25 +6762,20 @@ ${MAIL_FOOTER}`,
         total += st.total;
         done += st.done;
       });
-      const progressLabel = total
-        ? (`表示中 ${done}/${total}`)
-        : 'まだ目標なし';
+      const progressLabel = total ? `${done}/${total}` : '';
       const windowLabel = weeklyGoalOffset === 0
         ? '今週・来週・再来週'
         : weekColumnLabel(keys[0]) + ' 〜 ' + weekColumnLabel(keys[2]);
 
       el.innerHTML = `
         <div class="wg-header">
-          <div>
-            <div class="wg-heading">1週間の目標</div>
-            <div class="wg-sub">3週間分を並べて表示（左＝今週）。下に到達目標を細分化してチェック</div>
-          </div>
+          <div class="wg-heading">1週間の目標</div>
           <div class="wg-nav">
             <button type="button" class="calendar-nav-btn" onclick="shiftWeeklyGoalWeek(-1)" aria-label="前の週へずらす">‹</button>
             <div class="wg-nav-title">${esc(windowLabel)}</div>
             <button type="button" class="calendar-nav-btn" onclick="shiftWeeklyGoalWeek(1)" aria-label="次の週へずらす">›</button>
             ${weeklyGoalOffset !== 0 ? '<button type="button" class="calendar-nav-today" onclick="resetWeeklyGoalWeek()">今週から</button>' : ''}
-            <span class="wg-progress">${esc(progressLabel)}</span>
+            ${progressLabel ? `<span class="wg-progress">${esc(progressLabel)}</span>` : ''}
           </div>
         </div>
         <div class="wg-grid">
