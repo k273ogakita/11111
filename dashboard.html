@@ -1797,23 +1797,26 @@
       flex-shrink: 0;
       cursor: pointer;
     }
-    .wg-goal-text {
+    .weekly-goals-panel textarea.wg-goal-text {
       flex: 1;
       min-width: 0;
       font-size: .82rem;
       font-weight: 600;
       line-height: 1.4;
-      border: none;
+      border: none !important;
       border-radius: 0;
       padding: 4px 0;
-      background: transparent;
+      background: transparent !important;
+      box-shadow: none;
       color: var(--text);
       resize: vertical;
       min-height: 28px;
       font-family: inherit;
-    }
-    .wg-goal-text:focus {
       outline: none;
+    }
+    .weekly-goals-panel textarea.wg-goal-text:focus {
+      border: none !important;
+      background: transparent !important;
       box-shadow: 0 1px 0 rgba(232,149,106,.7);
     }
     .wg-goal.done .wg-goal-text {
@@ -1851,20 +1854,23 @@
       flex-shrink: 0;
       cursor: pointer;
     }
-    .wg-step-text {
+    .weekly-goals-panel input.wg-step-text[type="text"] {
       flex: 1;
       min-width: 0;
       font-size: .75rem;
       line-height: 1.4;
-      border: none;
+      border: none !important;
       border-radius: 0;
       padding: 3px 0;
-      background: transparent;
+      background: transparent !important;
+      box-shadow: none;
       color: var(--text);
       font-family: inherit;
-    }
-    .wg-step-text:focus {
       outline: none;
+    }
+    .weekly-goals-panel input.wg-step-text[type="text"]:focus {
+      border: none !important;
+      background: transparent !important;
       box-shadow: 0 1px 0 rgba(42,138,94,.45);
     }
     .wg-step-row.done .wg-step-text {
@@ -2713,7 +2719,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v146</div>
+        <div class="logo-sub">Business Dashboard · v147</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
