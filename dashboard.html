@@ -2754,7 +2754,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v142</div>
+        <div class="logo-sub">Business Dashboard · v143</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3765,43 +3765,44 @@ nark.visual.media@gmail.com
     const BIZ_TODO_CATEGORIES = ['営業', '集客', '経理', '運営', 'その他'];
 
     const MILESTONE_PLAN = {
-      period: '2026年7月〜9月',
+      period: '2026年10月〜12月',
       months: [
         {
-          id: '2026-07',
-          label: '7月',
-          subtitle: '実績づくり・見える化',
+          id: '2026-10',
+          label: '10月',
+          subtitle: '測定・設計',
           items: [
-            { id: 'm07-1', text: '知人の医者・看護師に声がけ（実績案件）' },
-            { id: 'm07-2', text: 'サンプル動画（白内障）を公開できる状態に' },
-            { id: 'm07-3', text: '会社概要・法務対応方針を整備' },
-            { id: 'm07-4', text: '制作ワークフローを確定（月1本の型）' },
+            { id: 'm10-1', text: 'フォーム営業：送信数・返信率を週次で記録する仕組み' },
+            { id: 'm10-2', text: 'Google広告：問い合わせCV（成果）を計測できるよう設定' },
+            { id: 'm10-3', text: 'フォーム件名・文面を2パターンで試す（A/B）' },
+            { id: 'm10-4', text: '終活動画のコンセプト設計（誰に・何を残す動画か）' },
+            { id: 'm10-5', text: '終活の提供ルートを比較し最初に当たる先を決める（施設／葬儀社・寺・士業）' },
           ],
         },
         {
-          id: '2026-08',
-          label: '8月',
-          subtitle: '事例・差別化',
+          id: '2026-11',
+          label: '11月',
+          subtitle: '改善・制作',
           items: [
-            { id: 'm08-1', text: '納品実績 1本以上（事例・許可取得）' },
-            { id: 'm08-2', text: 'Before/After（ロゴ差し替え例）作成' },
-            { id: 'm08-3', text: '固定セット設計（待合室・白内障）' },
-            { id: 'm08-4', text: '伴走の具体物（待合再生手順1枚）' },
-            { id: 'm08-5', text: 'サービス紹介資料の講座視聴' },
-            { id: 'm08-6', text: 'ど健在広告の講座視聴' },
-            { id: 'm08-7', text: 'プッシュアプローチの講座視聴' },
+            { id: 'm11-1', text: 'Google広告：キーワード・除外設定を見直し無駄クリック削減' },
+            { id: 'm11-2', text: 'フォーム営業：反応の良い型に寄せて勝ちパターンを1つ確定' },
+            { id: 'm11-3', text: 'LP：離脱ポイントを1つ改善' },
+            { id: 'm11-4', text: '終活動画のサンプル1本を制作（見せられる状態に）' },
+            { id: 'm11-5', text: '終活の料金・パッケージを仮決め（撮影＋編集＋納品形態）' },
+            { id: 'm11-6', text: 'モニター候補に声がけ（施設／パートナー経由）' },
           ],
         },
         {
-          id: '2026-09',
-          label: '9月',
-          subtitle: '獲得準備',
+          id: '2026-12',
+          label: '12月',
+          subtitle: '検証・確定',
           items: [
-            { id: 'm09-1', text: 'LP・サンプル視聴・無料相談の入口設計' },
-            { id: 'm09-2', text: '医療・責任の安心訴求をLP化' },
-            { id: 'm09-3', text: 'フォーム営業：リスト・送信文面テンプレ' },
-            { id: 'm09-4', text: 'Google検索広告：キーワード・月1万円の運用設計' },
-            { id: 'm09-5', text: '患者説明動画サービス紹介資料の完成' },
+            { id: 'm12-1', text: '四半期の営業数値を振り返り（フォーム・広告の反応をまとめる）' },
+            { id: 'm12-2', text: '次四半期の広告予算・配分を決める' },
+            { id: 'm12-3', text: '終活動画のモニター撮影を1件実施' },
+            { id: 'm12-4', text: '制作〜納品フローを1枚にまとめる（ルーティン化）' },
+            { id: 'm12-5', text: 'モニターの声をもとに終活の料金・フローを確定' },
+            { id: 'm12-6', text: '終活動画サービス紹介資料のドラフト作成' },
           ],
         },
       ],
@@ -7041,7 +7042,7 @@ ${MAIL_FOOTER}`,
         <div class="milestone-header collapsible-header" onclick="toggleMilestones()" title="クリックで開閉">
           <div>
             <div class="milestone-heading">3ヶ月マイルストーン<span class="collapse-chevron">${milestonesExpanded ? '▾' : '▸'}</span></div>
-            <div class="milestone-period">${MILESTONE_PLAN.period} · 患者説明動画 立ち上げ期</div>
+            <div class="milestone-period">${MILESTONE_PLAN.period} · 営業最適化＋終活動画 構築期</div>
             ${milestonesExpanded ? '' : `<div class="collapse-summary">${esc(summary)}</div>`}
           </div>
           <div class="milestone-overall">
