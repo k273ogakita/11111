@@ -2754,7 +2754,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v141</div>
+        <div class="logo-sub">Business Dashboard · v142</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4165,7 +4165,7 @@ nark.visual.media@gmail.com
     let bizTodoFilter = 'open';
     let bizTodoShowDone = false;
     let reviewMonthOffset = 0;
-    let weeklyGoalOffset = 0; // 0＝今週中心で先週・今週・来週。±1で3週ウィンドウをずらす
+    let weeklyGoalOffset = 0; // 0＝今週・来週・再来週。±1で3週ウィンドウをずらす
     let snsIdeaFilter = 'all';
 
     function defaultState() {
@@ -6572,8 +6572,9 @@ ${MAIL_FOOTER}`,
       const thisKey = weekStartKey(0);
       let suffix = '';
       if (weekKey === thisKey) suffix = ' · 今週';
-      else if (weekKey === weekStartKey(-1)) suffix = ' · 先週';
       else if (weekKey === weekStartKey(1)) suffix = ' · 来週';
+      else if (weekKey === weekStartKey(2)) suffix = ' · 再来週';
+      else if (weekKey === weekStartKey(-1)) suffix = ' · 先週';
       return `${a} 〜 ${b}${suffix}`;
     }
 
@@ -6587,16 +6588,17 @@ ${MAIL_FOOTER}`,
     function weekColumnSuffix(weekKey) {
       const thisKey = weekStartKey(0);
       if (weekKey === thisKey) return '今週';
-      if (weekKey === weekStartKey(-1)) return '先週';
       if (weekKey === weekStartKey(1)) return '来週';
+      if (weekKey === weekStartKey(2)) return '再来週';
+      if (weekKey === weekStartKey(-1)) return '先週';
       return '';
     }
 
     function getVisibleWeekKeys() {
       return [
-        weekStartKey(weeklyGoalOffset - 1),
         weekStartKey(weeklyGoalOffset),
         weekStartKey(weeklyGoalOffset + 1),
+        weekStartKey(weeklyGoalOffset + 2),
       ];
     }
 
@@ -6814,20 +6816,20 @@ ${MAIL_FOOTER}`,
         ? (`表示中 ${done}/${total}`)
         : 'まだ目標なし';
       const windowLabel = weeklyGoalOffset === 0
-        ? '先週・今週・来週'
+        ? '今週・来週・再来週'
         : weekColumnLabel(keys[0]) + ' 〜 ' + weekColumnLabel(keys[2]);
 
       el.innerHTML = `
         <div class="wg-header">
           <div>
             <div class="wg-heading">1週間の目標</div>
-            <div class="wg-sub">3週間分を並べて表示。下に到達目標を細分化してチェック</div>
+            <div class="wg-sub">3週間分を並べて表示（左＝今週）。下に到達目標を細分化してチェック</div>
           </div>
           <div class="wg-nav">
             <button type="button" class="calendar-nav-btn" onclick="shiftWeeklyGoalWeek(-1)" aria-label="前の週へずらす">‹</button>
             <div class="wg-nav-title">${esc(windowLabel)}</div>
             <button type="button" class="calendar-nav-btn" onclick="shiftWeeklyGoalWeek(1)" aria-label="次の週へずらす">›</button>
-            ${weeklyGoalOffset !== 0 ? '<button type="button" class="calendar-nav-today" onclick="resetWeeklyGoalWeek()">今週中心</button>' : ''}
+            ${weeklyGoalOffset !== 0 ? '<button type="button" class="calendar-nav-today" onclick="resetWeeklyGoalWeek()">今週から</button>' : ''}
             <span class="wg-progress">${esc(progressLabel)}</span>
           </div>
         </div>
