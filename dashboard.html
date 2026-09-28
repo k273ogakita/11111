@@ -1548,15 +1548,15 @@
     .milestone-panel {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 22px 24px;
-      margin-bottom: 32px;
+      border-radius: 10px;
+      padding: 16px 18px 18px;
+      margin-bottom: 18px;
     }
     .milestone-header {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
       margin-bottom: 0;
       flex-wrap: wrap;
     }
@@ -1567,122 +1567,112 @@
       font-size: .85em;
       color: var(--muted);
     }
-    .milestone-heading { font-size: .95rem; font-weight: 800; letter-spacing: .04em; }
+    .milestone-heading { font-size: .92rem; font-weight: 700; }
     .milestone-period { font-size: .75rem; color: var(--muted); margin-top: 4px; }
     .milestone-overall {
-      min-width: 140px;
+      min-width: 120px;
       text-align: right;
     }
     .milestone-overall-count {
-      font-size: 1.35rem;
-      font-weight: 800;
+      font-size: 1.15rem;
+      font-weight: 700;
       color: var(--text);
       line-height: 1.1;
     }
-    .milestone-overall-label { font-size: .68rem; color: var(--muted); margin-top: 4px; }
+    .milestone-overall-label { font-size: .68rem; color: var(--muted); margin-top: 2px; }
     .milestone-overall-bar {
-      height: 6px;
+      height: 4px;
       background: var(--surface-2);
       border-radius: 99px;
-      margin-top: 10px;
+      margin-top: 8px;
       overflow: hidden;
     }
     .milestone-overall-bar > div {
-      height: 100%;
-      background: linear-gradient(90deg, #2a8a5e, #4caf7a);
-      border-radius: 99px;
-      transition: width .25s;
-    }
-    .milestone-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-    }
-    .milestone-month {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 14px 12px;
-      transition: border-color .15s, box-shadow .15s, background .15s;
-    }
-    .milestone-month.current {
-      background: linear-gradient(165deg, #fff8f3 0%, #fbe9e0 100%);
-      border: 2px solid var(--red);
-      box-shadow: 0 0 0 3px var(--red-glow), 0 6px 18px rgba(212,122,74,.12);
-      padding: 16px 15px 14px;
-      transform: translateY(-1px);
-    }
-    .milestone-month.done-all { border-color: rgba(42,138,94,.4); }
-    .milestone-month.current.done-all {
-      border-color: var(--red);
-    }
-    .milestone-month-head {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-    .milestone-month-label {
-      font-size: 1.05rem;
-      font-weight: 800;
-      color: var(--text);
-    }
-    .milestone-month.current .milestone-month-label {
-      color: var(--red-dim);
-      font-size: 1.18rem;
-    }
-    .milestone-month-sub {
-      font-size: .68rem;
-      color: var(--muted);
-      flex: 1;
-      min-width: 0;
-    }
-    .milestone-month.current .milestone-month-sub {
-      color: var(--red-dim);
-      font-weight: 600;
-    }
-    .milestone-month-count {
-      font-size: .72rem;
-      font-weight: 700;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    .milestone-month.current .milestone-month-count {
-      color: var(--red-dim);
-      font-size: .8rem;
-    }
-    .milestone-month-bar {
-      height: 4px;
-      background: rgba(0,0,0,.06);
-      border-radius: 99px;
-      margin-bottom: 12px;
-      overflow: hidden;
-    }
-    .milestone-month.current .milestone-month-bar {
-      height: 6px;
-      background: rgba(232,149,106,.2);
-    }
-    .milestone-month-bar > div {
       height: 100%;
       background: #2a8a5e;
       border-radius: 99px;
       transition: width .25s;
     }
-    .milestone-month.current .milestone-month-bar > div { background: var(--red); }
-    .milestone-list { display: flex; flex-direction: column; gap: 6px; }
+    .milestone-panel .collapse-body { margin-top: 12px; }
+    .milestone-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      border-top: 1px solid var(--border);
+    }
+    .milestone-month {
+      background: transparent;
+      border: none;
+      border-right: 1px solid var(--border);
+      border-radius: 0;
+      padding: 12px 14px 10px;
+      min-width: 0;
+      box-shadow: none;
+      transform: none;
+    }
+    .milestone-month:last-child { border-right: none; }
+    .milestone-month.current {
+      background: transparent;
+      border-right: 1px solid var(--border);
+      box-shadow: inset 3px 0 0 var(--red);
+      padding: 12px 14px 10px;
+      transform: none;
+    }
+    .milestone-month.done-all .milestone-month-count { color: #2a8a5e; }
+    .milestone-month.current.done-all { border-color: transparent; }
+    .milestone-month-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .milestone-month-label {
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .milestone-month.current .milestone-month-label {
+      color: var(--red-dim);
+      font-size: .88rem;
+    }
+    .milestone-month-sub {
+      font-size: .72rem;
+      color: var(--muted);
+      flex: 1 1 100%;
+      min-width: 0;
+      order: 3;
+      margin-top: -4px;
+      line-height: 1.4;
+    }
+    .milestone-month.current .milestone-month-sub {
+      color: var(--red-dim);
+      font-weight: 500;
+    }
+    .milestone-month-count {
+      font-size: .72rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .milestone-month.current .milestone-month-count {
+      color: var(--muted);
+      font-size: .72rem;
+    }
+    .milestone-month-bar { display: none; }
+    .milestone-list { display: flex; flex-direction: column; gap: 4px; }
     .milestone-item {
       display: flex;
       align-items: flex-start;
       gap: 8px;
-      padding: 7px 8px;
-      border-radius: 6px;
+      padding: 4px 0;
+      border-radius: 0;
+      background: transparent;
       cursor: pointer;
       user-select: none;
-      transition: background .12s;
     }
-    .milestone-item:hover { background: rgba(0,0,0,.04); }
-    .milestone-month.current .milestone-item:hover { background: rgba(232,149,106,.12); }
+    .milestone-item:hover { background: transparent; }
+    .milestone-month.current .milestone-item:hover { background: transparent; }
     .milestone-item input[type="checkbox"] {
       margin-top: 2px;
       accent-color: #2a8a5e;
@@ -2669,6 +2659,9 @@
       .finance-breakdown-3 { grid-template-columns: repeat(2, 1fr); }
       .finance-breakdown-4 { grid-template-columns: repeat(2, 1fr); }
       .milestone-grid { grid-template-columns: 1fr; }
+      .milestone-month { border-right: none; border-bottom: 1px solid var(--border); }
+      .milestone-month:last-child { border-bottom: none; }
+      .milestone-month.current { box-shadow: inset 0 3px 0 var(--red); border-right: none; }
       .wg-grid { grid-template-columns: 1fr; }
       .wg-week { border-right: none; border-bottom: 1px solid var(--border); }
       .wg-week:last-child { border-bottom: none; }
@@ -2719,7 +2712,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v149</div>
+        <div class="logo-sub">Business Dashboard · v150</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
