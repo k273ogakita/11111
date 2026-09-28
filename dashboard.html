@@ -2727,7 +2727,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v154</div>
+        <div class="logo-sub">Business Dashboard · v155</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -3011,6 +3011,33 @@
           <option value="brandingRecord">ブランディング／記録動画制作フロー</option>
         </select>
         <div class="form-hint">進行中カードをクリックするとチェックリストが開きます。種別と違うフローで進める場合はここで変更</div>
+      </div>
+      <div id="funnelGroup">
+        <div class="form-row-2">
+          <div class="form-group">
+            <label>ファネルのサービス</label>
+            <select id="projectFunnelProduct">
+              <option value="">ファネルに出さない</option>
+              <option value="patient-nark">患者説明動画（nARK）</option>
+              <option value="patient-wslink">患者説明動画（W's Link）</option>
+              <option value="video-produce">動画制作</option>
+              <option value="video-edit">動画編集</option>
+              <option value="video-shoot">動画撮影</option>
+              <option value="end-of-life">終活動画</option>
+              <option value="birth">出産動画</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>どこから来たか</label>
+            <select id="projectFunnelChannel">
+              <option value="referral">知り合い紹介</option>
+              <option value="form">フォーム営業</option>
+              <option value="fax">FAX営業</option>
+              <option value="ads">広告</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-hint">サービスを選ぶと、営業ファネルの成約・金額に載ります。フォーム6000件のような営業の塊はファネル側です。</div>
       </div>
       <div class="form-group">
         <label>ステータス</label>
@@ -4351,6 +4378,8 @@ nark.visual.media@gmail.com
       if (p.afterFollowDone && p.afterFollowDone.followup !== undefined) delete p.afterFollowDone.followup;
       if (p.closingDay === undefined) p.closingDay = 25;
       if (p.opsStartDate === undefined) p.opsStartDate = '';
+      if (p.funnelProduct === undefined) p.funnelProduct = '';
+      if (p.funnelChannel === undefined) p.funnelChannel = '';
       if (p.prepayPhase === undefined) p.prepayPhase = isAdOpsType(p) ? '作成未' : '';
       if (p.opsMonth === undefined) p.opsMonth = isAdOpsType(p) ? (parseOpsMonthFromName(p.name) || 1) : 0;
       if (p.opsBaseName === undefined) p.opsBaseName = isAdOpsType(p) ? getOpsBaseName(p) : '';
@@ -4725,6 +4754,56 @@ ${MAIL_FOOTER}`,
       return AFTER_FOLLOW_CONTACTS.some(c => c.key === step);
     }
 
+    let seedFunnelDirty = false;
+
+    function seedFunnelLinkedProjects(data) {
+      const seedId = '2026-10-04-referral-video-shoot-brass';
+      if (!Array.isArray(data.projects)) return;
+      if (data.projects.some(p => p.funnelSeedId === seedId)) return;
+      const existing = data.projects.find(p => (p.name || '').includes('吹奏楽演奏会'));
+      if (existing) {
+        existing.funnelSeedId = seedId;
+        if (!existing.funnelProduct) existing.funnelProduct = 'video-shoot';
+        if (!existing.funnelChannel) existing.funnelChannel = 'referral';
+        if (!existing.revenue) existing.revenue = 20909;
+        seedFunnelDirty = true;
+        return;
+      }
+      const p = {
+        id: uid(),
+        funnelSeedId: seedId,
+        category: 'client',
+        name: '中学校の吹奏楽演奏会の撮影',
+        client: '',
+        type: 'record-video',
+        status: 'todo',
+        phase: '',
+        created: '2026-10-04',
+        draftDueDate: '',
+        finalDueDate: '2026-10-04',
+        draftDueDone: false,
+        finalDueDone: false,
+        deadlineDate: '',
+        deadlinePlan: '',
+        memo: '知り合いからの依頼。報酬は税込¥23,000（税抜¥20,909）。',
+        revenue: 20909,
+        targetHours: 0,
+        invoiceDate: '',
+        variableCosts: [],
+        timeLogs: [],
+        funnelProduct: 'video-shoot',
+        funnelChannel: 'referral',
+        contractRoute: 'directPlain',
+        followUpTiming: 'none',
+        afterFollow: false,
+        editorOutsource: false,
+        workflowKey: 'auto',
+      };
+      ensureProjectFinance(p);
+      data.projects.push(p);
+      seedFunnelDirty = true;
+    }
+
     function migrateState(data) {
       if (!data.subscriptions) data.subscriptions = [];
       if (!data.adExpenses) data.adExpenses = [];
@@ -4774,19 +4853,31 @@ ${MAIL_FOOTER}`,
           data.projects.push({ id: uid(), category: 'sns', type: 'sns', ...s, revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] });
         }
       });
+      seedFunnelLinkedProjects(data);
       return data;
     }
 
     function loadState() {
+      seedFunnelDirty = false;
+      let data = null;
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) return migrateState(JSON.parse(raw));
-        for (const key of ['nark_dashboard_v3', 'nark_dashboard_v2', 'nark_dashboard_v1']) {
-          const old = localStorage.getItem(key);
-          if (old) return migrateState(JSON.parse(old));
+        if (raw) data = migrateState(JSON.parse(raw));
+        else {
+          for (const key of ['nark_dashboard_v3', 'nark_dashboard_v2', 'nark_dashboard_v1']) {
+            const old = localStorage.getItem(key);
+            if (old) {
+              data = migrateState(JSON.parse(old));
+              break;
+            }
+          }
         }
       } catch (_) {}
-      return defaultState();
+      if (!data) data = migrateState(defaultState());
+      if (seedFunnelDirty) {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (_) {}
+      }
+      return data;
     }
 
     const undoStack = [];
@@ -8019,6 +8110,8 @@ ${MAIL_FOOTER}`,
       const isSns = cat === 'sns';
       document.getElementById('clientGroup').style.display = isSns ? 'none' : '';
       document.getElementById('typeGroup').style.display = isSns ? 'none' : '';
+      const funnelGroup = document.getElementById('funnelGroup');
+      if (funnelGroup) funnelGroup.style.display = isSns ? 'none' : '';
       document.getElementById('financeGroup').style.display = isSns ? 'none' : '';
       document.getElementById('projectNameLabel').textContent = isSns ? 'タイトル' : '案件名';
       document.getElementById('projectName').placeholder = isSns
@@ -8243,6 +8336,8 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectContractRoute').value = p.contractRoute || detectContractRoute(p);
         document.getElementById('projectFollowTiming').value = p.followUpTiming === '2week' ? '1month' : (p.followUpTiming || '1month');
         document.getElementById('projectAfterFollow').checked = needsAfterFollow(p);
+        document.getElementById('projectFunnelProduct').value = p.funnelProduct || '';
+        document.getElementById('projectFunnelChannel').value = p.funnelChannel || 'referral';
         document.getElementById('projectOpsStartDate').value = p.opsStartDate || '';
         document.getElementById('projectOpsMonthDisplay').value = isAdOpsType(p)
           ? formatOpsMonthLabel(getOpsMonth(p)) : '';
@@ -8269,6 +8364,8 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectContractRoute').value = 'directSupport';
         document.getElementById('projectFollowTiming').value = '1month';
         document.getElementById('projectAfterFollow').checked = true;
+        document.getElementById('projectFunnelProduct').value = '';
+        document.getElementById('projectFunnelChannel').value = 'referral';
         document.getElementById('projectOpsStartDate').value = '';
         document.getElementById('projectOpsMonthDisplay').value = '';
         updateAdOpsClosingPreview();
@@ -8350,6 +8447,8 @@ ${MAIL_FOOTER}`,
           ? 'none'
           : document.getElementById('projectFollowTiming').value;
         data.afterFollow = document.getElementById('projectAfterFollow').checked;
+        data.funnelProduct = document.getElementById('projectFunnelProduct').value;
+        data.funnelChannel = document.getElementById('projectFunnelChannel').value || 'referral';
         if (isWorkflowEligibleType(data.type)) {
           data.workflowKey = document.getElementById('projectWorkflow').value;
         } else {
@@ -8371,6 +8470,8 @@ ${MAIL_FOOTER}`,
         } else {
           data.type = 'sns';
         }
+        data.funnelProduct = '';
+        data.funnelChannel = '';
       }
       if (editingProjectId) {
         const p = state.projects.find(x => x.id === editingProjectId);
@@ -8459,6 +8560,8 @@ ${MAIL_FOOTER}`,
         folder: '',
         deliveredDate: '',
         afterFollow: p.afterFollow !== undefined ? p.afterFollow : isAfterFollowEligible(p),
+        funnelProduct: p.funnelProduct || '',
+        funnelChannel: p.funnelChannel || 'referral',
         afterFollowDone: { thanks: false, supportDirect: false, portfolio: false },
         afterFollowSchedule: { m1: false, m6: false, y1: false },
         editorOutsource: false,

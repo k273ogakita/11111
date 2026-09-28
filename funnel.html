@@ -64,6 +64,16 @@
     .logo-sub { font-size: .75rem; color: var(--muted); margin-top: 6px; letter-spacing: .08em; text-transform: uppercase; }
     .header-links { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .updated { font-size: .78rem; color: var(--muted); text-align: right; }
+    .sync-note {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: .82rem;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+    .sync-note b { color: var(--text); }
 
     .btn {
       display: inline-flex;
@@ -271,7 +281,8 @@
     th { color: var(--muted); font-weight: 700; font-size: .7rem; letter-spacing: .04em; }
     td:first-child, th:first-child,
     td:nth-child(2), th:nth-child(2),
-    td:nth-child(3), th:nth-child(3) { text-align: left; }
+    td:nth-child(3), th:nth-child(3),
+    td:nth-child(4), th:nth-child(4) { text-align: left; }
     tbody tr:last-child td { border-bottom: 0; }
 
     .exp-list { display: flex; flex-direction: column; gap: 10px; }
@@ -323,7 +334,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">営業ファネル · v4</div>
+        <div class="logo-sub">営業ファネル · v5</div>
       </div>
       <div class="header-links">
         <a class="btn" href="dashboard.html">Dashboard</a>
@@ -331,6 +342,8 @@
         <div class="updated" id="updated"></div>
       </div>
     </header>
+
+    <p class="sync-note">成約と金額は、<b>同じアドレスのダッシュボード</b>に入れた案件から読みます。フォーム送信のような営業の塊は、このファネル側の記録です。</p>
 
     <section class="section" id="productGrid"></section>
 
@@ -360,8 +373,51 @@
       return `<span class="grade grade-${g.key}">${g.label}</span>`;
     }
 
+    const DASH_STORAGE_KEY = "nark_dashboard_v4";
+
+    function dashboardDealCampaigns() {
+      try {
+        const raw = localStorage.getItem(DASH_STORAGE_KEY);
+        if (!raw) return [];
+        const data = JSON.parse(raw);
+        const projects = (data && data.projects) || [];
+        return projects.filter((p) => p.category === "client" && p.funnelProduct).map((p) => ({
+          id: "dash-" + p.id,
+          date: p.created || p.invoiceDate || p.finalDueDate || "",
+          productId: p.funnelProduct,
+          channelId: p.funnelChannel || "referral",
+          title: p.name,
+          target: p.client || "",
+          reach: 1,
+          clicks: 0,
+          inquiries: 1,
+          meetings: 1,
+          wins: 1,
+          revenue: Number(p.revenue) || 0,
+          source: "dashboard",
+          funnelSeedId: p.funnelSeedId || "",
+        }));
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function mergedCampaigns() {
+      const dash = dashboardDealCampaigns();
+      const seedIds = new Set(dash.map((c) => c.funnelSeedId).filter(Boolean));
+      const dashKeys = new Set(dash.map((c) => [c.productId, c.date, c.title].join("|")));
+      const fromFile = (DATA.campaigns || []).filter((c) => {
+        if (c.kind === "deal" || (c.wins > 0 && c.kind !== "outreach")) {
+          if (c.funnelSeedId && seedIds.has(c.funnelSeedId)) return false;
+          if (dashKeys.has([c.productId, c.date, c.title].join("|"))) return false;
+        }
+        return true;
+      });
+      return fromFile.concat(dash);
+    }
+
     function campaignsOf(productId, channelId) {
-      return DATA.campaigns.filter((c) => {
+      return mergedCampaigns().filter((c) => {
         if (c.productId !== productId) return false;
         if (channelId && c.channelId !== channelId) return false;
         return true;
@@ -584,6 +640,7 @@
             const inqR = pct(c.inquiries, c.reach);
             return `<tr>
               <td>${c.date}</td>
+              <td>${c.source === "dashboard" ? "案件" : "営業"}</td>
               <td>${ch ? ch.name : c.channelId}</td>
               <td>${c.title}</td>
               <td>${fmt(c.reach)}</td>
@@ -594,7 +651,7 @@
               <td>${fmtYen(c.revenue)}</td>
             </tr>`;
           }).join("")
-        : `<tr><td colspan="9" style="text-align:center;color:var(--muted)">まだキャンペーンなし</td></tr>`;
+        : `<tr><td colspan="10" style="text-align:center;color:var(--muted)">まだキャンペーンなし</td></tr>`;
 
       const experiments = DATA.experiments.filter((e) => e.productId === product.id);
       const expHtml = experiments.length
@@ -667,6 +724,7 @@
               <thead>
                 <tr>
                   <th>日付</th>
+                  <th>出典</th>
                   <th>チャネル</th>
                   <th>内容</th>
                   <th>接触</th>
@@ -675,6 +733,7 @@
                   <th>商談</th>
                   <th>成約</th>
                   <th>受注金額</th>
+                </tr>
               </thead>
               <tbody>${tableRows}</tbody>
             </table>

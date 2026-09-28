@@ -127,6 +127,7 @@ window.FUNNEL_DATA = {
       revenue: 0,
       extra: { hpClicks: 0, lpUrl: "https://lp.btobservice.com/bc81a18c6f50c43ad026a3113ee55607/" },
       notes: "リンク先は予定どおりLP。問い合わせは2026-09-28時点で0。",
+      kind: "outreach",
     },
     {
       id: "2026-10-04-referral-video-shoot-brass",
@@ -142,7 +143,9 @@ window.FUNNEL_DATA = {
       wins: 1,
       revenue: 20909,
       extra: { taxIncluded: 23000 },
-      notes: "知り合いからの依頼。報酬は税込¥23,000（税抜¥20,909）。",
+      notes: "知り合いからの依頼。報酬は税込¥23,000（税抜¥20,909）。ダッシュボード案件と二重にしない。",
+      kind: "deal",
+      funnelSeedId: "2026-10-04-referral-video-shoot-brass",
     },
   ],
 
