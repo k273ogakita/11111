@@ -2729,7 +2729,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v158</div>
+        <div class="logo-sub">Business Dashboard · v159</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -4763,52 +4763,23 @@ ${MAIL_FOOTER}`,
       return AFTER_FOLLOW_CONTACTS.some(c => c.key === step);
     }
 
-    function seedFunnelLinkedProjects(data) {
+    function removeAgentSeededShootProject(data) {
       const seedId = '2026-10-04-referral-video-shoot-brass';
+      const agentMemo = '知り合いからの依頼。報酬は税込¥23,000（税抜¥20,909）。';
       if (!Array.isArray(data.projects)) return;
-      if (data.projects.some(p => p.funnelSeedId === seedId)) return;
-      const existing = data.projects.find(p => (p.name || '').includes('吹奏楽演奏会'));
-      if (existing) {
-        existing.funnelSeedId = seedId;
-        if (!existing.funnelProduct) existing.funnelProduct = 'video-shoot';
-        if (!existing.funnelChannel) existing.funnelChannel = 'referral';
-        if (!existing.revenue) existing.revenue = 20909;
-        seedFunnelDirty = true;
-        return;
-      }
-      const p = {
-        id: uid(),
-        funnelSeedId: seedId,
-        category: 'client',
-        name: '中学校の吹奏楽演奏会の撮影',
-        client: '',
-        type: 'record-video',
-        status: 'todo',
-        phase: '',
-        created: '2026-10-04',
-        draftDueDate: '',
-        finalDueDate: '2026-10-04',
-        draftDueDone: false,
-        finalDueDone: false,
-        deadlineDate: '',
-        deadlinePlan: '',
-        memo: '知り合いからの依頼。報酬は税込¥23,000（税抜¥20,909）。',
-        revenue: 20909,
-        targetHours: 0,
-        invoiceDate: '',
-        variableCosts: [],
-        timeLogs: [],
-        funnelProduct: 'video-shoot',
-        funnelChannel: 'referral',
-        contractRoute: 'directPlain',
-        followUpTiming: 'none',
-        afterFollow: false,
-        editorOutsource: false,
-        workflowKey: 'auto',
-      };
-      ensureProjectFinance(p);
-      data.projects.push(p);
-      seedFunnelDirty = true;
+      const kept = [];
+      data.projects.forEach((p) => {
+        if (p.funnelSeedId === seedId && (p.memo || '') === agentMemo) {
+          seedFunnelDirty = true;
+          return;
+        }
+        if (p.funnelSeedId === seedId) {
+          delete p.funnelSeedId;
+          seedFunnelDirty = true;
+        }
+        kept.push(p);
+      });
+      data.projects = kept;
     }
 
     function migrateState(data) {
@@ -4860,7 +4831,7 @@ ${MAIL_FOOTER}`,
           data.projects.push({ id: uid(), category: 'sns', type: 'sns', ...s, revenue: 0, targetHours: 0, invoiceDate: '', variableCosts: [], timeLogs: [] });
         }
       });
-      seedFunnelLinkedProjects(data);
+      removeAgentSeededShootProject(data);
       return data;
     }
 
