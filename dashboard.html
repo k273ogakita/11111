@@ -1683,7 +1683,8 @@
       accent-color: var(--red);
     }
     .milestone-item span {
-      font-size: .78rem;
+      font-size: .85rem;
+      font-weight: 600;
       line-height: 1.45;
       color: var(--text);
     }
@@ -2712,7 +2713,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v151</div>
+        <div class="logo-sub">Business Dashboard · v152</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -3728,34 +3729,25 @@ nark.visual.media@gmail.com
         {
           id: '2026-10',
           label: '10月',
-          subtitle: "W's Linkとしての営業開始",
+          subtitle: '',
           items: [
-            { id: 'm10-ws1', text: "W's Link向け 患者説明動画LPを使える状態にする（法人版）" },
-            { id: 'm10-ws2', text: "W's Link向け フォーム文面・サービス紹介資料を整える" },
-            { id: 'm10-ws3', text: '外注へ連携：フォーム営業文面・リスト、Google広告素材を渡す' },
-            { id: 'm10-ws4', text: "W's Linkとして営業を開始する（キックオフ）" },
+            { id: 'm10', text: "W's Linkとしての営業開始" },
           ],
         },
         {
           id: '2026-11',
           label: '11月',
-          subtitle: 'nARKとしての改善策で営業開始',
+          subtitle: '',
           items: [
-            { id: 'm11-nk1', text: '反応・外注レポートを見て、nARK側の改善点を決める' },
-            { id: 'm11-nk2', text: 'LP・文面・サービス紹介資料を改善して反映する' },
-            { id: 'm11-nk3', text: '個別面談の型をブラッシュアップ（トーク・順番・クロージング）' },
-            { id: 'm11-nk4', text: 'nARKとしての改善策で営業を開始する' },
+            { id: 'm11', text: 'nARKとしての改善策で営業開始' },
           ],
         },
         {
           id: '2026-12',
           label: '12月',
-          subtitle: '終活動画のサービスリリース材料の大まかな完成',
+          subtitle: '',
           items: [
-            { id: 'm12-el1', text: '終活動画のコンセプト＋提供ルートを決める' },
-            { id: 'm12-el2', text: '終活動画のサンプルを見せられる状態にする' },
-            { id: 'm12-el3', text: '料金・パッケージ・納品フローのたたき台を作る' },
-            { id: 'm12-el4', text: '終活動画サービス紹介資料のドラフトを仕上げる（大まかな完成）' },
+            { id: 'm12', text: '終活動画のサービスリリース材料の大まかな完成' },
           ],
         },
       ],
@@ -6988,7 +6980,7 @@ ${MAIL_FOOTER}`,
         <div class="milestone-header collapsible-header" onclick="toggleMilestones()" title="クリックで開閉">
           <div>
             <div class="milestone-heading">3ヶ月マイルストーン<span class="collapse-chevron">${milestonesExpanded ? '▾' : '▸'}</span></div>
-            <div class="milestone-period">${MILESTONE_PLAN.period} · W's Link営業 → nARK改善営業 → 終活動画の材料づくり</div>
+            <div class="milestone-period">${MILESTONE_PLAN.period} · 詳細の到達は「1週間の目標」へ落とし込む</div>
             ${milestonesExpanded ? '' : `<div class="collapse-summary">${esc(summary)}</div>`}
           </div>
           <div class="milestone-overall">
@@ -7002,17 +6994,14 @@ ${MAIL_FOOTER}`,
             ${MILESTONE_PLAN.months.map(month => {
               const monthDone = month.items.filter(i => isMilestoneDone(i.id)).length;
               const monthTotal = month.items.length;
-              const monthPct = monthTotal ? Math.round((monthDone / monthTotal) * 100) : 0;
               const isCurrent = month.id === currentMonthId;
               const monthAllDone = monthDone === monthTotal && monthTotal > 0;
               return `
                 <div class="milestone-month${isCurrent ? ' current' : ''}${monthAllDone ? ' done-all' : ''}">
                   <div class="milestone-month-head">
                     <span class="milestone-month-label">${month.label}${isCurrent ? '（今月）' : ''}</span>
-                    <span class="milestone-month-sub">${esc(month.subtitle)}</span>
                     <span class="milestone-month-count">${monthDone}/${monthTotal}</span>
                   </div>
-                  <div class="milestone-month-bar"><div style="width:${monthPct}%"></div></div>
                   <div class="milestone-list">
                     ${month.items.map(item => {
                       const done = isMilestoneDone(item.id);
