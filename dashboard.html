@@ -2729,7 +2729,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v159</div>
+        <div class="logo-sub">Business Dashboard · v160</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -3056,17 +3056,29 @@
       </div>
       <div class="form-group" id="deadlineGroup">
         <label>期日</label>
+        <div class="form-group" id="shootModeGroup" style="display:none;margin-bottom:10px">
+          <label>撮影のパターン</label>
+          <select id="projectShootMode" onchange="onShootModeChange()">
+            <option value="handover">データ渡しのみ（撮影日だけ）</option>
+            <option value="edit">カット・色調補正あり（初稿・納品日も）</option>
+          </select>
+          <div class="form-hint">そのまま素材を渡して終わる案件は「データ渡しのみ」。編集が入る案件は「カット・色調補正あり」</div>
+        </div>
         <div class="deadline-fields-stack">
-          <div class="deadline-row">
+          <div class="deadline-row" id="shootDateRow" style="display:none">
+            <span class="deadline-row-label">撮影日</span>
+            <input type="date" id="projectShootDate">
+          </div>
+          <div class="deadline-row" id="draftDueRow">
             <span class="deadline-row-label">初稿提出</span>
             <input type="date" id="projectDraftDueDate">
           </div>
-          <div class="deadline-row">
+          <div class="deadline-row" id="finalDueRow">
             <span class="deadline-row-label">最終納品</span>
             <input type="date" id="projectFinalDueDate">
           </div>
         </div>
-        <div class="form-hint">カード・カレンダー・今日のタスクに表示されます</div>
+        <div class="form-hint" id="deadlineHint">カード・カレンダー・今日のタスクに表示されます</div>
       </div>
       <div class="form-group">
         <label>メモ</label>
@@ -4808,6 +4820,15 @@ ${MAIL_FOOTER}`,
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
         if (p.draftDueDate === undefined) p.draftDueDate = '';
         if (p.finalDueDate === undefined) p.finalDueDate = '';
+        if (p.shootDate === undefined) p.shootDate = '';
+        if (p.shootMode === undefined) {
+          // 撮影案件: 初稿/納品があれば編集あり、なければデータ渡し
+          if (p.type === 'shoot') {
+            p.shootMode = (p.draftDueDate || p.finalDueDate) ? 'edit' : 'handover';
+          } else {
+            p.shootMode = '';
+          }
+        }
         if (p.draftDueDone === undefined) p.draftDueDone = false;
         if (p.finalDueDone === undefined) p.finalDueDone = false;
         // 旧・単一期日 → 初稿提出／最終納品へ移行
@@ -6188,10 +6209,14 @@ ${MAIL_FOOTER}`,
       const projectDeadlines = [];
       state.projects.forEach(p => {
         if (p.status !== 'doing' && p.status !== 'todo') return;
-        if (p.draftDueDate && p.draftDueDate <= today && !p.draftDueDone) {
+        if (p.type === 'shoot' && p.shootDate === today) {
+          projectDeadlines.push({ project: p, label: '撮影', date: p.shootDate });
+        }
+        const showEditDeadlines = p.type !== 'shoot' || (p.shootMode || 'handover') === 'edit';
+        if (showEditDeadlines && p.draftDueDate && p.draftDueDate <= today && !p.draftDueDone) {
           projectDeadlines.push({ project: p, label: '初稿提出', date: p.draftDueDate });
         }
-        if (p.finalDueDate && p.finalDueDate <= today && !p.finalDueDone) {
+        if (showEditDeadlines && p.finalDueDate && p.finalDueDate <= today && !p.finalDueDone) {
           projectDeadlines.push({ project: p, label: '最終納品', date: p.finalDueDate });
         }
       });
@@ -7216,6 +7241,17 @@ ${MAIL_FOOTER}`,
 
     function getProjectDeadlineLines(p) {
       const lines = [];
+      if (p.type === 'shoot' && p.shootDate) {
+        lines.push({
+          kind: 'shoot',
+          date: p.shootDate,
+          done: false,
+          text: `${formatDateMd(p.shootDate)} 撮影`,
+        });
+      }
+      if (p.type === 'shoot' && (p.shootMode || 'handover') === 'handover') {
+        return lines;
+      }
       if (p.draftDueDate) {
         const done = !!p.draftDueDone;
         lines.push({
@@ -7824,10 +7860,14 @@ ${MAIL_FOOTER}`,
       });
       state.projects.forEach(p => {
         if (p.status !== 'doing' && p.status !== 'todo') return;
-        if (p.draftDueDate && p.draftDueDate <= today && !p.draftDueDone) {
+        if (p.type === 'shoot' && p.shootDate === today) {
+          entries.push({ kind: 'projectDeadline', item: p, date: p.shootDate, label: '撮影', deadlineKind: 'shoot' });
+        }
+        const showEditDeadlines = p.type !== 'shoot' || (p.shootMode || 'handover') === 'edit';
+        if (showEditDeadlines && p.draftDueDate && p.draftDueDate <= today && !p.draftDueDone) {
           entries.push({ kind: 'projectDeadline', item: p, date: p.draftDueDate, label: '初稿提出', deadlineKind: 'draft' });
         }
-        if (p.finalDueDate && p.finalDueDate <= today && !p.finalDueDone) {
+        if (showEditDeadlines && p.finalDueDate && p.finalDueDate <= today && !p.finalDueDone) {
           entries.push({ kind: 'projectDeadline', item: p, date: p.finalDueDate, label: '最終納品', deadlineKind: 'final' });
         }
       });
@@ -7997,6 +8037,15 @@ ${MAIL_FOOTER}`,
         }
         if (kind === 'projectDeadline') {
           const overdue = date < todayStr();
+          if (deadlineKind === 'shoot') {
+            return `
+        <div class="task-item task-item-reminder${overdue ? ' overdue' : ''}">
+          <span class="task-category 未完了">${overdue ? '未完了' : '今日'}</span>
+          <span class="task-category 依頼">撮影</span>
+          <span class="task-text">${esc(t.client || t.name)} — 撮影日（${formatDateJa(date)}）</span>
+          <button type="button" class="btn btn-ghost" onclick="editProject('${t.id}')">案件を開く</button>
+        </div>`;
+          }
           return `
         <div class="task-item task-item-reminder${overdue ? ' overdue' : ''}">
           <input type="checkbox" class="task-check" onchange="toggleProjectDeadline('${t.id}','${deadlineKind || 'draft'}')">
@@ -8106,7 +8155,44 @@ ${MAIL_FOOTER}`,
     function onProjectTypeChange() {
       updateWorkflowGroupVisibility();
       updateAdOpsGroupVisibility();
+      updateDeadlineFieldsVisibility();
     }
+
+    function onShootModeChange() {
+      updateDeadlineFieldsVisibility();
+    }
+    window.onShootModeChange = onShootModeChange;
+
+    function updateDeadlineFieldsVisibility() {
+      const type = document.getElementById('projectType')?.value;
+      const status = document.getElementById('projectStatus')?.value;
+      const shootModeGroup = document.getElementById('shootModeGroup');
+      const shootDateRow = document.getElementById('shootDateRow');
+      const draftDueRow = document.getElementById('draftDueRow');
+      const finalDueRow = document.getElementById('finalDueRow');
+      const hint = document.getElementById('deadlineHint');
+      const isShoot = type === 'shoot';
+      const mode = document.getElementById('projectShootMode')?.value || 'handover';
+      const showDeadlines = (status === 'todo' || status === 'doing');
+
+      if (shootModeGroup) shootModeGroup.style.display = (isShoot && showDeadlines) ? '' : 'none';
+      if (shootDateRow) shootDateRow.style.display = (isShoot && showDeadlines) ? '' : 'none';
+
+      const showEditDates = showDeadlines && (!isShoot || mode === 'edit');
+      if (draftDueRow) draftDueRow.style.display = showEditDates ? '' : 'none';
+      if (finalDueRow) finalDueRow.style.display = showEditDates ? '' : 'none';
+
+      if (hint) {
+        if (isShoot && mode === 'handover') {
+          hint.textContent = '撮影日だけ入れます。カレンダーとカードに表示されます';
+        } else if (isShoot && mode === 'edit') {
+          hint.textContent = '撮影日に加え、初稿・納品日もカード・カレンダー・今日のタスクに出ます';
+        } else {
+          hint.textContent = 'カード・カレンダー・今日のタスクに表示されます';
+        }
+      }
+    }
+    window.updateDeadlineFieldsVisibility = updateDeadlineFieldsVisibility;
 
     function updateAdOpsGroupVisibility() {
       const isSns = document.getElementById('projectCategory').value === 'sns';
@@ -8166,6 +8252,7 @@ ${MAIL_FOOTER}`,
       const s = document.getElementById('projectStatus').value;
       document.getElementById('deadlineGroup').style.display =
         (s === 'todo' || s === 'doing') ? '' : 'none';
+      updateDeadlineFieldsVisibility();
       updateProjectProfitPreview();
     }
 
@@ -8302,6 +8389,10 @@ ${MAIL_FOOTER}`,
         }
         document.getElementById('projectWorkflow').value = p.workflowKey || 'auto';
         document.getElementById('projectStatus').value = p.status;
+        document.getElementById('projectShootMode').value = p.type === 'shoot'
+          ? (p.shootMode || ((p.draftDueDate || p.finalDueDate) ? 'edit' : 'handover'))
+          : 'handover';
+        document.getElementById('projectShootDate').value = p.shootDate || '';
         document.getElementById('projectDraftDueDate').value = p.draftDueDate || '';
         document.getElementById('projectFinalDueDate').value = p.finalDueDate || '';
         document.getElementById('projectMemo').value = p.memo || '';
@@ -8331,6 +8422,8 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectType').value = 'explainer-video';
         document.getElementById('projectWorkflow').value = 'auto';
         document.getElementById('projectStatus').value = 'todo';
+        document.getElementById('projectShootMode').value = 'handover';
+        document.getElementById('projectShootDate').value = '';
         document.getElementById('projectDraftDueDate').value = '';
         document.getElementById('projectFinalDueDate').value = '';
         document.getElementById('projectMemo').value = '';
@@ -8354,6 +8447,7 @@ ${MAIL_FOOTER}`,
       onContractRouteChange();
       updateWorkflowGroupVisibility();
       updateAdOpsGroupVisibility();
+      updateDeadlineFieldsVisibility();
       updateProjectProfitPreview();
       updatePaymentDueHint();
       document.getElementById('projectModal').classList.add('open');
@@ -8389,15 +8483,34 @@ ${MAIL_FOOTER}`,
       if (!name) { toast('名前を入力してください'); return; }
       const category = document.getElementById('projectCategory').value;
       const status = document.getElementById('projectStatus').value;
-      const draftDueDate = document.getElementById('projectDraftDueDate').value;
-      const finalDueDate = document.getElementById('projectFinalDueDate').value;
+      const typeForSave = category === 'client'
+        ? document.getElementById('projectType').value
+        : '';
+      const shootMode = typeForSave === 'shoot'
+        ? (document.getElementById('projectShootMode').value || 'handover')
+        : '';
+      const shootDate = typeForSave === 'shoot'
+        ? document.getElementById('projectShootDate').value
+        : '';
+      let draftDueDate = document.getElementById('projectDraftDueDate').value;
+      let finalDueDate = document.getElementById('projectFinalDueDate').value;
+      if (typeForSave === 'shoot' && shootMode === 'handover') {
+        draftDueDate = '';
+        finalDueDate = '';
+      }
+      if (!(status === 'todo' || status === 'doing')) {
+        draftDueDate = '';
+        finalDueDate = '';
+      }
       const existing = editingProjectId ? state.projects.find(x => x.id === editingProjectId) : null;
       const data = {
         category,
         name,
         status,
-        draftDueDate: (status === 'todo' || status === 'doing') ? draftDueDate : '',
-        finalDueDate: (status === 'todo' || status === 'doing') ? finalDueDate : '',
+        shootMode: typeForSave === 'shoot' ? shootMode : '',
+        shootDate: typeForSave === 'shoot' ? shootDate : '',
+        draftDueDate,
+        finalDueDate,
         draftDueDone: existing && existing.draftDueDate === draftDueDate ? !!existing.draftDueDone : false,
         finalDueDone: existing && existing.finalDueDate === finalDueDate ? !!existing.finalDueDone : false,
         deadlineDate: '',
@@ -9700,7 +9813,18 @@ ${MAIL_FOOTER}`,
       const events = {};
       const today = todayStr();
       state.projects.forEach(p => {
-        if (p.draftDueDate && !p.draftDueDone) {
+        if (p.type === 'shoot' && p.shootDate) {
+          if (!events[p.shootDate]) events[p.shootDate] = [];
+          events[p.shootDate].push({
+            label: `${p.name}（撮影）`,
+            category: p.category,
+            client: p.client,
+            status: p.status,
+            deadline: true,
+          });
+        }
+        const showEditDeadlines = p.type !== 'shoot' || (p.shootMode || 'handover') === 'edit';
+        if (showEditDeadlines && p.draftDueDate && !p.draftDueDone) {
           if (!events[p.draftDueDate]) events[p.draftDueDate] = [];
           events[p.draftDueDate].push({
             label: `${p.name}（初稿提出）`,
@@ -9710,7 +9834,7 @@ ${MAIL_FOOTER}`,
             deadline: true,
           });
         }
-        if (p.finalDueDate && !p.finalDueDone) {
+        if (showEditDeadlines && p.finalDueDate && !p.finalDueDone) {
           if (!events[p.finalDueDate]) events[p.finalDueDate] = [];
           events[p.finalDueDate].push({
             label: `${p.name}（最終納品）`,
