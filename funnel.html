@@ -323,7 +323,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">営業ファネル · v3</div>
+        <div class="logo-sub">営業ファネル · v4</div>
       </div>
       <div class="header-links">
         <a class="btn" href="dashboard.html">Dashboard</a>
@@ -410,6 +410,20 @@
       };
     }
 
+    function primaryChannelId(productId) {
+      let bestId = "form";
+      let best = -1;
+      DATA.channels.forEach((ch) => {
+        const ct = totals(productId, ch.id);
+        const score = ct.wins * 10000 + ct.inquiries * 100 + ct.reach;
+        if (ct.list.length && score >= best) {
+          best = score;
+          bestId = ch.id;
+        }
+      });
+      return bestId;
+    }
+
     function bottleneck(r) {
       const order = [
         ["click", "接触 → クリック"],
@@ -462,8 +476,9 @@
         return `<p>${product.blurb}</p><p class="muted">数字が来たら、ここに「どこが弱いか」が出ます。</p>`;
       }
       const bn = bottleneck(r);
+      const chan = primaryChannelId(product.id);
       const lines = [];
-      if (t.clickRate != null) {
+      if (t.clickRate != null && !(chan === "referral" && !t.clicks)) {
         lines.push(`クリック率は <b>${pctLabel(t.clickRate, 1)}</b> で${r.click.grade.label}。`);
       }
       lines.push(`問い合わせは <b>${fmt(t.inquiries)}</b> 件、商談 <b>${fmt(t.meetings)}</b>、成約 <b>${fmt(t.wins)}</b>、受注金額 <b>${fmtYen(t.revenue)}</b>（税抜）。`);
@@ -472,6 +487,8 @@
       }
       if (bn) {
         lines.push(`いまのボトルネックは <b>${bn.label}</b>（${pctLabel(bn.item.value, 2)}）。`);
+      } else if (chan === "referral") {
+        lines.push("入口は知り合い紹介。");
       } else {
         lines.push("大きな穴は見えていません。次の送信で同じ指標を追います。");
       }
@@ -524,8 +541,7 @@
     function renderDetail() {
       const product = DATA.products.find((p) => p.id === currentId);
       const t = totals(product.id);
-      const formT = totals(product.id, "form");
-      const r = rates(formT.list.length ? formT : t, formT.list.length ? "form" : "form");
+      const r = rates(t, primaryChannelId(product.id));
       const max = Math.max(t.reach, 1);
 
       const funnelRows = [
