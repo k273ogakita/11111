@@ -1731,9 +1731,9 @@
       color: var(--muted);
       white-space: nowrap;
     }
-    .wg-grid {
+      .wg-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 0;
       border-top: 1px solid var(--border);
     }
@@ -2712,7 +2712,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v150</div>
+        <div class="logo-sub">Business Dashboard · v151</div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
@@ -4119,7 +4119,7 @@ nark.visual.media@gmail.com
     let bizTodoFilter = 'open';
     let bizTodoShowDone = false;
     let reviewMonthOffset = 0;
-    let weeklyGoalOffset = 0; // 0＝今週・来週・再来週。±1で3週ウィンドウをずらす
+    let weeklyGoalOffset = 0; // 0＝今週から4週分。±1でウィンドウをずらす
     let snsIdeaFilter = 'all';
 
     function defaultState() {
@@ -6528,6 +6528,7 @@ ${MAIL_FOOTER}`,
       if (weekKey === thisKey) suffix = ' · 今週';
       else if (weekKey === weekStartKey(1)) suffix = ' · 来週';
       else if (weekKey === weekStartKey(2)) suffix = ' · 再来週';
+      else if (weekKey === weekStartKey(3)) suffix = ' · 3週後';
       else if (weekKey === weekStartKey(-1)) suffix = ' · 先週';
       return `${a} 〜 ${b}${suffix}`;
     }
@@ -6544,6 +6545,7 @@ ${MAIL_FOOTER}`,
       if (weekKey === thisKey) return '今週';
       if (weekKey === weekStartKey(1)) return '来週';
       if (weekKey === weekStartKey(2)) return '再来週';
+      if (weekKey === weekStartKey(3)) return '3週後';
       if (weekKey === weekStartKey(-1)) return '先週';
       return '';
     }
@@ -6553,6 +6555,7 @@ ${MAIL_FOOTER}`,
         weekStartKey(weeklyGoalOffset),
         weekStartKey(weeklyGoalOffset + 1),
         weekStartKey(weeklyGoalOffset + 2),
+        weekStartKey(weeklyGoalOffset + 3),
       ];
     }
 
@@ -6763,8 +6766,8 @@ ${MAIL_FOOTER}`,
       });
       const progressLabel = total ? `${done}/${total}` : '';
       const windowLabel = weeklyGoalOffset === 0
-        ? '今週・来週・再来週'
-        : weekColumnLabel(keys[0]) + ' 〜 ' + weekColumnLabel(keys[2]);
+        ? '今週から4週間'
+        : weekColumnLabel(keys[0]) + ' 〜 ' + weekColumnLabel(keys[3]);
 
       el.innerHTML = `
         <div class="wg-header">
