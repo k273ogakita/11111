@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>nARK 営業ファネル</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f3ede4;
+      --surface: #faf7f2;
+      --surface-2: #efe9df;
+      --border: #ddd5c8;
+      --text: #3a3530;
+      --muted: #8c8278;
+      --red: #e8956a;
+      --red-dim: #d47a4a;
+      --red-glow: rgba(232, 149, 106, 0.22);
+      --good: #5b8f6a;
+      --good-bg: rgba(91, 143, 106, 0.14);
+      --ok: #c4a15a;
+      --ok-bg: rgba(196, 161, 90, 0.16);
+      --poor: #c56b42;
+      --poor-bg: rgba(197, 107, 66, 0.14);
+      --radius: 10px;
+      --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    }
+
+    html { font-size: 15px; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(58,53,48,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(58,53,48,.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .app { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 28px 24px 64px; }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 28px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+    .logo span { color: var(--red); }
+    .logo-sub { font-size: .75rem; color: var(--muted); margin-top: 6px; letter-spacing: .08em; text-transform: uppercase; }
+    .header-links { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .updated { font-size: .78rem; color: var(--muted); text-align: right; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn:hover { border-color: #c9bfb0; }
+    .btn-primary { background: var(--red); border-color: var(--red); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; }
+
+    .section { margin-bottom: 32px; }
+    .section-title {
+      font-size: .85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .section-title::before {
+      content: "";
+      display: inline-block;
+      width: 3px;
+      height: 14px;
+      background: var(--red);
+      margin-right: 10px;
+      vertical-align: middle;
+      border-radius: 2px;
+    }
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--font);
+      color: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .product-card:hover { border-color: var(--red); }
+    .product-card.active {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px var(--red-glow);
+    }
+    .product-card.dim { opacity: .72; }
+    .product-kicker { font-size: .68rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .product-name { font-size: 1.02rem; font-weight: 700; margin: 4px 0 8px; }
+    .product-stats { display: flex; gap: 10px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); }
+    .product-stats b { color: var(--text); font-weight: 700; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .badge-active { background: var(--good-bg); color: var(--good); }
+    .badge-building { background: var(--ok-bg); color: #8a6d2e; }
+    .badge-later { background: var(--surface-2); color: var(--muted); }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 14px;
+    }
+    .kpi-label { font-size: .72rem; color: var(--muted); font-weight: 700; letter-spacing: .06em; }
+    .kpi-value { font-size: 1.7rem; font-weight: 800; letter-spacing: -.03em; margin-top: 4px; line-height: 1.1; }
+    .kpi-sub { font-size: .72rem; color: var(--muted); margin-top: 6px; }
+
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, .9fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .panel h3 { font-size: .95rem; margin-bottom: 14px; }
+
+    .funnel {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .funnel-row {
+      display: grid;
+      grid-template-columns: 92px 1fr 88px 110px;
+      gap: 10px;
+      align-items: center;
+    }
+    .funnel-label { font-size: .78rem; font-weight: 700; color: var(--muted); }
+    .funnel-bar-wrap {
+      height: 28px;
+      background: var(--surface-2);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .funnel-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #e8a57a, var(--red));
+      border-radius: 6px;
+      min-width: 4px;
+      transition: width .4s ease;
+    }
+    .funnel-bar.empty { background: var(--border); min-width: 0; width: 0 !important; }
+    .funnel-num { font-size: .95rem; font-weight: 800; text-align: right; }
+    .funnel-rate { font-size: .72rem; text-align: right; }
+
+    .grade {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 4.2em;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: .68rem;
+      font-weight: 700;
+    }
+    .grade-good { background: var(--good-bg); color: var(--good); }
+    .grade-ok { background: var(--ok-bg); color: #8a6d2e; }
+    .grade-poor { background: var(--poor-bg); color: var(--poor); }
+    .grade-none { background: var(--surface-2); color: var(--muted); }
+
+    .insight {
+      border-left: 3px solid var(--red);
+      padding: 4px 0 4px 14px;
+      font-size: .88rem;
+    }
+    .insight p { overflow-wrap: anywhere; }
+    .insight p + p { margin-top: 8px; }
+    .insight .muted { color: var(--muted); font-size: .8rem; }
+
+    .channel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .channel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+    .channel-card h4 { font-size: .82rem; margin-bottom: 10px; }
+    .channel-line { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); margin-top: 4px; }
+    .channel-line b { color: var(--text); }
+    .chart {
+      width: 100%;
+      height: 180px;
+      display: block;
+    }
+    .chart-legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      font-size: .72rem;
+      color: var(--muted);
+    }
+    .swatch {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      margin-right: 6px;
+      vertical-align: -1px;
+    }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+    th, td { padding: 10px 8px; text-align: right; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    th { color: var(--muted); font-weight: 700; font-size: .7rem; letter-spacing: .04em; }
+    td:first-child, th:first-child,
+    td:nth-child(2), th:nth-child(2),
+    td:nth-child(3), th:nth-child(3) { text-align: left; }
+    tbody tr:last-child td { border-bottom: 0; }
+
+    .exp-list { display: flex; flex-direction: column; gap: 10px; }
+    .exp {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+    .exp-meta { font-size: .72rem; color: var(--muted); margin-bottom: 6px; }
+    .exp b { font-weight: 700; }
+    .bench-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .bench {
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: .78rem;
+    }
+    .bench strong { display: block; margin-bottom: 4px; }
+    .empty {
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 28px 18px;
+      color: var(--muted);
+      text-align: center;
+      font-size: .88rem;
+    }
+    .note { font-size: .75rem; color: var(--muted); margin-top: 8px; }
+
+    @media (max-width: 1280px) {
+      .split { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 980px) {
+      .bench-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .funnel-row { grid-template-columns: 72px 1fr 64px; }
+      .funnel-rate { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <div class="logo">n<span>ARK</span></div>
+        <div class="logo-sub">営業ファネル · v2</div>
+      </div>
+      <div class="header-links">
+        <a class="btn" href="dashboard.html">Dashboard</a>
+        <a class="btn" href="リファレンス/index.html">リファレンス</a>
+        <div class="updated" id="updated"></div>
+      </div>
+    </header>
+
+    <section class="section">
+      <div class="section-title">サービス</div>
+      <div class="product-grid" id="productGrid"></div>
+    </section>
+
+    <div id="detail"></div>
+  </div>
+
+  <script src="funnel-data.js"></script>
+  <script>
+    const DATA = window.FUNNEL_DATA;
+    let currentId = DATA.products[0].id;
+
+    const fmt = (n) => n == null ? "—" : Number(n).toLocaleString("ja-JP");
+    const pct = (n, d) => {
+      if (n == null || !d) return null;
+      return (n / d) * 100;
+    };
+    const pctLabel = (v, digits) => v == null ? "—" : v.toFixed(digits) + "%";
+
+    function grade(rate, bench) {
+      if (rate == null || !bench) return { key: "none", label: "—" };
+      if (rate >= bench.good) return { key: "good", label: "いい" };
+      if (rate >= bench.ok) return { key: "ok", label: "まずまず" };
+      return { key: "poor", label: "弱い" };
+    }
+    function gradeHtml(g) {
+      return `<span class="grade grade-${g.key}">${g.label}</span>`;
+    }
+
+    function campaignsOf(productId, channelId) {
+      return DATA.campaigns.filter((c) => {
+        if (c.productId !== productId) return false;
+        if (channelId && c.channelId !== channelId) return false;
+        return true;
+      });
+    }
+
+    function sum(list, key) {
+      return list.reduce((s, c) => s + (Number(c[key]) || 0), 0);
+    }
+
+    function clickRateOf(c) {
+      if (c.clickRate != null) return c.clickRate;
+      return pct(c.clicks, c.reach);
+    }
+
+    function totals(productId, channelId) {
+      const list = campaignsOf(productId, channelId);
+      const reach = sum(list, "reach");
+      const clicks = sum(list, "clicks");
+      const inquiries = sum(list, "inquiries");
+      const meetings = sum(list, "meetings");
+      const wins = sum(list, "wins");
+      let clickRate = pct(clicks, reach);
+      if (list.length === 1 && list[0].clickRate != null) clickRate = list[0].clickRate;
+      if (list.length > 1 && list.every((c) => c.clickRate != null) && reach) {
+        const weighted = list.reduce((s, c) => s + (c.clickRate * c.reach), 0);
+        clickRate = weighted / reach;
+      }
+      return { list, reach, clicks, inquiries, meetings, wins, clickRate };
+    }
+
+    function rates(t, channelId) {
+      const b = DATA.benchmarks[channelId] || DATA.benchmarks.form;
+      const inquiryFromReach = pct(t.inquiries, t.reach);
+      const inquiryFromClick = t.clicks ? pct(t.inquiries, t.clicks) : null;
+      const meetingFromInquiry = pct(t.meetings, t.inquiries);
+      const winFromMeeting = pct(t.wins, t.meetings);
+      return {
+        click: { value: t.clickRate, grade: grade(t.clickRate, b.click), bench: b.click },
+        inquiryFromReach: { value: inquiryFromReach, grade: grade(inquiryFromReach, b.inquiryFromReach), bench: b.inquiryFromReach },
+        inquiryFromClick: { value: inquiryFromClick, grade: grade(inquiryFromClick, b.inquiryFromClick), bench: b.inquiryFromClick },
+        meetingFromInquiry: { value: meetingFromInquiry, grade: grade(meetingFromInquiry, b.meetingFromInquiry), bench: b.meetingFromInquiry },
+        winFromMeeting: { value: winFromMeeting, grade: grade(winFromMeeting, b.winFromMeeting), bench: b.winFromMeeting },
+      };
+    }
+
+    function bottleneck(r) {
+      const order = [
+        ["click", "接触 → クリック"],
+        ["inquiryFromClick", "クリック → 問い合わせ"],
+        ["inquiryFromReach", "接触 → 問い合わせ"],
+        ["meetingFromInquiry", "問い合わせ → 商談"],
+        ["winFromMeeting", "商談 → 成約"],
+      ];
+      for (const [key, label] of order) {
+        const item = r[key];
+        if (item && item.grade.key === "poor") return { key, label, item };
+      }
+      return null;
+    }
+
+    function renderProducts() {
+      const el = document.getElementById("productGrid");
+      el.innerHTML = DATA.products.map((p) => {
+        const t = totals(p.id);
+        const active = p.id === currentId ? "active" : "";
+        const dim = p.status !== "active" ? "dim" : "";
+        return `<button class="product-card ${active} ${dim}" onclick="selectProduct('${p.id}')">
+          <div class="product-kicker">${p.brand}</div>
+          <div class="product-name">${p.name}</div>
+          <span class="badge badge-${p.status}">${p.statusLabel}</span>
+          <div class="product-stats" style="margin-top:10px">
+            <span>接触 <b>${fmt(t.reach)}</b></span>
+            <span>問合 <b>${fmt(t.inquiries)}</b></span>
+            <span>成約 <b>${fmt(t.wins)}</b></span>
+          </div>
+        </button>`;
+      }).join("");
+    }
+
+    function funnelWidth(value, max) {
+      if (!max) return 0;
+      return Math.max(6, Math.round((value / max) * 100));
+    }
+
+    function insightText(product, t, r) {
+      if (!t.list.length) {
+        return `<p>${product.blurb}</p><p class="muted">数字が来たら、ここに「どこが弱いか」が出ます。</p>`;
+      }
+      const bn = bottleneck(r);
+      const lines = [];
+      if (t.clickRate != null) {
+        lines.push(`クリック率は <b>${pctLabel(t.clickRate, 1)}</b> で${r.click.grade.label}。`);
+      }
+      lines.push(`問い合わせは <b>${fmt(t.inquiries)}</b> 件、商談 <b>${fmt(t.meetings)}</b>、成約 <b>${fmt(t.wins)}</b>。`);
+      if (bn) {
+        lines.push(`いまのボトルネックは <b>${bn.label}</b>（${pctLabel(bn.item.value, 2)}）。`);
+      } else {
+        lines.push("大きな穴は見えていません。次の送信で同じ指標を追います。");
+      }
+      return `<p>${lines.join(" ")}</p><p class="muted">${product.blurb}</p>`;
+    }
+
+    function barChart(t) {
+      const rows = [
+        { label: "接触", v: t.reach, color: "#c9bfb0" },
+        { label: "クリック", v: t.clicks, color: "#e8a57a" },
+        { label: "問い合わせ", v: t.inquiries, color: "#e8956a" },
+        { label: "商談", v: t.meetings, color: "#d47a4a" },
+        { label: "成約", v: t.wins, color: "#b85c32" },
+      ];
+      const max = Math.max(...rows.map((x) => x.v), 1);
+      const w = 520, h = 180, pad = 28, gap = 12;
+      const barW = (w - pad * 2 - gap * (rows.length - 1)) / rows.length;
+      const bars = rows.map((x, i) => {
+        const bh = Math.max(x.v ? 4 : 0, (x.v / max) * (h - 56));
+        const x0 = pad + i * (barW + gap);
+        const y0 = h - 28 - bh;
+        return `<rect x="${x0}" y="${y0}" width="${barW}" height="${bh}" rx="5" fill="${x.color}"></rect>
+          <text x="${x0 + barW / 2}" y="${y0 - 6}" text-anchor="middle" font-size="11" font-weight="700" fill="#3a3530">${fmt(x.v)}</text>
+          <text x="${x0 + barW / 2}" y="${h - 10}" text-anchor="middle" font-size="10" fill="#8c8278">${x.label}</text>`;
+      }).join("");
+      return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="ファネル件数">${bars}</svg>`;
+    }
+
+    function channelChart(productId) {
+      const w = 520, h = 180, pad = 108;
+      const chans = DATA.channels;
+      const max = Math.max(...chans.map((ch) => totals(productId, ch.id).reach), 1);
+      const barH = 22;
+      const gap = 12;
+      const startY = 18;
+      const inner = w - pad - 16;
+      return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="チャネル別接触数">${
+        chans.map((ch, i) => {
+          const t = totals(productId, ch.id);
+          const bw = t.reach ? Math.max(4, (t.reach / max) * inner) : 0;
+          const y = startY + i * (barH + gap);
+          return `<text x="0" y="${y + 15}" font-size="11" fill="#8c8278">${ch.name}</text>
+            <rect x="${pad}" y="${y}" width="${inner}" height="${barH}" rx="5" fill="#efe9df"></rect>
+            <rect x="${pad}" y="${y}" width="${bw}" height="${barH}" rx="5" fill="#e8956a"></rect>
+            <text x="${pad + 8}" y="${y + 15}" font-size="11" font-weight="700" fill="#3a3530">${fmt(t.reach)}</text>`;
+        }).join("")
+      }</svg>`;
+    }
+
+    function renderDetail() {
+      const product = DATA.products.find((p) => p.id === currentId);
+      const t = totals(product.id);
+      const formT = totals(product.id, "form");
+      const r = rates(formT.list.length ? formT : t, formT.list.length ? "form" : "form");
+      const max = Math.max(t.reach, 1);
+
+      const funnelRows = [
+        { key: "reach", label: "接触", value: t.reach, rate: null, grade: { key: "none", label: "母数" } },
+        { key: "clicks", label: "クリック", value: t.clicks, rate: t.clickRate, grade: r.click.grade },
+        { key: "inquiries", label: "問い合わせ", value: t.inquiries, rate: r.inquiryFromReach.value, grade: r.inquiryFromReach.grade },
+        { key: "meetings", label: "商談", value: t.meetings, rate: r.meetingFromInquiry.value, grade: r.meetingFromInquiry.grade },
+        { key: "wins", label: "成約", value: t.wins, rate: r.winFromMeeting.value, grade: r.winFromMeeting.grade },
+      ];
+
+      const funnelHtml = funnelRows.map((row) => {
+        const w = funnelWidth(row.value, max);
+        const barClass = row.value ? "" : "empty";
+        const rateText = row.key === "reach" ? "100%" : pctLabel(row.rate, row.rate != null && row.rate < 1 ? 2 : 1);
+        return `<div class="funnel-row">
+          <div class="funnel-label">${row.label}</div>
+          <div class="funnel-bar-wrap"><div class="funnel-bar ${barClass}" style="width:${w}%"></div></div>
+          <div class="funnel-num">${fmt(row.value)}</div>
+          <div class="funnel-rate">${rateText} ${gradeHtml(row.grade)}</div>
+        </div>`;
+      }).join("");
+
+      const channelCards = DATA.channels.map((ch) => {
+        const ct = totals(product.id, ch.id);
+        const cr = rates(ct, ch.id);
+        return `<div class="channel-card">
+          <h4>${ch.name}</h4>
+          <div class="channel-line">${ch.unit} <b>${fmt(ct.reach)}</b></div>
+          <div class="channel-line">問い合わせ <b>${fmt(ct.inquiries)}</b> ${ct.reach ? gradeHtml(cr.inquiryFromReach.grade) : ""}</div>
+          <div class="channel-line">商談 <b>${fmt(ct.meetings)}</b></div>
+          <div class="channel-line">成約 <b>${fmt(ct.wins)}</b></div>
+        </div>`;
+      }).join("");
+
+      const tableRows = t.list.length
+        ? t.list.map((c) => {
+            const ch = DATA.channels.find((x) => x.id === c.channelId);
+            const cr = clickRateOf(c);
+            const inqR = pct(c.inquiries, c.reach);
+            return `<tr>
+              <td>${c.date}</td>
+              <td>${ch ? ch.name : c.channelId}</td>
+              <td>${c.title}</td>
+              <td>${fmt(c.reach)}</td>
+              <td>${fmt(c.clicks)} <span class="muted">(${pctLabel(cr, 1)})</span></td>
+              <td>${fmt(c.inquiries)}</td>
+              <td>${fmt(c.meetings)}</td>
+              <td>${fmt(c.wins)}</td>
+            </tr>`;
+          }).join("")
+        : `<tr><td colspan="8" style="text-align:center;color:var(--muted)">まだキャンペーンなし</td></tr>`;
+
+      const experiments = DATA.experiments.filter((e) => e.productId === product.id);
+      const expHtml = experiments.length
+        ? experiments.slice().reverse().map((e) => {
+            const ch = DATA.channels.find((x) => x.id === e.channelId);
+            return `<div class="exp">
+              <div class="exp-meta">${e.date} · ${ch ? ch.name : ""}</div>
+              <div><b>やったこと</b>　${e.change}</div>
+              <div><b>結果</b>　${e.result}</div>
+              <div><b>見立て</b>　${e.verdict}</div>
+            </div>`;
+          }).join("")
+        : `<div class="empty">改善の記録はまだありません。</div>`;
+
+      const b = DATA.benchmarks.form;
+      const empty = !t.list.length
+        ? `<div class="empty" style="margin-bottom:16px">${product.statusLabel}。${product.blurb}</div>`
+        : "";
+
+      document.getElementById("detail").innerHTML = `
+        ${empty}
+        <section class="section">
+          <div class="section-title">${product.brand} · ${product.name} のいま</div>
+          <div class="kpi-row">
+            <div class="kpi"><div class="kpi-label">接触</div><div class="kpi-value">${fmt(t.reach)}</div><div class="kpi-sub">送信・表示・声かけ</div></div>
+            <div class="kpi"><div class="kpi-label">クリック</div><div class="kpi-value">${fmt(t.clicks)}</div><div class="kpi-sub">${pctLabel(t.clickRate, 1)} ${gradeHtml(r.click.grade)}</div></div>
+            <div class="kpi"><div class="kpi-label">問い合わせ</div><div class="kpi-value">${fmt(t.inquiries)}</div><div class="kpi-sub">${pctLabel(r.inquiryFromReach.value, 2)} ${gradeHtml(r.inquiryFromReach.grade)}</div></div>
+            <div class="kpi"><div class="kpi-label">商談</div><div class="kpi-value">${fmt(t.meetings)}</div><div class="kpi-sub">${pctLabel(r.meetingFromInquiry.value, 0)} ${gradeHtml(r.meetingFromInquiry.grade)}</div></div>
+            <div class="kpi"><div class="kpi-label">成約</div><div class="kpi-value">${fmt(t.wins)}</div><div class="kpi-sub">${pctLabel(r.winFromMeeting.value, 0)} ${gradeHtml(r.winFromMeeting.grade)}</div></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="split">
+            <div class="panel">
+              <h3>ファネル</h3>
+              <div class="funnel">${funnelHtml}</div>
+              <p class="note">右の判定は、仮のものさしです。件数が溜まったら直します。</p>
+            </div>
+            <div class="panel">
+              <h3>いまの見立て</h3>
+              <div class="insight">${insightText(product, t, r)}</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="split">
+            <div class="panel">
+              <h3>件数の形</h3>
+              ${barChart(t)}
+            </div>
+            <div class="panel">
+              <h3>チャネル別の接触</h3>
+              ${channelChart(product.id)}
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-title">チャネル</div>
+          <div class="channel-grid">${channelCards}</div>
+        </section>
+
+        <section class="section">
+          <div class="section-title">キャンペーン</div>
+          <div class="panel table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>日付</th>
+                  <th>チャネル</th>
+                  <th>内容</th>
+                  <th>接触</th>
+                  <th>クリック</th>
+                  <th>問い合わせ</th>
+                  <th>商談</th>
+                  <th>成約</th>
+                </tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-title">改善の履歴</div>
+          <div class="exp-list">${expHtml}</div>
+        </section>
+
+        <section class="section">
+          <div class="section-title">ものさし（フォーム営業・仮）</div>
+          <div class="bench-grid">
+            <div class="bench"><strong>クリック率</strong>弱い &lt; ${b.click.ok}%　／　まずまず ${b.click.ok}%〜　／　いい ${b.click.good}%〜<br>${b.click.hint}</div>
+            <div class="bench"><strong>問い合わせ率（接触比）</strong>弱い &lt; ${b.inquiryFromReach.ok}%　／　いい ${b.inquiryFromReach.good}%〜<br>${b.inquiryFromReach.hint}</div>
+            <div class="bench"><strong>問い合わせ率（クリック比）</strong>弱い &lt; ${b.inquiryFromClick.ok}%　／　いい ${b.inquiryFromClick.good}%〜<br>${b.inquiryFromClick.hint}</div>
+            <div class="bench"><strong>商談化・成約</strong>商談化は ${b.meetingFromInquiry.ok}%〜、成約は ${b.winFromMeeting.ok}%〜をまずまずとする</div>
+          </div>
+          <p class="note">この線は業界の正解ではなく、自分たちの改善用です。実績が溜まったら数字を上げ下げします。</p>
+        </section>
+      `;
+    }
+
+    function selectProduct(id) {
+      currentId = id;
+      location.hash = id;
+      renderProducts();
+      renderDetail();
+    }
+
+    document.getElementById("updated").textContent = "更新 " + DATA.updated;
+    const fromHash = location.hash.replace("#", "");
+    if (DATA.products.some((p) => p.id === fromHash)) currentId = fromHash;
+    renderProducts();
+    renderDetail();
+  </script>
+</body>
+</html>

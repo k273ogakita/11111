@@ -761,6 +761,8 @@
     }
 
     /* ── Buttons & Inputs ── */
+    a.btn { text-decoration: none; }
+    .header-page-links { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .btn {
       display: inline-flex;
       align-items: center;
@@ -2725,7 +2727,10 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v153</div>
+        <div class="logo-sub">Business Dashboard · v154</div>
+        <div class="header-page-links">
+          <a class="btn" href="funnel.html">営業ファネル</a>
+        </div>
       </div>
       <div class="header-right">
         <button class="btn btn-ghost btn-logout" onclick="logoutDashboard()">ログアウト</button>
