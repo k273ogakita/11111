@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'dashboard.html'
+      - 'funnel.html'
+      - 'funnel-data.js'
       - 'vision-*.jpg'
       - '.nojekyll'
       - '.github/workflows/deploy-pages.yml'
@@ -26,12 +28,14 @@ jobs:
       url: ${{ steps.deployment_retry.outputs.page_url || steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      # リポジトリ全体（SNSメディア等）は上げず、ダッシュボードだけ公開する
+      # リポジトリ全体（SNSメディア等）は上げず、ダッシュボードと営業ファネルだけ公開する
       - name: Prepare Pages bundle
         run: |
           mkdir -p _site
           cp dashboard.html _site/dashboard.html
           cp dashboard.html _site/index.html
+          cp funnel.html _site/funnel.html
+          cp funnel-data.js _site/funnel-data.js
           cp vision-*.jpg _site/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
