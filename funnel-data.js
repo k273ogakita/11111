@@ -125,6 +125,7 @@ window.FUNNEL_DATA = {
       meetings: 0,
       wins: 0,
       revenue: 0,
+      cost: 0,
       extra: { hpClicks: 0, lpUrl: "https://lp.btobservice.com/bc81a18c6f50c43ad026a3113ee55607/" },
       notes: "リンク先は予定どおりLP。問い合わせは2026-09-28時点で0。",
       kind: "outreach",

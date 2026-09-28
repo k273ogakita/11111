@@ -334,7 +334,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">営業ファネル · v5</div>
+        <div class="logo-sub">営業ファネル · v6</div>
       </div>
       <div class="header-links">
         <a class="btn" href="dashboard.html">Dashboard</a>
@@ -343,7 +343,7 @@
       </div>
     </header>
 
-    <p class="sync-note">成約と金額は、<b>同じアドレスのダッシュボード</b>に入れた案件から読みます。フォーム送信のような営業の塊は、このファネル側の記録です。</p>
+    <p class="sync-note">成約と金額は、<b>同じアドレスのダッシュボード</b>の案件から読みます。かけた費用は、ファネル側の営業記録と、ダッシュボードの広告費（サービスを選んだ分）です。フォーム営業は費用0です。</p>
 
     <section class="section" id="productGrid"></section>
 
@@ -394,6 +394,7 @@
           meetings: 1,
           wins: 1,
           revenue: Number(p.revenue) || 0,
+          cost: 0,
           source: "dashboard",
           funnelSeedId: p.funnelSeedId || "",
         }));
@@ -402,8 +403,47 @@
       }
     }
 
+    function dashboardAdCampaigns() {
+      try {
+        const raw = localStorage.getItem(DASH_STORAGE_KEY);
+        if (!raw) return [];
+        const data = JSON.parse(raw);
+        const ads = (data && data.adExpenses) || [];
+        return ads.filter((a) => a.funnelProduct).map((a) => ({
+          id: "ad-" + a.id,
+          date: a.month ? a.month + "-01" : "",
+          productId: a.funnelProduct,
+          channelId: "ads",
+          title: (a.platform || "広告") + (a.month ? " " + a.month : ""),
+          reach: 0,
+          clicks: 0,
+          inquiries: 0,
+          meetings: 0,
+          wins: 0,
+          revenue: 0,
+          cost: Number(a.amount) || 0,
+          source: "ads",
+        }));
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function unassignedAdCost() {
+      try {
+        const raw = localStorage.getItem(DASH_STORAGE_KEY);
+        if (!raw) return 0;
+        const data = JSON.parse(raw);
+        const ads = (data && data.adExpenses) || [];
+        return ads.filter((a) => !a.funnelProduct).reduce((s, a) => s + (Number(a.amount) || 0), 0);
+      } catch (_) {
+        return 0;
+      }
+    }
+
     function mergedCampaigns() {
       const dash = dashboardDealCampaigns();
+      const ads = dashboardAdCampaigns();
       const seedIds = new Set(dash.map((c) => c.funnelSeedId).filter(Boolean));
       const dashKeys = new Set(dash.map((c) => [c.productId, c.date, c.title].join("|")));
       const fromFile = (DATA.campaigns || []).filter((c) => {
@@ -413,7 +453,7 @@
         }
         return true;
       });
-      return fromFile.concat(dash);
+      return fromFile.concat(dash, ads);
     }
 
     function campaignsOf(productId, channelId) {
@@ -441,14 +481,19 @@
       const meetings = sum(list, "meetings");
       const wins = sum(list, "wins");
       const revenue = sum(list, "revenue");
+      const cost = sum(list, "cost");
+      const profit = revenue - cost;
       const avgOrder = wins ? revenue / wins : null;
-      let clickRate = pct(clicks, reach);
-      if (list.length === 1 && list[0].clickRate != null) clickRate = list[0].clickRate;
-      if (list.length > 1 && list.every((c) => c.clickRate != null) && reach) {
-        const weighted = list.reduce((s, c) => s + (c.clickRate * c.reach), 0);
-        clickRate = weighted / reach;
+      const roas = cost > 0 ? revenue / cost : null;
+      const cpa = wins ? cost / wins : null;
+      const clickable = list.filter((c) => (Number(c.reach) || 0) > 0 || c.clickRate != null);
+      let clickRate = pct(sum(clickable, "clicks"), sum(clickable, "reach"));
+      if (clickable.length === 1 && clickable[0].clickRate != null) clickRate = clickable[0].clickRate;
+      if (clickable.length > 1 && clickable.every((c) => c.clickRate != null) && sum(clickable, "reach")) {
+        const weighted = clickable.reduce((s, c) => s + (c.clickRate * c.reach), 0);
+        clickRate = weighted / sum(clickable, "reach");
       }
-      return { list, reach, clicks, inquiries, meetings, wins, revenue, avgOrder, clickRate };
+      return { list, reach, clicks, inquiries, meetings, wins, revenue, cost, profit, avgOrder, clickRate, roas, cpa };
     }
 
     function rates(t, channelId) {
@@ -510,8 +555,8 @@
             <div class="product-name">${p.name}</div>
             <span class="badge badge-${p.status}">${p.statusLabel}</span>
             <div class="product-stats" style="margin-top:10px">
-              <span>成約 <b>${fmt(t.wins)}</b></span>
-              <span>金額 <b>${fmtYen(t.revenue)}</b></span>
+              <span>売上 <b>${fmtYen(t.revenue)}</b></span>
+              <span>費用 <b>${fmtYen(t.cost)}</b></span>
             </div>
           </button>`;
         }).join("");
@@ -527,6 +572,24 @@
       return Math.max(6, Math.round((value / max) * 100));
     }
 
+    function sourceLabel(c) {
+      if (c.source === "dashboard") return "案件";
+      if (c.source === "ads") return "広告費";
+      return "営業";
+    }
+
+    function recoverLabel(t) {
+      if (!t.cost) return t.revenue ? "費用なし" : "—";
+      return t.roas.toFixed(1) + "倍";
+    }
+
+    function moneyGrade(t) {
+      if (!t.cost) return { key: "none", label: "費用なし" };
+      if (t.profit > 0) return { key: "good", label: "黒字" };
+      if (t.profit === 0) return { key: "ok", label: "トントン" };
+      return { key: "poor", label: "赤字" };
+    }
+
     function insightText(product, t, r) {
       if (!t.list.length) {
         return `<p>${product.blurb}</p><p class="muted">数字が来たら、ここに「どこが弱いか」が出ます。</p>`;
@@ -537,9 +600,14 @@
       if (t.clickRate != null && !(chan === "referral" && !t.clicks)) {
         lines.push(`クリック率は <b>${pctLabel(t.clickRate, 1)}</b> で${r.click.grade.label}。`);
       }
-      lines.push(`問い合わせは <b>${fmt(t.inquiries)}</b> 件、商談 <b>${fmt(t.meetings)}</b>、成約 <b>${fmt(t.wins)}</b>、受注金額 <b>${fmtYen(t.revenue)}</b>（税抜）。`);
+      lines.push(`問い合わせは <b>${fmt(t.inquiries)}</b> 件、商談 <b>${fmt(t.meetings)}</b>、成約 <b>${fmt(t.wins)}</b>、売上 <b>${fmtYen(t.revenue)}</b>（税抜）。`);
       if (t.avgOrder != null) {
         lines.push(`成約単価は <b>${fmtYen(Math.round(t.avgOrder))}</b>。`);
+      }
+      if (t.cost > 0) {
+        lines.push(`費用は <b>${fmtYen(t.cost)}</b>、利益は <b>${fmtYen(t.profit)}</b>、回収は <b>${t.roas.toFixed(1)}倍</b>。`);
+      } else {
+        lines.push(`費用は <b>¥0</b>（このサービスはまだお金をかけていない）。`);
       }
       if (bn) {
         lines.push(`いまのボトルネックは <b>${bn.label}</b>（${pctLabel(bn.item.value, 2)}）。`);
@@ -571,6 +639,27 @@
           <text x="${x0 + barW / 2}" y="${h - 10}" text-anchor="middle" font-size="10" fill="#8c8278">${x.label}</text>`;
       }).join("");
       return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="ファネル件数">${bars}</svg>`;
+    }
+
+    function moneyChart(t) {
+      const rows = [
+        { label: "費用", v: t.cost, color: "#c9bfb0" },
+        { label: "売上", v: t.revenue, color: "#e8956a" },
+        { label: "利益", v: Math.max(t.profit, 0), color: "#5b8f6a" },
+      ];
+      const max = Math.max(...rows.map((x) => Math.abs(x.v)), 1);
+      const w = 520, h = 180, pad = 28, gap = 16;
+      const barW = (w - pad * 2 - gap * (rows.length - 1)) / rows.length;
+      const bars = rows.map((x, i) => {
+        const bh = Math.max(x.v ? 4 : 0, (Math.abs(x.v) / max) * (h - 56));
+        const x0 = pad + i * (barW + gap);
+        const y0 = h - 28 - bh;
+        const label = x.label === "利益" ? fmtYen(t.profit) : fmtYen(x.v);
+        return `<rect x="${x0}" y="${y0}" width="${barW}" height="${bh}" rx="5" fill="${x.color}"></rect>
+          <text x="${x0 + barW / 2}" y="${y0 - 6}" text-anchor="middle" font-size="11" font-weight="700" fill="#3a3530">${label}</text>
+          <text x="${x0 + barW / 2}" y="${h - 10}" text-anchor="middle" font-size="10" fill="#8c8278">${x.label}</text>`;
+      }).join("");
+      return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="費用と売上">${bars}</svg>`;
     }
 
     function channelChart(productId) {
@@ -630,6 +719,7 @@
           <div class="channel-line">商談 <b>${fmt(ct.meetings)}</b></div>
           <div class="channel-line">成約 <b>${fmt(ct.wins)}</b></div>
           <div class="channel-line">金額 <b>${fmtYen(ct.revenue)}</b></div>
+          <div class="channel-line">費用 <b>${fmtYen(ct.cost)}</b></div>
         </div>`;
       }).join("");
 
@@ -640,7 +730,7 @@
             const inqR = pct(c.inquiries, c.reach);
             return `<tr>
               <td>${c.date}</td>
-              <td>${c.source === "dashboard" ? "案件" : "営業"}</td>
+              <td>${c.source === "dashboard" ? "案件" : sourceLabel(c)}</td>
               <td>${ch ? ch.name : c.channelId}</td>
               <td>${c.title}</td>
               <td>${fmt(c.reach)}</td>
@@ -649,9 +739,10 @@
               <td>${fmt(c.meetings)}</td>
               <td>${fmt(c.wins)}</td>
               <td>${fmtYen(c.revenue)}</td>
+              <td>${fmtYen(c.cost)}</td>
             </tr>`;
           }).join("")
-        : `<tr><td colspan="10" style="text-align:center;color:var(--muted)">まだキャンペーンなし</td></tr>`;
+        : `<tr><td colspan="11" style="text-align:center;color:var(--muted)">まだキャンペーンなし</td></tr>`;
 
       const experiments = DATA.experiments.filter((e) => e.productId === product.id);
       const expHtml = experiments.length
@@ -686,6 +777,17 @@
         </section>
 
         <section class="section">
+          <div class="section-title">費用対効果（税抜）</div>
+          <div class="kpi-row">
+            <div class="kpi"><div class="kpi-label">かけた費用</div><div class="kpi-value yen">${fmtYen(t.cost)}</div><div class="kpi-sub">${t.cpa != null && t.cost ? "成約1件 " + fmtYen(Math.round(t.cpa)) : "広告・営業の実費"}</div></div>
+            <div class="kpi"><div class="kpi-label">戻ってきた売上</div><div class="kpi-value yen">${fmtYen(t.revenue)}</div><div class="kpi-sub">案件の受注額</div></div>
+            <div class="kpi"><div class="kpi-label">利益</div><div class="kpi-value yen">${fmtYen(t.profit)}</div><div class="kpi-sub">${gradeHtml(moneyGrade(t))}</div></div>
+            <div class="kpi"><div class="kpi-label">回収</div><div class="kpi-value yen">${recoverLabel(t)}</div><div class="kpi-sub">売上 ÷ 費用</div></div>
+          </div>
+          <p class="note">Google広告はダッシュボードの「広告費」でサービスを選ぶと、ここに足されます。${unassignedAdCost() ? "サービス未選択の広告費が " + fmtYen(unassignedAdCost()) + " あります。" : ""}</p>
+        </section>
+
+        <section class="section">
           <div class="split">
             <div class="panel">
               <h3>ファネル</h3>
@@ -706,9 +808,16 @@
               ${barChart(t)}
             </div>
             <div class="panel">
-              <h3>チャネル別の接触</h3>
-              ${channelChart(product.id)}
+              <h3>費用と売上</h3>
+              ${moneyChart(t)}
             </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="panel">
+            <h3>チャネル別の接触</h3>
+            ${channelChart(product.id)}
           </div>
         </section>
 
@@ -733,6 +842,7 @@
                   <th>商談</th>
                   <th>成約</th>
                   <th>受注金額</th>
+                  <th>費用</th>
                 </tr>
               </thead>
               <tbody>${tableRows}</tbody>

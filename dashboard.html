@@ -2729,7 +2729,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v160</div>
+        <div class="logo-sub">Business Dashboard · v161</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -3255,6 +3255,20 @@
           <label>金額（税抜）</label>
           <input type="number" id="adAmount" min="0" step="1" placeholder="30000">
         </div>
+      </div>
+      <div class="form-group">
+        <label>ファネルのサービス</label>
+        <select id="adFunnelProduct">
+          <option value="patient-nark">患者説明動画（nARK）</option>
+          <option value="patient-wslink">患者説明動画（W's Link）</option>
+          <option value="video-produce">動画制作</option>
+          <option value="video-edit">動画編集</option>
+          <option value="video-shoot">動画撮影</option>
+          <option value="end-of-life">終活動画</option>
+          <option value="birth">出産動画</option>
+          <option value="">ファネルに出さない</option>
+        </select>
+        <div class="form-hint">選んだサービスのファネルに、かけた費用として載ります。</div>
       </div>
       <div class="form-group">
         <label>メモ</label>
@@ -6135,6 +6149,20 @@ ${MAIL_FOOTER}`,
       return `${y}年${+m}月`;
     }
 
+    function funnelProductLabel(id) {
+      const labels = {
+        'patient-nark': '患者説明動画（nARK）',
+        'patient-wslink': "患者説明動画（W's Link）",
+        'video-produce': '動画制作',
+        'video-edit': '動画編集',
+        'video-shoot': '動画撮影',
+        'end-of-life': '終活動画',
+        birth: '出産動画',
+      };
+      if (!id) return 'ファネルに出さない';
+      return labels[id] || id;
+    }
+
     function renderAdExpenses() {
       const ads = (state.adExpenses || []).slice().sort((a, b) => {
         if (a.month !== b.month) return b.month.localeCompare(a.month);
@@ -6157,8 +6185,8 @@ ${MAIL_FOOTER}`,
         return `
           <div class="sub-item${isViewMonth ? ' renewal-soon' : ''}">
             <div class="sub-info">
-              <div class="sub-name">Google検索広告 · ${formatMonthLabel(ad.month)}</div>
-              <div class="sub-meta">支出月 ${formatMonthLabel(ad.month)}${ad.memo ? ' · ' + esc(ad.memo) : ''}</div>
+              <div class="sub-name">${esc(ad.platform || 'Google検索広告')} · ${formatMonthLabel(ad.month)}</div>
+              <div class="sub-meta">${funnelProductLabel(ad.funnelProduct)} · 支出月 ${formatMonthLabel(ad.month)}${ad.memo ? ' · ' + esc(ad.memo) : ''}</div>
             </div>
             <div class="sub-amount">${formatYen(Number(ad.amount) || 0)}</div>
             <div class="sub-actions">
@@ -9668,11 +9696,14 @@ ${MAIL_FOOTER}`,
         document.getElementById('adModalTitle').textContent = '広告費を編集';
         document.getElementById('adMonth').value = ad.month || defaultMonth;
         document.getElementById('adAmount').value = ad.amount || '';
+        document.getElementById('adPlatform').value = ad.platform || 'Google検索広告';
+        document.getElementById('adFunnelProduct').value = ad.funnelProduct || '';
         document.getElementById('adMemo').value = ad.memo || '';
       } else {
         document.getElementById('adModalTitle').textContent = '広告費を追加';
         document.getElementById('adMonth').value = defaultMonth;
         document.getElementById('adAmount').value = '';
+        document.getElementById('adFunnelProduct').value = 'patient-nark';
         document.getElementById('adMemo').value = '';
       }
       document.getElementById('adModal').classList.add('open');
@@ -9692,6 +9723,8 @@ ${MAIL_FOOTER}`,
       const data = {
         month,
         amount,
+        platform: document.getElementById('adPlatform').value || 'Google検索広告',
+        funnelProduct: document.getElementById('adFunnelProduct').value,
         memo: document.getElementById('adMemo').value.trim(),
       };
       if (editingAdId) {
