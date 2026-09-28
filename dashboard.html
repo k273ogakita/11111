@@ -2727,7 +2727,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v155</div>
+        <div class="logo-sub">Business Dashboard · v156</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -4129,6 +4129,7 @@ nark.visual.media@gmail.com
       { name: 'GO!GO! Rally in 熊本 2026', platform: 'instagram', snsStatus: 'published', status: 'done', created: '2026-04-01', folder: 'SNS/Instagram/投稿/2026-4-GO!GO! Rally in 熊本 2026/2026-4-GO!GO! Rally in 熊本 2026.md' },
     ];
 
+    var seedFunnelDirty = false;
     let state = loadState();
     let editingProjectId = null;
     let editingSubId = null;
@@ -4753,8 +4754,6 @@ ${MAIL_FOOTER}`,
     function isAfterFollowContactKey(step) {
       return AFTER_FOLLOW_CONTACTS.some(c => c.key === step);
     }
-
-    let seedFunnelDirty = false;
 
     function seedFunnelLinkedProjects(data) {
       const seedId = '2026-10-04-referral-video-shoot-brass';
