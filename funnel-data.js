@@ -1,11 +1,18 @@
 /* nARK 営業ファネル正本。数字が増えたらここを直して GitHub に上げる。 */
 window.FUNNEL_DATA = {
   updated: "2026-09-28",
-  version: 1,
+  version: 2,
+
+  productGroups: [
+    { id: "patient", title: "患者説明動画" },
+    { id: "video", title: "動画制作・編集・撮影" },
+    { id: "later", title: "これから" },
+  ],
 
   products: [
     {
       id: "patient-nark",
+      group: "patient",
       name: "患者説明動画",
       brand: "nARK",
       status: "active",
@@ -14,6 +21,7 @@ window.FUNNEL_DATA = {
     },
     {
       id: "patient-wslink",
+      group: "patient",
       name: "患者説明動画",
       brand: "W's Link",
       status: "building",
@@ -21,7 +29,35 @@ window.FUNNEL_DATA = {
       blurb: "W's Linkのサービスの一部として売る。まだ営業数字なし。",
     },
     {
+      id: "video-produce",
+      group: "video",
+      name: "動画制作",
+      brand: "nARK",
+      status: "active",
+      statusLabel: "稼働中",
+      blurb: "企画から仕上げまで。入口は知り合い紹介が多い想定。",
+    },
+    {
+      id: "video-edit",
+      group: "video",
+      name: "動画編集",
+      brand: "nARK",
+      status: "active",
+      statusLabel: "稼働中",
+      blurb: "編集だけ受ける案件。入口は知り合い紹介が多い想定。",
+    },
+    {
+      id: "video-shoot",
+      group: "video",
+      name: "動画撮影",
+      brand: "nARK",
+      status: "active",
+      statusLabel: "稼働中",
+      blurb: "撮影だけ／撮影込み。入口は知り合い紹介が多い想定。",
+    },
+    {
       id: "end-of-life",
+      group: "later",
       name: "終活動画",
       brand: "nARK",
       status: "building",
@@ -30,6 +66,7 @@ window.FUNNEL_DATA = {
     },
     {
       id: "birth",
+      group: "later",
       name: "出産動画",
       brand: "nARK",
       status: "later",
@@ -45,7 +82,7 @@ window.FUNNEL_DATA = {
     { id: "referral", name: "知り合い紹介", unit: "声かけ" },
   ],
 
-  /* 仮のものさし。件数が溜まったら見直す。率はすべて％。 */
+  /* 仮のものさし。件数が溜まったら見直す。率はすべて％。金額は税抜円。 */
   benchmarks: {
     form: {
       click: { ok: 1, good: 3, hint: "冷たいフォーム。1%未満は弱い。3%超えたら良い。" },
@@ -87,6 +124,7 @@ window.FUNNEL_DATA = {
       inquiries: 0,
       meetings: 0,
       wins: 0,
+      revenue: 0,
       extra: { hpClicks: 0, lpUrl: "https://lp.btobservice.com/bc81a18c6f50c43ad026a3113ee55607/" },
       notes: "リンク先は予定どおりLP。問い合わせは2026-09-28時点で0。",
     },

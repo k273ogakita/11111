@@ -105,6 +105,8 @@
       border-radius: 2px;
     }
 
+    .product-group { margin-bottom: 20px; }
+    .product-group .section-title { margin-bottom: 10px; }
     .product-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -157,6 +159,7 @@
     }
     .kpi-label { font-size: .72rem; color: var(--muted); font-weight: 700; letter-spacing: .06em; }
     .kpi-value { font-size: 1.7rem; font-weight: 800; letter-spacing: -.03em; margin-top: 4px; line-height: 1.1; }
+    .kpi-value.yen { font-size: 1.25rem; }
     .kpi-sub { font-size: .72rem; color: var(--muted); margin-top: 6px; }
 
     .split {
@@ -320,7 +323,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">営業ファネル · v2</div>
+        <div class="logo-sub">営業ファネル · v3</div>
       </div>
       <div class="header-links">
         <a class="btn" href="dashboard.html">Dashboard</a>
@@ -329,10 +332,7 @@
       </div>
     </header>
 
-    <section class="section">
-      <div class="section-title">サービス</div>
-      <div class="product-grid" id="productGrid"></div>
-    </section>
+    <section class="section" id="productGrid"></section>
 
     <div id="detail"></div>
   </div>
@@ -343,6 +343,7 @@
     let currentId = DATA.products[0].id;
 
     const fmt = (n) => n == null ? "—" : Number(n).toLocaleString("ja-JP");
+    const fmtYen = (n) => n == null ? "—" : "¥" + Number(n).toLocaleString("ja-JP");
     const pct = (n, d) => {
       if (n == null || !d) return null;
       return (n / d) * 100;
@@ -383,13 +384,15 @@
       const inquiries = sum(list, "inquiries");
       const meetings = sum(list, "meetings");
       const wins = sum(list, "wins");
+      const revenue = sum(list, "revenue");
+      const avgOrder = wins ? revenue / wins : null;
       let clickRate = pct(clicks, reach);
       if (list.length === 1 && list[0].clickRate != null) clickRate = list[0].clickRate;
       if (list.length > 1 && list.every((c) => c.clickRate != null) && reach) {
         const weighted = list.reduce((s, c) => s + (c.clickRate * c.reach), 0);
         clickRate = weighted / reach;
       }
-      return { list, reach, clicks, inquiries, meetings, wins, clickRate };
+      return { list, reach, clicks, inquiries, meetings, wins, revenue, avgOrder, clickRate };
     }
 
     function rates(t, channelId) {
@@ -424,20 +427,28 @@
 
     function renderProducts() {
       const el = document.getElementById("productGrid");
-      el.innerHTML = DATA.products.map((p) => {
-        const t = totals(p.id);
-        const active = p.id === currentId ? "active" : "";
-        const dim = p.status !== "active" ? "dim" : "";
-        return `<button class="product-card ${active} ${dim}" onclick="selectProduct('${p.id}')">
-          <div class="product-kicker">${p.brand}</div>
-          <div class="product-name">${p.name}</div>
-          <span class="badge badge-${p.status}">${p.statusLabel}</span>
-          <div class="product-stats" style="margin-top:10px">
-            <span>接触 <b>${fmt(t.reach)}</b></span>
-            <span>問合 <b>${fmt(t.inquiries)}</b></span>
-            <span>成約 <b>${fmt(t.wins)}</b></span>
-          </div>
-        </button>`;
+      const groups = DATA.productGroups || [{ id: "all", title: "サービス" }];
+      el.innerHTML = groups.map((g) => {
+        const items = DATA.products.filter((p) => (p.group || "all") === g.id);
+        if (!items.length) return "";
+        const cards = items.map((p) => {
+          const t = totals(p.id);
+          const active = p.id === currentId ? "active" : "";
+          const dim = p.status !== "active" ? "dim" : "";
+          return `<button class="product-card ${active} ${dim}" onclick="selectProduct('${p.id}')">
+            <div class="product-kicker">${p.brand}</div>
+            <div class="product-name">${p.name}</div>
+            <span class="badge badge-${p.status}">${p.statusLabel}</span>
+            <div class="product-stats" style="margin-top:10px">
+              <span>成約 <b>${fmt(t.wins)}</b></span>
+              <span>金額 <b>${fmtYen(t.revenue)}</b></span>
+            </div>
+          </button>`;
+        }).join("");
+        return `<div class="product-group">
+          <div class="section-title">${g.title}</div>
+          <div class="product-grid">${cards}</div>
+        </div>`;
       }).join("");
     }
 
@@ -455,7 +466,10 @@
       if (t.clickRate != null) {
         lines.push(`クリック率は <b>${pctLabel(t.clickRate, 1)}</b> で${r.click.grade.label}。`);
       }
-      lines.push(`問い合わせは <b>${fmt(t.inquiries)}</b> 件、商談 <b>${fmt(t.meetings)}</b>、成約 <b>${fmt(t.wins)}</b>。`);
+      lines.push(`問い合わせは <b>${fmt(t.inquiries)}</b> 件、商談 <b>${fmt(t.meetings)}</b>、成約 <b>${fmt(t.wins)}</b>、受注金額 <b>${fmtYen(t.revenue)}</b>（税抜）。`);
+      if (t.avgOrder != null) {
+        lines.push(`成約単価は <b>${fmtYen(Math.round(t.avgOrder))}</b>。`);
+      }
       if (bn) {
         lines.push(`いまのボトルネックは <b>${bn.label}</b>（${pctLabel(bn.item.value, 2)}）。`);
       } else {
@@ -543,6 +557,7 @@
           <div class="channel-line">問い合わせ <b>${fmt(ct.inquiries)}</b> ${ct.reach ? gradeHtml(cr.inquiryFromReach.grade) : ""}</div>
           <div class="channel-line">商談 <b>${fmt(ct.meetings)}</b></div>
           <div class="channel-line">成約 <b>${fmt(ct.wins)}</b></div>
+          <div class="channel-line">金額 <b>${fmtYen(ct.revenue)}</b></div>
         </div>`;
       }).join("");
 
@@ -560,9 +575,10 @@
               <td>${fmt(c.inquiries)}</td>
               <td>${fmt(c.meetings)}</td>
               <td>${fmt(c.wins)}</td>
+              <td>${fmtYen(c.revenue)}</td>
             </tr>`;
           }).join("")
-        : `<tr><td colspan="8" style="text-align:center;color:var(--muted)">まだキャンペーンなし</td></tr>`;
+        : `<tr><td colspan="9" style="text-align:center;color:var(--muted)">まだキャンペーンなし</td></tr>`;
 
       const experiments = DATA.experiments.filter((e) => e.productId === product.id);
       const expHtml = experiments.length
@@ -592,6 +608,7 @@
             <div class="kpi"><div class="kpi-label">問い合わせ</div><div class="kpi-value">${fmt(t.inquiries)}</div><div class="kpi-sub">${pctLabel(r.inquiryFromReach.value, 2)} ${gradeHtml(r.inquiryFromReach.grade)}</div></div>
             <div class="kpi"><div class="kpi-label">商談</div><div class="kpi-value">${fmt(t.meetings)}</div><div class="kpi-sub">${pctLabel(r.meetingFromInquiry.value, 0)} ${gradeHtml(r.meetingFromInquiry.grade)}</div></div>
             <div class="kpi"><div class="kpi-label">成約</div><div class="kpi-value">${fmt(t.wins)}</div><div class="kpi-sub">${pctLabel(r.winFromMeeting.value, 0)} ${gradeHtml(r.winFromMeeting.grade)}</div></div>
+            <div class="kpi"><div class="kpi-label">受注金額</div><div class="kpi-value yen">${fmtYen(t.revenue)}</div><div class="kpi-sub">税抜${t.avgOrder != null ? " · 単価 " + fmtYen(Math.round(t.avgOrder)) : ""}</div></div>
           </div>
         </section>
 
@@ -641,7 +658,7 @@
                   <th>問い合わせ</th>
                   <th>商談</th>
                   <th>成約</th>
-                </tr>
+                  <th>受注金額</th>
               </thead>
               <tbody>${tableRows}</tbody>
             </table>
