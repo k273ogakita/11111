@@ -1771,13 +1771,45 @@
       color: var(--muted);
       white-space: nowrap;
     }
-    .wg-list { display: flex; flex-direction: column; gap: 10px; }
+    .wg-list { display: flex; flex-direction: column; gap: 10px; min-height: 28px; }
     .wg-goal {
       border: none;
       border-radius: 0;
       padding: 0;
       background: transparent;
+      transition: background .12s, box-shadow .12s, opacity .12s;
     }
+    .wg-goal.dragging { opacity: .45; }
+    .wg-goal.drag-over {
+      box-shadow: inset 0 2px 0 var(--red);
+    }
+    .wg-week.drag-over {
+      background: rgba(180, 40, 40, .04);
+    }
+    .wg-week.drag-over .wg-list {
+      outline: 1px dashed rgba(180, 40, 40, .35);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    .wg-drag-handle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 14px;
+      margin-top: 5px;
+      flex-shrink: 0;
+      cursor: grab;
+      color: var(--muted);
+      font-size: .72rem;
+      letter-spacing: -1px;
+      line-height: 1;
+      user-select: none;
+      opacity: .35;
+      touch-action: none;
+    }
+    .wg-goal:hover .wg-drag-handle,
+    .wg-drag-handle:active { opacity: .9; }
+    .wg-drag-handle:active { cursor: grabbing; }
     .wg-goal.done { opacity: .65; }
     .wg-goal-row {
       display: flex;
@@ -2729,7 +2761,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v161</div>
+        <div class="logo-sub">Business Dashboard · v163</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -6846,6 +6878,116 @@ ${MAIL_FOOTER}`,
     }
     window.onWeeklyStepText = onWeeklyStepText;
 
+    let wgDrag = null;
+
+    function clearWgDragOver() {
+      document.querySelectorAll('#weeklyGoalsPanel .wg-week.drag-over, #weeklyGoalsPanel .wg-goal.drag-over')
+        .forEach(el => el.classList.remove('drag-over'));
+    }
+
+    function onWgGoalDragStart(e, goalId, weekKey) {
+      wgDrag = { goalId, fromWeek: weekKey };
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', goalId); } catch (_) {}
+      const card = e.currentTarget.closest('.wg-goal');
+      if (card) card.classList.add('dragging');
+    }
+    window.onWgGoalDragStart = onWgGoalDragStart;
+
+    function onWgGoalDragEnd(e) {
+      const card = e.currentTarget.closest('.wg-goal');
+      if (card) card.classList.remove('dragging');
+      clearWgDragOver();
+      wgDrag = null;
+    }
+    window.onWgGoalDragEnd = onWgGoalDragEnd;
+
+    function onWgWeekDragOver(e) {
+      if (!wgDrag) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const week = e.currentTarget;
+      if (!week.classList.contains('drag-over')) {
+        clearWgDragOver();
+        week.classList.add('drag-over');
+      }
+    }
+    window.onWgWeekDragOver = onWgWeekDragOver;
+
+    function onWgWeekDragLeave(e) {
+      if (!e.currentTarget.contains(e.relatedTarget)) {
+        e.currentTarget.classList.remove('drag-over');
+      }
+    }
+    window.onWgWeekDragLeave = onWgWeekDragLeave;
+
+    function onWgGoalDragOver(e) {
+      if (!wgDrag) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = 'move';
+      const goal = e.currentTarget;
+      const week = goal.closest('.wg-week');
+      clearWgDragOver();
+      if (week) week.classList.add('drag-over');
+      goal.classList.add('drag-over');
+    }
+    window.onWgGoalDragOver = onWgGoalDragOver;
+
+    function onWgGoalDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+    window.onWgGoalDragLeave = onWgGoalDragLeave;
+
+    function moveWeeklyGoal(goalId, fromWeek, toWeek, toIndex) {
+      if (!goalId || !fromWeek || !toWeek) return false;
+      const fromList = getWeekGoals(fromWeek);
+      const fromIdx = fromList.findIndex(g => g.id === goalId);
+      if (fromIdx < 0) return false;
+      const [goal] = fromList.splice(fromIdx, 1);
+      const toList = getWeekGoals(toWeek);
+      let insertAt = typeof toIndex === 'number' ? toIndex : toList.length;
+      if (fromWeek === toWeek && fromIdx < insertAt) insertAt -= 1;
+      insertAt = Math.max(0, Math.min(insertAt, toList.length));
+      toList.splice(insertAt, 0, goal);
+      saveState();
+      return true;
+    }
+
+    function onWgGoalDrop(e, goalId, weekKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      clearWgDragOver();
+      if (!wgDrag || !wgDrag.goalId) return;
+      if (wgDrag.goalId === goalId && wgDrag.fromWeek === weekKey) {
+        wgDrag = null;
+        return;
+      }
+      const toList = getWeekGoals(weekKey);
+      const toIndex = toList.findIndex(g => g.id === goalId);
+      const ok = moveWeeklyGoal(wgDrag.goalId, wgDrag.fromWeek, weekKey, toIndex < 0 ? toList.length : toIndex);
+      const from = wgDrag.fromWeek;
+      wgDrag = null;
+      if (ok) {
+        toast(from === weekKey ? '順番を変えました' : '別の週へ移しました');
+      }
+    }
+    window.onWgGoalDrop = onWgGoalDrop;
+
+    function onWgWeekDrop(e, weekKey) {
+      e.preventDefault();
+      clearWgDragOver();
+      if (!wgDrag || !wgDrag.goalId) return;
+      if (e.target.closest && e.target.closest('.wg-goal')) return;
+      const from = wgDrag.fromWeek;
+      const ok = moveWeeklyGoal(wgDrag.goalId, from, weekKey);
+      wgDrag = null;
+      if (ok) {
+        toast(from === weekKey ? '順番を変えました' : '別の週へ移しました');
+      }
+    }
+    window.onWgWeekDrop = onWgWeekDrop;
+
     function renderWeekColumn(weekKey) {
       const goals = getWeekGoals(weekKey);
       const st = weekGoalStats(weekKey);
@@ -6867,8 +7009,13 @@ ${MAIL_FOOTER}`,
             </div>
           `).join('');
           return `
-            <div class="wg-goal${g.done ? ' done' : ''}" data-goal-id="${g.id}">
+            <div class="wg-goal${g.done ? ' done' : ''}" data-goal-id="${g.id}"
+                 ondragover="onWgGoalDragOver(event)" ondragleave="onWgGoalDragLeave(event)"
+                 ondrop="onWgGoalDrop(event,'${g.id}','${weekKey}')">
               <div class="wg-goal-row">
+                <span class="wg-drag-handle" draggable="true" title="ドラッグで週の移動・並べ替え"
+                      ondragstart="onWgGoalDragStart(event,'${g.id}','${weekKey}')"
+                      ondragend="onWgGoalDragEnd(event)">⋮⋮</span>
                 <input type="checkbox" ${g.done ? 'checked' : ''} onchange="toggleWeeklyGoalDone('${g.id}','${weekKey}')" title="目標を完了">
                 <textarea class="wg-goal-text" rows="1" placeholder="目標を記入"
                           oninput="onWeeklyGoalText('${g.id}','${weekKey}', this)">${esc(g.text || '')}</textarea>
@@ -6883,7 +7030,9 @@ ${MAIL_FOOTER}`,
         }).join('');
 
       return `
-        <div class="wg-week${isCurrent ? ' current' : ''}${allDone ? ' done-all' : ''}" data-week-key="${weekKey}">
+        <div class="wg-week${isCurrent ? ' current' : ''}${allDone ? ' done-all' : ''}" data-week-key="${weekKey}"
+             ondragover="onWgWeekDragOver(event)" ondragleave="onWgWeekDragLeave(event)"
+             ondrop="onWgWeekDrop(event,'${weekKey}')">
           <div class="wg-week-head">
             <span class="wg-week-label">${esc(label)}</span>
             <span class="wg-week-count">${st.done}/${st.total || 0}</span>
@@ -7618,6 +7767,16 @@ ${MAIL_FOOTER}`,
       p.phase = phase;
       if (phase === '納品済' && !isAdOpsType(p)) {
         if (!p.deliveredDate) p.deliveredDate = todayStr();
+        // 自社事業整備は請求なし → 完了へ直行
+        if (p.category === 'sns') {
+          p.status = 'done';
+          p.phase = '';
+          p.snsStatus = 'published';
+          doneExpanded = true;
+          saveState();
+          toast(`「${p.name}」→ 完了`);
+          return;
+        }
         if (!p.hddMigrate) p.hddMigrate = 'pending';
         p.status = 'billing';
         p.phase = '作成未';
