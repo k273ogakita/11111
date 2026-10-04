@@ -564,6 +564,150 @@
       margin-top: 6px;
       font-weight: 600;
     }
+
+    /* ── 案件フロー進捗一覧 ── */
+    .flow-progress-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px 10px;
+      margin-bottom: 14px;
+      max-width: 680px;
+    }
+    .flow-progress-panel:empty { display: none; }
+    .flow-progress-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .flow-progress-title {
+      font-size: .88rem;
+      font-weight: 700;
+    }
+    .flow-progress-hint {
+      font-size: .68rem;
+      color: var(--muted);
+    }
+    .flow-progress-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .flow-progress-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color .12s, background .12s;
+    }
+    .flow-progress-row:hover {
+      border-color: #c9bfb0;
+      background: rgba(58,53,48,.02);
+    }
+    .flow-progress-row-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .flow-progress-name {
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--text);
+      min-width: 0;
+    }
+    .flow-progress-meta {
+      font-size: .68rem;
+      color: var(--muted);
+      font-weight: 500;
+    }
+    .flow-progress-pct {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .flow-progress-pct.done { color: #2a8a5e; }
+    .flow-stages {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+    .flow-stage {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: .66rem;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: transparent;
+      line-height: 1.3;
+      max-width: 100%;
+    }
+    .flow-stage.done {
+      color: #2a8a5e;
+      border-color: rgba(42,138,94,.35);
+      background: rgba(42,138,94,.06);
+    }
+    .flow-stage.current {
+      color: var(--red-dim);
+      border-color: rgba(232,149,106,.45);
+      background: rgba(232,149,106,.1);
+      font-weight: 700;
+    }
+    .flow-stage-count {
+      font-variant-numeric: tabular-nums;
+      opacity: .85;
+    }
+    .flow-progress-now {
+      font-size: .68rem;
+      color: var(--text);
+      line-height: 1.35;
+    }
+    .flow-progress-now strong {
+      font-weight: 700;
+      color: var(--red-dim);
+    }
+    .flow-progress-empty {
+      font-size: .75rem;
+      color: var(--muted);
+      padding: 4px 0 2px;
+    }
+    .card-flow-progress {
+      margin-top: 8px;
+    }
+    .card-flow-bar {
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(58,53,48,.08);
+      overflow: hidden;
+      margin-bottom: 4px;
+    }
+    .card-flow-bar > span {
+      display: block;
+      height: 100%;
+      background: var(--red);
+      border-radius: 999px;
+      min-width: 0;
+    }
+    .card-flow-label {
+      font-size: .66rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .card-flow-label strong {
+      color: var(--red-dim);
+      font-weight: 700;
+    }
     .card-deadline {
       font-size: .72rem;
       color: var(--red-dim);
@@ -2767,7 +2911,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v164</div>
+        <div class="logo-sub">Business Dashboard · v165</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -2931,6 +3075,7 @@
             <button class="btn btn-primary" onclick="openProjectModal()">案件追加</button>
           </div>
         </div>
+        <div class="flow-progress-panel" id="flowProgressPanel"></div>
         <div class="kanban" id="kanban"></div>
     </section>
   </div>
@@ -6005,6 +6150,7 @@ ${MAIL_FOOTER}`,
       renderAdExpenses();
       renderBizTodos();
       renderCalendar();
+      renderFlowProgress();
       renderKanban();
       renderTasks();
     }
@@ -7665,6 +7811,7 @@ ${MAIL_FOOTER}`,
         : (isAdOpsType(p) && p.status === 'billing'
           ? `<div class="phase-current">▸ ${esc(formatOpsMonthLabel(getOpsMonth(p)))} 締め — 継続または契約終了</div>`
           : '');
+      const flowProgress = renderCardFlowProgress(p);
       const financeBlock = renderCardFinance(p);
       const showTimeLogBtn = p.status === 'doing' && p.category !== 'sns';
       const actions = p.status !== 'done' ? `
@@ -7697,6 +7844,7 @@ ${MAIL_FOOTER}`,
           ${paymentDueLine}
           ${memoBlock}
           ${phaseLabel}
+          ${flowProgress}
           ${financeBlock}
           ${renderPhaseButtons(p)}
           ${renderHddMigrateButtons(p)}
@@ -9494,6 +9642,176 @@ ${MAIL_FOOTER}`,
     function getWorkflow(p) {
       const key = getWorkflowKey(p);
       return key ? WORKFLOWS[key] : null;
+    }
+
+    function getWorkflowProgress(p) {
+      if (!p || p.category === 'sns') return null;
+      const wf = getWorkflow(p);
+      if (!wf) return null;
+      const wfKey = getWorkflowKey(p);
+      const checklist = getProjectChecklist(p, wfKey);
+      const customSteps = getProjectCustomSteps(p, wfKey);
+      const groups = [];
+      let checked = 0;
+      let total = 0;
+
+      wf.groups.forEach(g => {
+        if (g.optional && g.gateKey === EDITOR_OUTSOURCE_GATE && !isEditorOutsourceEnabled(p)) return;
+        const steps = g.steps || [];
+        const gDone = steps.filter(s => checklist[s.id]).length;
+        const gTotal = steps.length;
+        groups.push({
+          label: g.label,
+          done: gDone,
+          total: gTotal,
+          complete: gTotal > 0 && gDone === gTotal,
+          current: false,
+          nextText: (steps.find(s => !checklist[s.id]) || {}).text || '',
+        });
+        checked += gDone;
+        total += gTotal;
+      });
+
+      if (customSteps.length) {
+        const cDone = customSteps.filter(s => checklist[s.id]).length;
+        const cTotal = customSteps.length;
+        groups.push({
+          label: '追加',
+          done: cDone,
+          total: cTotal,
+          complete: cDone === cTotal,
+          current: false,
+          nextText: (customSteps.find(s => !checklist[s.id]) || {}).text || '',
+        });
+        checked += cDone;
+        total += cTotal;
+      }
+
+      let currentGroupLabel = '';
+      let currentStepText = '';
+      const current = groups.find(g => !g.complete && g.total > 0);
+      if (current) {
+        current.current = true;
+        currentGroupLabel = current.label;
+        currentStepText = current.nextText || '';
+      } else if (total > 0 && checked === total) {
+        currentGroupLabel = '完了';
+      }
+
+      return {
+        wfKey,
+        title: wf.title,
+        groups,
+        checked,
+        total,
+        pct: total ? Math.round(checked / total * 100) : 0,
+        currentGroupLabel,
+        currentStepText,
+      };
+    }
+
+    function getPhaseProgress(p) {
+      if (!p || p.status !== 'doing') return null;
+      const phases = getDoingPhases(p).filter(ph => ph !== '納品済');
+      if (!phases.length) return null;
+      const current = p.phase || phases[0];
+      let idx = phases.indexOf(current);
+      if (idx < 0) idx = 0;
+      const groups = phases.map((ph, i) => ({
+        label: ph,
+        done: i < idx ? 1 : 0,
+        total: 1,
+        complete: i < idx,
+        current: i === idx,
+      }));
+      const checked = idx;
+      const total = phases.length;
+      const pct = total ? Math.round(checked / total * 100) : 0;
+      return {
+        wfKey: '',
+        title: 'フェーズ',
+        groups,
+        checked,
+        total,
+        pct,
+        currentGroupLabel: current,
+        currentStepText: '',
+        isPhase: true,
+      };
+    }
+
+    function getProjectFlowProgress(p) {
+      return getWorkflowProgress(p) || getPhaseProgress(p);
+    }
+
+    function renderCardFlowProgress(p) {
+      if (p.status !== 'doing') return '';
+      const prog = getWorkflowProgress(p);
+      if (!prog || !prog.total) return '';
+      const now = prog.currentGroupLabel === '完了'
+        ? 'チェックリスト完了'
+        : (prog.currentStepText
+          ? `<strong>${esc(prog.currentGroupLabel)}</strong> — ${esc(prog.currentStepText)}`
+          : `<strong>${esc(prog.currentGroupLabel || '未着手')}</strong>`);
+      return `<div class="card-flow-progress">
+        <div class="card-flow-bar"><span style="width:${prog.pct}%"></span></div>
+        <div class="card-flow-label">${prog.checked}/${prog.total}（${prog.pct}%） · ${now}</div>
+      </div>`;
+    }
+
+    function renderFlowProgress() {
+      const el = document.getElementById('flowProgressPanel');
+      if (!el) return;
+      const projects = state.projects.filter(p =>
+        p.category === 'client' &&
+        p.status === 'doing' &&
+        getProjectFlowProgress(p)
+      );
+      if (!projects.length) {
+        el.innerHTML = '';
+        return;
+      }
+
+      const rows = projects.map(p => {
+        const prog = getProjectFlowProgress(p);
+        const stages = prog.groups.map(g => {
+          const cls = g.complete ? 'done' : (g.current ? 'current' : '');
+          const count = prog.isPhase
+            ? ''
+            : `<span class="flow-stage-count">${g.done}/${g.total}</span>`;
+          return `<span class="flow-stage${cls ? ' ' + cls : ''}">${esc(g.label)}${count ? ' ' + count : ''}</span>`;
+        }).join('');
+        const nowLine = prog.isPhase
+          ? `いま: <strong>${esc(prog.currentGroupLabel)}</strong>`
+          : (prog.currentGroupLabel === '完了'
+            ? '<strong>チェックリスト完了</strong>'
+            : (prog.currentStepText
+              ? `いま: <strong>${esc(prog.currentGroupLabel)}</strong> — ${esc(prog.currentStepText)}`
+              : `いま: <strong>${esc(prog.currentGroupLabel || '未着手')}</strong>`));
+        const click = getWorkflow(p)
+          ? `openChecklist('${p.id}')`
+          : `editProject('${p.id}')`;
+        const pctCls = prog.pct >= 100 ? ' done' : '';
+        return `
+          <div class="flow-progress-row" onclick="${click}" title="クリックで詳細を開く">
+            <div class="flow-progress-row-top">
+              <div>
+                <div class="flow-progress-name">${esc(p.client ? p.client + ' — ' : '')}${esc(p.name)}</div>
+                <div class="flow-progress-meta">${esc(typeLabel(p.type))}${prog.isPhase ? ' · フェーズ' : ' · ' + esc(prog.title)}</div>
+              </div>
+              <div class="flow-progress-pct${pctCls}">${prog.checked}/${prog.total} · ${prog.pct}%</div>
+            </div>
+            <div class="flow-stages">${stages}</div>
+            <div class="flow-progress-now">${nowLine}</div>
+          </div>`;
+      }).join('');
+
+      el.innerHTML = `
+        <div class="flow-progress-head">
+          <div class="flow-progress-title">案件フロー進捗</div>
+          <div class="flow-progress-hint">進行中 ${projects.length}件 · クリックでチェックリスト</div>
+        </div>
+        <div class="flow-progress-list">${rows}</div>`;
     }
 
     function ensureProjectChecklists(p) {
