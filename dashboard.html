@@ -570,7 +570,7 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 12px 14px 10px;
+      padding: 14px 14px 12px;
       margin-bottom: 14px;
       max-width: 680px;
     }
@@ -580,10 +580,10 @@
       align-items: baseline;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
     .flow-progress-title {
-      font-size: .88rem;
+      font-size: .92rem;
       font-weight: 700;
     }
     .flow-progress-hint {
@@ -593,120 +593,236 @@
     .flow-progress-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
     .flow-progress-row {
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      padding: 8px 10px;
+      gap: 10px;
+      padding: 12px 12px 11px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: border-color .12s, background .12s;
+      transition: border-color .12s, background .12s, box-shadow .12s;
     }
     .flow-progress-row:hover {
-      border-color: #c9bfb0;
-      background: rgba(58,53,48,.02);
+      border-color: rgba(232,149,106,.55);
+      background: rgba(232,149,106,.04);
+      box-shadow: 0 1px 0 rgba(58,53,48,.04);
     }
     .flow-progress-row-top {
       display: flex;
-      align-items: baseline;
+      align-items: flex-start;
       justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
+      gap: 12px;
     }
     .flow-progress-name {
-      font-size: .82rem;
+      font-size: .88rem;
       font-weight: 700;
       color: var(--text);
       min-width: 0;
+      line-height: 1.35;
     }
     .flow-progress-meta {
       font-size: .68rem;
       color: var(--muted);
       font-weight: 500;
+      margin-top: 2px;
     }
-    .flow-progress-pct {
-      font-size: .72rem;
-      font-weight: 700;
-      color: var(--muted);
-      white-space: nowrap;
+    .flow-progress-feel {
+      flex-shrink: 0;
+      text-align: right;
+      min-width: 4.5em;
     }
-    .flow-progress-pct.done { color: #2a8a5e; }
-    .flow-stages {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      align-items: center;
-    }
-    .flow-stage {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: .66rem;
-      padding: 2px 7px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      background: transparent;
-      line-height: 1.3;
-      max-width: 100%;
-    }
-    .flow-stage.done {
-      color: #2a8a5e;
-      border-color: rgba(42,138,94,.35);
-      background: rgba(42,138,94,.06);
-    }
-    .flow-stage.current {
+    .flow-progress-feel-main {
+      font-size: .95rem;
+      font-weight: 800;
       color: var(--red-dim);
-      border-color: rgba(232,149,106,.45);
-      background: rgba(232,149,106,.1);
-      font-weight: 700;
+      letter-spacing: .02em;
+      line-height: 1.1;
     }
-    .flow-stage-count {
-      font-variant-numeric: tabular-nums;
-      opacity: .85;
+    .flow-progress-feel-main.done { color: #2a8a5e; }
+    .flow-progress-feel-sub {
+      font-size: .62rem;
+      color: var(--muted);
+      margin-top: 2px;
     }
     .flow-progress-now {
-      font-size: .68rem;
-      color: var(--text);
-      line-height: 1.35;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(232,149,106,.1);
+      border: 1px solid rgba(232,149,106,.28);
     }
-    .flow-progress-now strong {
-      font-weight: 700;
+    .flow-progress-now.done {
+      background: rgba(42,138,94,.08);
+      border-color: rgba(42,138,94,.28);
+    }
+    .flow-progress-now-badge {
+      flex-shrink: 0;
+      font-size: .62rem;
+      font-weight: 800;
+      letter-spacing: .04em;
+      color: #fff;
+      background: var(--red);
+      border-radius: 4px;
+      padding: 3px 6px;
+      line-height: 1.2;
+      margin-top: 1px;
+    }
+    .flow-progress-now.done .flow-progress-now-badge {
+      background: #2a8a5e;
+    }
+    .flow-progress-now-body {
+      min-width: 0;
+      flex: 1;
+    }
+    .flow-progress-now-stage {
+      font-size: .82rem;
+      font-weight: 800;
       color: var(--red-dim);
+      line-height: 1.3;
     }
-    .flow-progress-empty {
-      font-size: .75rem;
+    .flow-progress-now.done .flow-progress-now-stage { color: #2a8a5e; }
+    .flow-progress-now-step {
+      font-size: .72rem;
+      color: var(--text);
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .flow-track {
+      display: flex;
+      align-items: flex-start;
+      width: 100%;
+      gap: 0;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .flow-track-step {
+      flex: 1 1 0;
+      min-width: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      text-align: center;
+    }
+    .flow-track-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 9px;
+      left: calc(50% + 10px);
+      right: calc(-50% + 10px);
+      height: 3px;
+      background: rgba(58,53,48,.12);
+      border-radius: 2px;
+      z-index: 0;
+    }
+    .flow-track-step.done:not(:last-child)::after {
+      background: rgba(42,138,94,.55);
+    }
+    .flow-track-step.current:not(:last-child)::after {
+      background: linear-gradient(90deg, rgba(232,149,106,.7), rgba(58,53,48,.12));
+    }
+    .flow-track-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid rgba(58,53,48,.22);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .62rem;
+      font-weight: 800;
+      color: transparent;
+      position: relative;
+      z-index: 1;
+      box-sizing: border-box;
+    }
+    .flow-track-step.done .flow-track-dot {
+      background: #2a8a5e;
+      border-color: #2a8a5e;
+      color: #fff;
+    }
+    .flow-track-step.current .flow-track-dot {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+      box-shadow: 0 0 0 3px rgba(232,149,106,.28);
+      transform: scale(1.12);
+    }
+    .flow-track-label {
+      margin-top: 6px;
+      font-size: .6rem;
+      font-weight: 600;
       color: var(--muted);
-      padding: 4px 0 2px;
+      line-height: 1.25;
+      max-width: 100%;
+      padding: 0 2px;
+      word-break: break-word;
     }
+    .flow-track-step.done .flow-track-label { color: #2a8a5e; }
+    .flow-track-step.current .flow-track-label {
+      color: var(--red-dim);
+      font-weight: 800;
+    }
+    .flow-track-frac {
+      font-size: .58rem;
+      color: var(--muted);
+      margin-top: 1px;
+      font-variant-numeric: tabular-nums;
+    }
+    .flow-track-step.current .flow-track-frac { color: var(--red-dim); font-weight: 700; }
     .card-flow-progress {
       margin-top: 8px;
     }
-    .card-flow-bar {
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(58,53,48,.08);
-      overflow: hidden;
-      margin-bottom: 4px;
-    }
-    .card-flow-bar > span {
-      display: block;
-      height: 100%;
-      background: var(--red);
-      border-radius: 999px;
-      min-width: 0;
-    }
-    .card-flow-label {
-      font-size: .66rem;
-      color: var(--muted);
+    .card-flow-now {
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--red-dim);
+      margin-bottom: 5px;
       line-height: 1.35;
     }
-    .card-flow-label strong {
-      color: var(--red-dim);
-      font-weight: 700;
+    .card-flow-now span {
+      font-weight: 500;
+      color: var(--text);
+    }
+    .card-flow-track {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 3px;
+    }
+    .card-flow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(58,53,48,.15);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .card-flow-dot.done { background: #2a8a5e; }
+    .card-flow-dot.current {
+      background: var(--red);
+      box-shadow: 0 0 0 2px rgba(232,149,106,.3);
+      transform: scale(1.25);
+    }
+    .card-flow-seg {
+      flex: 1;
+      height: 2px;
+      background: rgba(58,53,48,.12);
+      min-width: 6px;
+    }
+    .card-flow-seg.done { background: rgba(42,138,94,.55); }
+    .card-flow-label {
+      font-size: .62rem;
+      color: var(--muted);
+      line-height: 1.35;
     }
     .card-deadline {
       font-size: .72rem;
@@ -2911,7 +3027,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v165</div>
+        <div class="logo-sub">Business Dashboard · v166</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -9744,29 +9860,85 @@ ${MAIL_FOOTER}`,
       return getWorkflowProgress(p) || getPhaseProgress(p);
     }
 
+    function flowFeelLabel(pct, done) {
+      if (done || pct >= 100) return '完了';
+      if (pct <= 0) return 'これから';
+      if (pct < 25) return 'はじめ';
+      if (pct < 50) return '前半';
+      if (pct < 75) return '後半';
+      if (pct < 100) return '仕上げ';
+      return '完了';
+    }
+
+    function shortFlowLabel(label) {
+      if (!label) return '';
+      return String(label)
+        .replace(/・/g, '')
+        .replace(/クライアント確認/g, '確認')
+        .replace(/デザイン・素材準備/g, 'デザイン')
+        .replace(/トンマナ・デザイン/g, 'トンマナ')
+        .replace(/企画・台本/g, '企画')
+        .replace(/企画・方向性/g, '企画')
+        .replace(/編集・仕上げ/g, '仕上げ')
+        .replace(/確認・納品/g, '納品')
+        .replace(/編集者依頼/g, '外注')
+        .replace(/素材処理/g, '素材')
+        .replace(/ヒアリング・構成/g, '構成')
+        .replace(/クライアントチェック中/g, 'チェック')
+        .replace(/レポート作成/g, 'レポート');
+    }
+
+    function renderFlowTrack(prog) {
+      return `<div class="flow-track">${prog.groups.map(g => {
+        const cls = g.complete ? 'done' : (g.current ? 'current' : '');
+        const mark = g.complete ? '✓' : (g.current ? '!' : '');
+        const frac = (!prog.isPhase && g.total > 1)
+          ? `<div class="flow-track-frac">${g.done}/${g.total}</div>`
+          : '';
+        return `<div class="flow-track-step${cls ? ' ' + cls : ''}">
+          <div class="flow-track-dot">${mark}</div>
+          <div class="flow-track-label">${esc(shortFlowLabel(g.label))}</div>
+          ${frac}
+        </div>`;
+      }).join('')}</div>`;
+    }
+
     function renderCardFlowProgress(p) {
       if (p.status !== 'doing') return '';
       const prog = getWorkflowProgress(p);
       if (!prog || !prog.total) return '';
-      const now = prog.currentGroupLabel === '完了'
+      const doneAll = prog.pct >= 100;
+      const feel = flowFeelLabel(prog.pct, doneAll);
+      const now = doneAll
         ? 'チェックリスト完了'
         : (prog.currentStepText
-          ? `<strong>${esc(prog.currentGroupLabel)}</strong> — ${esc(prog.currentStepText)}`
-          : `<strong>${esc(prog.currentGroupLabel || '未着手')}</strong>`);
+          ? `${esc(prog.currentGroupLabel)} <span>— ${esc(prog.currentStepText)}</span>`
+          : esc(prog.currentGroupLabel || '未着手'));
+      const dots = prog.groups.map((g, i) => {
+        const cls = g.complete ? 'done' : (g.current ? 'current' : '');
+        const seg = i < prog.groups.length - 1
+          ? `<div class="card-flow-seg${g.complete ? ' done' : ''}"></div>`
+          : '';
+        return `<div class="card-flow-dot${cls ? ' ' + cls : ''}" title="${esc(g.label)}"></div>${seg}`;
+      }).join('');
       return `<div class="card-flow-progress">
-        <div class="card-flow-bar"><span style="width:${prog.pct}%"></span></div>
-        <div class="card-flow-label">${prog.checked}/${prog.total}（${prog.pct}%） · ${now}</div>
+        <div class="card-flow-now">${doneAll ? '' : 'いまここ · '}${now}</div>
+        <div class="card-flow-track">${dots}</div>
+        <div class="card-flow-label">${feel}（${prog.pct}%）</div>
       </div>`;
     }
 
     function renderFlowProgress() {
       const el = document.getElementById('flowProgressPanel');
       if (!el) return;
-      const projects = state.projects.filter(p =>
-        p.category === 'client' &&
-        p.status === 'doing' &&
-        getProjectFlowProgress(p)
-      );
+      const projects = state.projects.filter(p => {
+        if (p.category !== 'client' || p.status !== 'doing') return false;
+        const prog = getProjectFlowProgress(p);
+        if (!prog) return false;
+        // チェックリスト完了は「いまどこまで？」から外す
+        if (!prog.isPhase && prog.pct >= 100) return false;
+        return true;
+      });
       if (!projects.length) {
         el.innerHTML = '';
         return;
@@ -9774,42 +9946,46 @@ ${MAIL_FOOTER}`,
 
       const rows = projects.map(p => {
         const prog = getProjectFlowProgress(p);
-        const stages = prog.groups.map(g => {
-          const cls = g.complete ? 'done' : (g.current ? 'current' : '');
-          const count = prog.isPhase
-            ? ''
-            : `<span class="flow-stage-count">${g.done}/${g.total}</span>`;
-          return `<span class="flow-stage${cls ? ' ' + cls : ''}">${esc(g.label)}${count ? ' ' + count : ''}</span>`;
-        }).join('');
-        const nowLine = prog.isPhase
-          ? `いま: <strong>${esc(prog.currentGroupLabel)}</strong>`
-          : (prog.currentGroupLabel === '完了'
-            ? '<strong>チェックリスト完了</strong>'
-            : (prog.currentStepText
-              ? `いま: <strong>${esc(prog.currentGroupLabel)}</strong> — ${esc(prog.currentStepText)}`
-              : `いま: <strong>${esc(prog.currentGroupLabel || '未着手')}</strong>`));
+        const doneAll = prog.pct >= 100 || prog.currentGroupLabel === '完了';
+        const feel = flowFeelLabel(prog.pct, doneAll);
         const click = getWorkflow(p)
           ? `openChecklist('${p.id}')`
           : `editProject('${p.id}')`;
-        const pctCls = prog.pct >= 100 ? ' done' : '';
+        const nowBlock = doneAll
+          ? `<div class="flow-progress-now done">
+              <div class="flow-progress-now-badge">完了</div>
+              <div class="flow-progress-now-body">
+                <div class="flow-progress-now-stage">チェックリスト完了</div>
+              </div>
+            </div>`
+          : `<div class="flow-progress-now">
+              <div class="flow-progress-now-badge">いまここ</div>
+              <div class="flow-progress-now-body">
+                <div class="flow-progress-now-stage">${esc(prog.currentGroupLabel || '未着手')}</div>
+                ${prog.currentStepText ? `<div class="flow-progress-now-step">${esc(prog.currentStepText)}</div>` : ''}
+              </div>
+            </div>`;
         return `
           <div class="flow-progress-row" onclick="${click}" title="クリックで詳細を開く">
             <div class="flow-progress-row-top">
               <div>
                 <div class="flow-progress-name">${esc(p.client ? p.client + ' — ' : '')}${esc(p.name)}</div>
-                <div class="flow-progress-meta">${esc(typeLabel(p.type))}${prog.isPhase ? ' · フェーズ' : ' · ' + esc(prog.title)}</div>
+                <div class="flow-progress-meta">${esc(typeLabel(p.type))}${prog.isPhase ? ' · フェーズ' : ''}</div>
               </div>
-              <div class="flow-progress-pct${pctCls}">${prog.checked}/${prog.total} · ${prog.pct}%</div>
+              <div class="flow-progress-feel">
+                <div class="flow-progress-feel-main${doneAll ? ' done' : ''}">${esc(feel)}</div>
+                <div class="flow-progress-feel-sub">${prog.pct}%</div>
+              </div>
             </div>
-            <div class="flow-stages">${stages}</div>
-            <div class="flow-progress-now">${nowLine}</div>
+            ${nowBlock}
+            ${renderFlowTrack(prog)}
           </div>`;
       }).join('');
 
       el.innerHTML = `
         <div class="flow-progress-head">
-          <div class="flow-progress-title">案件フロー進捗</div>
-          <div class="flow-progress-hint">進行中 ${projects.length}件 · クリックでチェックリスト</div>
+          <div class="flow-progress-title">いまどこまで？</div>
+          <div class="flow-progress-hint">進行中 ${projects.length}件 · タップでチェックリスト</div>
         </div>
         <div class="flow-progress-list">${rows}</div>`;
     }
