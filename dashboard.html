@@ -598,7 +598,7 @@
     .flow-progress-row {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       padding: 12px 12px 11px;
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -3027,7 +3027,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v166</div>
+        <div class="logo-sub">Business Dashboard · v167</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -9909,11 +9909,6 @@ ${MAIL_FOOTER}`,
       if (!prog || !prog.total) return '';
       const doneAll = prog.pct >= 100;
       const feel = flowFeelLabel(prog.pct, doneAll);
-      const now = doneAll
-        ? 'チェックリスト完了'
-        : (prog.currentStepText
-          ? `${esc(prog.currentGroupLabel)} <span>— ${esc(prog.currentStepText)}</span>`
-          : esc(prog.currentGroupLabel || '未着手'));
       const dots = prog.groups.map((g, i) => {
         const cls = g.complete ? 'done' : (g.current ? 'current' : '');
         const seg = i < prog.groups.length - 1
@@ -9922,7 +9917,6 @@ ${MAIL_FOOTER}`,
         return `<div class="card-flow-dot${cls ? ' ' + cls : ''}" title="${esc(g.label)}"></div>${seg}`;
       }).join('');
       return `<div class="card-flow-progress">
-        <div class="card-flow-now">${doneAll ? '' : 'いまここ · '}${now}</div>
         <div class="card-flow-track">${dots}</div>
         <div class="card-flow-label">${feel}（${prog.pct}%）</div>
       </div>`;
@@ -9951,20 +9945,6 @@ ${MAIL_FOOTER}`,
         const click = getWorkflow(p)
           ? `openChecklist('${p.id}')`
           : `editProject('${p.id}')`;
-        const nowBlock = doneAll
-          ? `<div class="flow-progress-now done">
-              <div class="flow-progress-now-badge">完了</div>
-              <div class="flow-progress-now-body">
-                <div class="flow-progress-now-stage">チェックリスト完了</div>
-              </div>
-            </div>`
-          : `<div class="flow-progress-now">
-              <div class="flow-progress-now-badge">いまここ</div>
-              <div class="flow-progress-now-body">
-                <div class="flow-progress-now-stage">${esc(prog.currentGroupLabel || '未着手')}</div>
-                ${prog.currentStepText ? `<div class="flow-progress-now-step">${esc(prog.currentStepText)}</div>` : ''}
-              </div>
-            </div>`;
         return `
           <div class="flow-progress-row" onclick="${click}" title="クリックで詳細を開く">
             <div class="flow-progress-row-top">
@@ -9977,7 +9957,6 @@ ${MAIL_FOOTER}`,
                 <div class="flow-progress-feel-sub">${prog.pct}%</div>
               </div>
             </div>
-            ${nowBlock}
             ${renderFlowTrack(prog)}
           </div>`;
       }).join('');
