@@ -564,6 +564,94 @@
       margin-top: 6px;
       font-weight: 600;
     }
+    .card-flow-progress {
+      margin-top: 8px;
+      margin-bottom: 2px;
+    }
+    .card-flow-track {
+      display: flex;
+      align-items: flex-start;
+      width: 100%;
+      gap: 0;
+    }
+    .card-flow-step {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      text-align: center;
+    }
+    .card-flow-step:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      left: calc(50% + 7px);
+      right: calc(-50% + 7px);
+      height: 2px;
+      background: rgba(58,53,48,.12);
+      border-radius: 1px;
+      z-index: 0;
+    }
+    .card-flow-step.done:not(:last-child)::after {
+      background: rgba(42,138,94,.55);
+    }
+    .card-flow-step.current:not(:last-child)::after {
+      background: linear-gradient(90deg, rgba(232,149,106,.7), rgba(58,53,48,.12));
+    }
+    .card-flow-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid rgba(58,53,48,.2);
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .55rem;
+      font-weight: 800;
+      color: transparent;
+      position: relative;
+      z-index: 1;
+      box-sizing: border-box;
+    }
+    .card-flow-step.done .card-flow-dot {
+      background: #2a8a5e;
+      border-color: #2a8a5e;
+      color: #fff;
+    }
+    .card-flow-step.current .card-flow-dot {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+      box-shadow: 0 0 0 2px rgba(232,149,106,.28);
+    }
+    .card-flow-label {
+      margin-top: 4px;
+      font-size: .58rem;
+      font-weight: 600;
+      color: var(--muted);
+      line-height: 1.2;
+      max-width: 100%;
+      padding: 0 1px;
+      word-break: break-word;
+    }
+    .card-flow-step.done .card-flow-label { color: #2a8a5e; }
+    .card-flow-step.current .card-flow-label {
+      color: var(--red-dim);
+      font-weight: 800;
+    }
+    .card-flow-frac {
+      font-size: .55rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+    }
+    .card-flow-step.current .card-flow-frac {
+      color: var(--red-dim);
+      font-weight: 700;
+    }
     .card-deadline {
       font-size: .72rem;
       color: var(--red-dim);
@@ -2767,7 +2855,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v168</div>
+        <div class="logo-sub">Business Dashboard · v169</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -7660,11 +7748,14 @@ ${MAIL_FOOTER}`,
       const deadline = (p.status === 'todo' || p.status === 'doing') ? renderDeadlineHtml(p) : '';
       const memoBlock = p.memo && p.memo.trim()
         ? `<div class="card-memo">${esc(p.memo.trim())}</div>` : '';
-      const phaseLabel = p.phase && p.status !== 'done'
-        ? `<div class="phase-current">▸ ${isAdOpsType(p) && p.status === 'doing' && p.prepayPhase ? `先払い ${esc(p.prepayPhase)} · ` : ''}${esc(p.phase)}</div>`
+      const phaseLabel = p.phase && p.status !== 'done' && p.status !== 'doing'
+        ? `<div class="phase-current">▸ ${isAdOpsType(p) && p.prepayPhase ? `先払い ${esc(p.prepayPhase)} · ` : ''}${esc(p.phase)}</div>`
         : (isAdOpsType(p) && p.status === 'billing'
           ? `<div class="phase-current">▸ ${esc(formatOpsMonthLabel(getOpsMonth(p)))} 締め — 継続または契約終了</div>`
-          : '');
+          : (isAdOpsType(p) && p.status === 'doing' && p.prepayPhase
+            ? `<div class="phase-current">▸ 先払い ${esc(p.prepayPhase)}${p.phase ? ` · ${esc(p.phase)}` : ''}</div>`
+            : ''));
+      const flowProgress = renderCardFlowProgress(p);
       const financeBlock = renderCardFinance(p);
       const showTimeLogBtn = p.status === 'doing' && p.category !== 'sns';
       const actions = p.status !== 'done' ? `
@@ -7697,6 +7788,7 @@ ${MAIL_FOOTER}`,
           ${paymentDueLine}
           ${memoBlock}
           ${phaseLabel}
+          ${flowProgress}
           ${financeBlock}
           ${renderPhaseButtons(p)}
           ${renderHddMigrateButtons(p)}
@@ -9494,6 +9586,90 @@ ${MAIL_FOOTER}`,
     function getWorkflow(p) {
       const key = getWorkflowKey(p);
       return key ? WORKFLOWS[key] : null;
+    }
+
+    function getWorkflowProgress(p) {
+      if (!p || p.category === 'sns') return null;
+      const wf = getWorkflow(p);
+      if (!wf) return null;
+      const wfKey = getWorkflowKey(p);
+      const checklist = getProjectChecklist(p, wfKey);
+      const customSteps = getProjectCustomSteps(p, wfKey);
+      const groups = [];
+      let checked = 0;
+      let total = 0;
+
+      wf.groups.forEach(g => {
+        if (g.optional && g.gateKey === EDITOR_OUTSOURCE_GATE && !isEditorOutsourceEnabled(p)) return;
+        const steps = g.steps || [];
+        const gDone = steps.filter(s => checklist[s.id]).length;
+        const gTotal = steps.length;
+        groups.push({
+          label: g.label,
+          done: gDone,
+          total: gTotal,
+          complete: gTotal > 0 && gDone === gTotal,
+          current: false,
+        });
+        checked += gDone;
+        total += gTotal;
+      });
+
+      if (customSteps.length) {
+        const cDone = customSteps.filter(s => checklist[s.id]).length;
+        const cTotal = customSteps.length;
+        groups.push({
+          label: '追加',
+          done: cDone,
+          total: cTotal,
+          complete: cDone === cTotal,
+          current: false,
+        });
+        checked += cDone;
+        total += cTotal;
+      }
+
+      const current = groups.find(g => !g.complete && g.total > 0);
+      if (current) current.current = true;
+
+      return {
+        groups,
+        checked,
+        total,
+        pct: total ? Math.round(checked / total * 100) : 0,
+      };
+    }
+
+    function shortFlowLabel(label) {
+      if (!label) return '';
+      return String(label)
+        .replace(/・/g, '')
+        .replace(/クライアント確認/g, '確認')
+        .replace(/デザイン・素材準備/g, 'デザイン')
+        .replace(/トンマナ・デザイン/g, 'トンマナ')
+        .replace(/企画・台本/g, '企画')
+        .replace(/企画・方向性/g, '企画')
+        .replace(/編集・仕上げ/g, '仕上げ')
+        .replace(/確認・納品/g, '納品')
+        .replace(/編集者依頼/g, '外注')
+        .replace(/素材処理/g, '素材');
+    }
+
+    function renderCardFlowProgress(p) {
+      if (p.status !== 'doing') return '';
+      const prog = getWorkflowProgress(p);
+      if (!prog || !prog.total || !prog.groups.length) return '';
+      const steps = prog.groups.map(g => {
+        const cls = g.complete ? 'done' : (g.current ? 'current' : '');
+        const mark = g.complete ? '✓' : (g.current ? '!' : '');
+        const frac = g.total > 1 ? `<div class="card-flow-frac">${g.done}/${g.total}</div>` : '';
+        return `<div class="card-flow-step${cls ? ' ' + cls : ''}">
+          <div class="card-flow-dot">${mark}</div>
+          <div class="card-flow-label">${esc(shortFlowLabel(g.label))}</div>
+          ${frac}
+        </div>`;
+      }).join('');
+      return `<div class="card-flow-progress">${steps ? `<div class="card-flow-track">${steps}</div>` : ''}</div>`;
     }
 
     function ensureProjectChecklists(p) {
