@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>撮影チェックリスト｜nARK</title>
+<style>
+  @page { size: A4; margin: 10mm 11mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    font-size: 8.8pt;
+    color: #1a1814;
+    line-height: 1.28;
+    margin: 0;
+    padding: 10px 12px 14px;
+    max-width: 210mm;
+  }
+  h1 {
+    font-size: 13pt;
+    font-weight: 800;
+    letter-spacing: .06em;
+    margin: 0 0 6px;
+    text-align: center;
+  }
+  .meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px 12px;
+    margin-bottom: 6px;
+    font-size: 8.5pt;
+  }
+  .meta label { display: flex; gap: 4px; align-items: baseline; }
+  .meta .line {
+    flex: 1;
+    border-bottom: 1px solid #aaa;
+    min-height: 1.05em;
+  }
+  h2 {
+    font-size: 9pt;
+    font-weight: 800;
+    margin: 7px 0 3px;
+    padding: 2px 6px;
+    background: #f0ebe3;
+    border-left: 3px solid #c45c3e;
+  }
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px 10px;
+  }
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 2px 0;
+    border-bottom: 1px dotted #ddd;
+    font-size: 8.4pt;
+  }
+  .box {
+    width: 11px;
+    height: 11px;
+    border: 1.4px solid #333;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .fill {
+    display: inline-block;
+    min-width: 1.8em;
+    border-bottom: 1px solid #999;
+    margin: 0 1px;
+  }
+  .hint {
+    font-size: 7.5pt;
+    color: #666;
+    margin: 0 0 2px;
+  }
+  .preset .item { font-size: 8pt; padding: 3px 0; }
+  .fail {
+    margin-top: 5px;
+    font-size: 7.6pt;
+    color: #555;
+    padding: 3px 6px;
+    border: 1px solid #ddd;
+  }
+  .note {
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 4px 7px;
+    min-height: 36px;
+  }
+  .note-label { font-size: 7.5pt; color: #666; font-weight: 700; }
+  .footer {
+    margin-top: 4px;
+    font-size: 7pt;
+    color: #999;
+    text-align: right;
+  }
+  .print-bar {
+    position: sticky; top: 0; background: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 6px 0 8px; margin: -4px 0 8px;
+    display: flex; gap: 8px; align-items: center; z-index: 2;
+  }
+  .print-bar button {
+    font: inherit; font-size: .82rem; font-weight: 700;
+    padding: 6px 12px; border: none; border-radius: 6px;
+    background: #c45c3e; color: #fff; cursor: pointer;
+  }
+  .print-bar span { font-size: .72rem; color: #888; }
+  @media print {
+    .print-bar { display: none; }
+    body { padding: 0; }
+  }
+</style>
+</head>
+<body>
+  <div class="print-bar">
+    <button type="button" onclick="window.print()">印刷する</button>
+    <span>A4・1枚想定。印刷して現場へ</span>
+  </div>
+
+  <h1>撮影チェックリスト</h1>
+  <div class="meta">
+    <label>案件名 <span class="line"></span></label>
+    <label>撮影日 <span class="line"></span></label>
+    <label>場所 <span class="line"></span></label>
+    <label>担当 <span class="line"></span></label>
+  </div>
+
+  <h2>① あらかじめ決める・設定する</h2>
+  <p class="hint">現場で値を書いて□</p>
+  <div class="preset">
+    <div class="item"><span class="box"></span><span>形式(MOV/MP4):<span class="fill"></span>　色深度:<span class="fill"></span>　fps:<span class="fill"></span>　SS:1/<span class="fill"></span>　絞り:F<span class="fill"></span>　ISO:<span class="fill"></span>上限:<span class="fill"></span>　WB:<span class="fill"></span>　MF/AF</span></div>
+    <div class="item"><span class="box"></span><span>解像度:<span class="fill"></span>　プロファイル:<span class="fill"></span>　□音声入力　□メディア・バッテリー　□メイン構図カメラはダブルスロット録画</span></div>
+  </div>
+
+  <h2>② 撮影開始直前</h2>
+  <div class="grid2">
+    <div class="item"><span class="box"></span><span>フレームレート</span></div>
+    <div class="item"><span class="box"></span><span>シャッタースピード</span></div>
+    <div class="item"><span class="box"></span><span>絞り</span></div>
+    <div class="item"><span class="box"></span><span>ISO（上限内）</span></div>
+    <div class="item"><span class="box"></span><span>WB固定</span></div>
+    <div class="item"><span class="box"></span><span>ピント</span></div>
+    <div class="item"><span class="box"></span><span>MF／AF</span></div>
+    <div class="item"><span class="box"></span><span>ズーム後のピント</span></div>
+    <div class="item"><span class="box"></span><span>音声</span></div>
+    <div class="item"><span class="box"></span><span>メディア容量</span></div>
+    <div class="item"><span class="box"></span><span>バッテリー</span></div>
+    <div class="item"><span class="box"></span><span>10秒テスト→再生</span></div>
+    <div class="item"><span class="box"></span><span>ダブルスロット録画</span></div>
+  </div>
+
+  <h2>③ 撮影開始後（最初の1〜2分を念入りに）</h2>
+  <div class="grid2">
+    <div class="item"><span class="box"></span><span>REC表示</span></div>
+    <div class="item"><span class="box"></span><span>顔の解像（ピンぼけなし）</span></div>
+    <div class="item"><span class="box"></span><span>目のピント</span></div>
+    <div class="item"><span class="box"></span><span>フォーカスの勝手な動きなし</span></div>
+    <div class="item"><span class="box"></span><span>拡大してピント確認</span></div>
+    <div class="item"><span class="box"></span><span>フォーカスピーキング</span></div>
+    <div class="item"><span class="box"></span><span>手ブレ</span></div>
+    <div class="item"><span class="box"></span><span>明るさ</span></div>
+    <div class="item"><span class="box"></span><span>色・WB</span></div>
+    <div class="item"><span class="box"></span><span>音声レベル</span></div>
+    <div class="item"><span class="box"></span><span>メディア・バッテリー残量</span></div>
+    <div class="item"><span class="box"></span><span>重要シーン2テイク</span></div>
+  </div>
+
+  <div class="fail">失敗しやすいポイント：ピンぼけ／手ブレ／明るさ／色／フレームレート／SS／音声／容量</div>
+  <div class="note"><div class="note-label">メモ</div></div>
+  <div class="footer">nARK　撮影関連資料/撮影チェックリスト印刷.html</div>
+</body>
+</html>

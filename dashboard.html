@@ -1419,6 +1419,23 @@
       color: #fff;
     }
     .checklist-text { flex: 1; font-size: .88rem; }
+    .checklist-open-btn {
+      flex-shrink: 0;
+      font: inherit;
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .checklist-open-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+      background: var(--red-glow);
+    }
     .checklist-tag {
       font-size: .6rem;
       padding: 2px 7px;
@@ -2856,7 +2873,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v171</div>
+        <div class="logo-sub">Business Dashboard · v172</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
         </div>
@@ -9558,7 +9575,7 @@ ${MAIL_FOOTER}`,
               { id: 305, text: '機材揃え', tag: '準備' },
               { id: 306, text: 'ロケハン', tag: '準備' },
               { id: 307, text: '仕込み（不要ならスキップ）', tag: '準備' },
-              { id: 309, text: '撮影チェックリストを印刷', tag: '準備' },
+              { id: 309, text: '撮影チェックリストを印刷', tag: '準備', action: 'openShootChecklist' },
             ],
           },
           {
@@ -9781,12 +9798,16 @@ ${MAIL_FOOTER}`,
         stepNum++;
         const num = stepNum;
         const isDeadline = s.type === 'editorDeadline';
+        const actionBtn = s.action === 'openShootChecklist'
+          ? `<button type="button" class="checklist-open-btn" onclick="event.preventDefault();event.stopPropagation();openShootChecklistPrint()">印刷用を開く</button>`
+          : '';
         const item = `
             <label class="checklist-item${checklist[s.id] ? ' checked' : ''}">
               <input type="checkbox" class="checklist-check" ${checklist[s.id] ? 'checked' : ''}
                      onchange="toggleChecklist('${p.id}','${wfKey}',${s.id},this.checked)">
               <div class="checklist-num">${num}</div>
               <div class="checklist-text">${esc(s.text)}</div>
+              ${actionBtn}
               <span class="checklist-tag ${esc(s.tag)}">${esc(s.tag)}</span>
             </label>`;
         if (!isDeadline) return item;
@@ -9927,11 +9948,27 @@ ${MAIL_FOOTER}`,
       EDITOR_DEADLINE_STEP_IDS.forEach(id => { checklist[id] = !!checked; });
     }
 
+    function openShootChecklistPrint() {
+      const base = location.href.replace(/[^/?#]*([?#].*)?$/, '');
+      const isPages = /github\.io$/i.test(location.hostname);
+      const rel = isPages
+        ? 'shoot-checklist.html'
+        : encodeURI('撮影関連資料/撮影チェックリスト印刷.html');
+      window.open(base + rel, '_blank');
+      toast('撮影チェックリストを開きました');
+    }
+    window.openShootChecklistPrint = openShootChecklistPrint;
+
+    const SHOOT_CHECKLIST_PRINT_STEP = 309;
+
     function toggleChecklist(projectId, wfKey, stepId, checked) {
       const p = state.projects.find(x => x.id === projectId);
       if (!p) return;
       const checklist = getProjectChecklist(p, wfKey);
       checklist[stepId] = checked;
+      if (checked && Number(stepId) === SHOOT_CHECKLIST_PRINT_STEP) {
+        openShootChecklistPrint();
+      }
       const wf = getWorkflow(p);
       if (wf) renderChecklistBody(p, wf);
       saveState();

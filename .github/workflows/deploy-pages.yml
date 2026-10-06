@@ -8,6 +8,7 @@ on:
       - 'funnel.html'
       - 'funnel-data.js'
       - 'vision-*.jpg'
+      - '撮影関連資料/撮影チェックリスト印刷.html'
       - '.nojekyll'
       - '.github/workflows/deploy-pages.yml'
 
@@ -37,6 +38,7 @@ jobs:
           cp funnel.html _site/funnel.html
           cp funnel-data.js _site/funnel-data.js
           cp vision-*.jpg _site/
+          cp "撮影関連資料/撮影チェックリスト印刷.html" _site/shoot-checklist.html
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
