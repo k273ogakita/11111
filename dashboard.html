@@ -2047,6 +2047,70 @@
       padding: 4px 0 2px;
       line-height: 1.45;
     }
+    .wg-adhoc {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(58,53,48,.18);
+    }
+    .wg-adhoc-head {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .wg-adhoc-hint {
+      font-size: .62rem;
+      color: var(--muted);
+      opacity: .85;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+    .wg-adhoc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .wg-adhoc-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+    .weekly-goals-panel textarea.wg-adhoc-text {
+      flex: 1;
+      min-width: 0;
+      font-size: .75rem;
+      font-weight: 400;
+      line-height: 1.4;
+      border: none !important;
+      border-radius: 0;
+      padding: 2px 0;
+      background: transparent !important;
+      box-shadow: none;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      resize: none;
+      overflow: hidden;
+      min-height: 1.4em;
+      height: auto;
+      field-sizing: content;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .weekly-goals-panel textarea.wg-adhoc-text:focus {
+      border: none !important;
+      background: transparent !important;
+      box-shadow: 0 1px 0 rgba(180, 40, 40, .35);
+    }
+    .wg-adhoc-row:hover .wg-goal-del { opacity: 1; }
+    .wg-adhoc-add {
+      margin-top: 4px;
+      width: auto;
+      font-size: .72rem;
+      padding: 2px 6px;
+      color: var(--muted);
+    }
     /* ── SNS投稿ネタ（自分用ストック） ── */
     .sns-ideas-panel {
       background: var(--surface);
@@ -4351,6 +4415,7 @@ nark.visual.media@gmail.com
         adExpenses: [],
         bizTodos: [],
         weeklyGoals: {},
+        weeklyAdHoc: {},
         snsIdeas: defaultSnsIdeas(),
         milestoneDone: {},
         vision: emptyVision(),
@@ -4960,6 +5025,7 @@ ${MAIL_FOOTER}`,
       if (!data.adExpenses) data.adExpenses = [];
       if (!data.bizTodos) data.bizTodos = [];
       if (!data.weeklyGoals || typeof data.weeklyGoals !== 'object') data.weeklyGoals = {};
+      if (!data.weeklyAdHoc || typeof data.weeklyAdHoc !== 'object') data.weeklyAdHoc = {};
       if (!Object.prototype.hasOwnProperty.call(data, 'snsIdeas') || data.snsIdeas === undefined) {
         data.snsIdeas = defaultSnsIdeas();
       } else if (!Array.isArray(data.snsIdeas)) {
@@ -6773,6 +6839,7 @@ ${MAIL_FOOTER}`,
     /* ── Weekly Goals（1週間の目標＋到達目標） ── */
     function ensureWeeklyGoals(data) {
       if (!data.weeklyGoals || typeof data.weeklyGoals !== 'object') data.weeklyGoals = {};
+      if (!data.weeklyAdHoc || typeof data.weeklyAdHoc !== 'object') data.weeklyAdHoc = {};
       return data;
     }
 
@@ -6931,7 +6998,7 @@ ${MAIL_FOOTER}`,
     }
 
     function autoSizeAllWgFields() {
-      document.querySelectorAll('#weeklyGoalsPanel .wg-goal-text, #weeklyGoalsPanel .wg-step-text').forEach(autoSizeWgField);
+      document.querySelectorAll('#weeklyGoalsPanel .wg-goal-text, #weeklyGoalsPanel .wg-step-text, #weeklyGoalsPanel .wg-adhoc-text').forEach(autoSizeWgField);
     }
 
     function onWeeklyGoalText(goalId, weekKey, el) {
@@ -6992,6 +7059,46 @@ ${MAIL_FOOTER}`,
       persistStateQuiet();
     }
     window.onWeeklyStepText = onWeeklyStepText;
+
+    function getWeekAdHoc(weekKey) {
+      ensureWeeklyGoals(state);
+      if (!Array.isArray(state.weeklyAdHoc[weekKey])) state.weeklyAdHoc[weekKey] = [];
+      return state.weeklyAdHoc[weekKey];
+    }
+
+    function findWeekAdHoc(weekKey, itemId) {
+      return getWeekAdHoc(weekKey).find(x => x.id === itemId) || null;
+    }
+
+    function addWeeklyAdHoc(weekKey) {
+      const key = weekKey || currentWeekStartKey();
+      getWeekAdHoc(key).push({ id: uid(), text: '' });
+      saveState();
+      setTimeout(function() {
+        const col = document.querySelector('#weeklyGoalsPanel [data-week-key="' + key + '"]');
+        const list = col ? col.querySelectorAll('.wg-adhoc-text') : [];
+        const last = list[list.length - 1];
+        if (last) { last.focus(); last.select(); }
+      }, 40);
+    }
+    window.addWeeklyAdHoc = addWeeklyAdHoc;
+
+    function deleteWeeklyAdHoc(itemId, weekKey) {
+      const key = weekKey || currentWeekStartKey();
+      state.weeklyAdHoc[key] = getWeekAdHoc(key).filter(x => x.id !== itemId);
+      saveState();
+    }
+    window.deleteWeeklyAdHoc = deleteWeeklyAdHoc;
+
+    function onWeeklyAdHocText(itemId, weekKey, el) {
+      const key = weekKey || currentWeekStartKey();
+      const item = findWeekAdHoc(key, itemId);
+      if (!item) return;
+      item.text = el.value;
+      autoSizeWgField(el);
+      persistStateQuiet();
+    }
+    window.onWeeklyAdHocText = onWeeklyAdHocText;
 
     let wgDrag = null;
 
@@ -7144,6 +7251,15 @@ ${MAIL_FOOTER}`,
           `;
         }).join('');
 
+      const adhoc = getWeekAdHoc(weekKey);
+      const adhocHtml = adhoc.map(item => `
+            <div class="wg-adhoc-row">
+              <textarea class="wg-adhoc-text" rows="1" placeholder="例：動画制作の仕事"
+                        oninput="onWeeklyAdHocText('${item.id}','${weekKey}', this)">${esc(item.text || '')}</textarea>
+              <button type="button" class="btn btn-ghost btn-danger wg-goal-del" onclick="deleteWeeklyAdHoc('${item.id}','${weekKey}')" title="削除">×</button>
+            </div>
+          `).join('');
+
       return `
         <div class="wg-week${isCurrent ? ' current' : ''}${allDone ? ' done-all' : ''}" data-week-key="${weekKey}"
              ondragover="onWgWeekDragOver(event)" ondragleave="onWgWeekDragLeave(event)"
@@ -7154,6 +7270,14 @@ ${MAIL_FOOTER}`,
           </div>
           <div class="wg-list">${goalsHtml}</div>
           <button type="button" class="btn btn-ghost wg-goal-add" onclick="addWeeklyGoal('${weekKey}')">+ 目標</button>
+          <div class="wg-adhoc">
+            <div class="wg-adhoc-head">突発で入った仕事</div>
+            <div class="wg-adhoc-hint">目標ではない。途中で入ったことをメモ</div>
+            <div class="wg-adhoc-list">
+              ${adhocHtml}
+            </div>
+            <button type="button" class="btn btn-ghost wg-adhoc-add" onclick="addWeeklyAdHoc('${weekKey}')">+ メモ</button>
+          </div>
         </div>
       `;
     }
