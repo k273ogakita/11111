@@ -2937,7 +2937,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v173</div>
+        <div class="logo-sub">Business Dashboard · v174</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
           <a class="btn" href="実績/index.html">実績</a>
@@ -4416,6 +4416,7 @@ nark.visual.media@gmail.com
         bizTodos: [],
         weeklyGoals: {},
         weeklyAdHoc: {},
+        weeklyGoalSeeded: {},
         snsIdeas: defaultSnsIdeas(),
         milestoneDone: {},
         vision: emptyVision(),
@@ -5026,6 +5027,7 @@ ${MAIL_FOOTER}`,
       if (!data.bizTodos) data.bizTodos = [];
       if (!data.weeklyGoals || typeof data.weeklyGoals !== 'object') data.weeklyGoals = {};
       if (!data.weeklyAdHoc || typeof data.weeklyAdHoc !== 'object') data.weeklyAdHoc = {};
+      if (!data.weeklyGoalSeeded || typeof data.weeklyGoalSeeded !== 'object') data.weeklyGoalSeeded = {};
       if (!Object.prototype.hasOwnProperty.call(data, 'snsIdeas') || data.snsIdeas === undefined) {
         data.snsIdeas = defaultSnsIdeas();
       } else if (!Array.isArray(data.snsIdeas)) {
@@ -6840,7 +6842,44 @@ ${MAIL_FOOTER}`,
     function ensureWeeklyGoals(data) {
       if (!data.weeklyGoals || typeof data.weeklyGoals !== 'object') data.weeklyGoals = {};
       if (!data.weeklyAdHoc || typeof data.weeklyAdHoc !== 'object') data.weeklyAdHoc = {};
+      if (!data.weeklyGoalSeeded || typeof data.weeklyGoalSeeded !== 'object') data.weeklyGoalSeeded = {};
       return data;
+    }
+
+    const MEDICAL_BRIEFING_SEED = 'medical-briefing';
+    const MEDICAL_BRIEFING_STEP_TEXT = '医療月報の確認';
+
+    /** 月曜キーが、その月の第2週（8〜14日始まり）か */
+    function isSecondWeekOfMonth(weekKey) {
+      const d = Number(String(weekKey).split('-')[2]);
+      return d >= 8 && d <= 14;
+    }
+
+    /** 毎月第2週に「医療月報の確認」到達目標を1回だけ入れる（削除後は再投入しない） */
+    function ensureWeek2MedicalBriefingGoal(weekKey) {
+      if (!weekKey || !isSecondWeekOfMonth(weekKey)) return;
+      ensureWeeklyGoals(state);
+      const seedKey = weekKey + ':' + MEDICAL_BRIEFING_SEED;
+      if (state.weeklyGoalSeeded[seedKey]) return;
+      const goals = state.weeklyGoals[weekKey] || (state.weeklyGoals[weekKey] = []);
+      const already = goals.some(g =>
+        g.seed === MEDICAL_BRIEFING_SEED ||
+        g.text === MEDICAL_BRIEFING_STEP_TEXT ||
+        (Array.isArray(g.steps) && g.steps.some(s => s.text === MEDICAL_BRIEFING_STEP_TEXT))
+      );
+      if (already) {
+        state.weeklyGoalSeeded[seedKey] = true;
+        return;
+      }
+      goals.push({
+        id: uid(),
+        text: '医療月報',
+        done: false,
+        seed: MEDICAL_BRIEFING_SEED,
+        steps: [{ id: uid(), text: MEDICAL_BRIEFING_STEP_TEXT, done: false }],
+      });
+      state.weeklyGoalSeeded[seedKey] = true;
+      persistStateQuiet();
     }
 
     function getMondayDate(base) {
@@ -6907,6 +6946,7 @@ ${MAIL_FOOTER}`,
     function getWeekGoals(weekKey) {
       ensureWeeklyGoals(state);
       if (!Array.isArray(state.weeklyGoals[weekKey])) state.weeklyGoals[weekKey] = [];
+      ensureWeek2MedicalBriefingGoal(weekKey);
       return state.weeklyGoals[weekKey];
     }
 
