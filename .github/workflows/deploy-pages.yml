@@ -9,6 +9,9 @@ on:
       - 'funnel-data.js'
       - 'vision-*.jpg'
       - '撮影関連資料/撮影チェックリスト印刷.html'
+      - '実績/index.html'
+      - '実績/hero.png'
+      - 'リファレンス/**'
       - '.nojekyll'
       - '.github/workflows/deploy-pages.yml'
 
@@ -29,16 +32,19 @@ jobs:
       url: ${{ steps.deployment_retry.outputs.page_url || steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      # リポジトリ全体（SNSメディア等）は上げず、ダッシュボードと営業ファネルだけ公開する
+      # リポジトリ全体（SNSメディア等）は上げない。大きな実績mp4も上げない。
       - name: Prepare Pages bundle
         run: |
-          mkdir -p _site
+          mkdir -p _site "_site/リファレンス/thumbs" "_site/実績"
           cp dashboard.html _site/dashboard.html
           cp dashboard.html _site/index.html
           cp funnel.html _site/funnel.html
           cp funnel-data.js _site/funnel-data.js
           cp vision-*.jpg _site/
           cp "撮影関連資料/撮影チェックリスト印刷.html" _site/shoot-checklist.html
+          cp "リファレンス/index.html" "リファレンス/items.js" "_site/リファレンス/"
+          find "リファレンス/thumbs" -maxdepth 1 -type f \( -name '*.jpg' -o -name '*.png' \) -exec cp {} "_site/リファレンス/thumbs/" \;
+          cp "実績/index.html" "実績/hero.png" "_site/実績/"
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

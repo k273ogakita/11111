@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nARK — 動画制作 実績集</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Noto+Sans+JP:wght@300;400;500;700&family=Noto+Serif+JP:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:        #141414;
+    --ink-2:      #1d1d1d;
+    --paper:      #ffffff;
+    --smoke:      #f4f3f1;
+    --smoke-2:    #ecebe8;
+    --grey:       #6f6f6f;
+    --grey-light: #a6a6a5;
+    --line:       rgba(0,0,0,0.10);
+    --line-dark:  rgba(255,255,255,0.14);
+    --orange:     #e07a3f;
+    --orange-hi:  #ef9d68;
+    --orange-deep:#c86234;
+  }
+
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: #0e0e0e;
+    color: #f2f1ef;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  img, video { display: block; max-width: 100%; }
+  a { color: inherit; }
+
+  /* ── HEADER ── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 18px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(20,20,20,0.82);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line-dark);
+  }
+  .logo { font-family: 'Cormorant Garamond', serif; font-size: 27px; font-weight: 400; letter-spacing: 0.04em; color: #fff; }
+  .logo span { color: var(--orange); font-weight: 600; }
+  nav { display: flex; gap: 24px; align-items: center; }
+  nav a {
+    font-size: 11px; font-weight: 400; letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.66); text-decoration: none;
+    text-transform: uppercase; transition: color 0.2s;
+  }
+  nav a:hover { color: var(--orange-hi); }
+  nav button.nav-lock {
+    font-size: 16px; line-height: 1; letter-spacing: 0;
+    color: rgba(255,255,255,0.55); text-transform: none;
+    background: none; border: 0; cursor: pointer; font-family: inherit;
+    padding: 0; transition: transform 0.2s, opacity 0.2s;
+  }
+  nav button.nav-lock:hover { color: var(--orange-hi); transform: scale(1.12); opacity: 1; }
+  nav a.nav-private { display: none; }
+  body.is-private nav a.nav-private { display: inline; }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative; min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    overflow: hidden; background: var(--ink);
+  }
+  .hero-bg { position: absolute; inset: 0; z-index: 0; }
+  .hero-bg img { width: 100%; height: 100%; object-fit: cover; object-position: center 55%; filter: grayscale(1) contrast(1.05) brightness(0.72); }
+  .hero-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(20,20,20,0.60) 0%, rgba(20,20,20,0.32) 42%, rgba(20,20,20,0.85) 100%); }
+  .hero-inner { position: relative; z-index: 1; padding: 0 48px 84px; max-width: 1120px; animation: fadeUp 1.1s 0.2s both; }
+  .hero-kicker { font-family: 'Noto Serif JP', serif; font-size: clamp(14px, 1.9vw, 18px); font-weight: 300; letter-spacing: 0.16em; color: var(--orange-hi); margin-bottom: 18px; }
+  .hero-brand { font-family: 'Cormorant Garamond', serif; font-size: clamp(60px, 11vw, 132px); font-weight: 300; line-height: 0.92; color: #fff; letter-spacing: -0.02em; margin-bottom: 14px; }
+  .hero-brand strong { font-weight: 600; color: var(--orange); }
+  .hero-title { font-family: 'Noto Serif JP', serif; font-size: clamp(24px, 3.6vw, 44px); font-weight: 300; color: #fff; letter-spacing: 0.05em; line-height: 1.45; margin-bottom: 22px; }
+  .hero-title em { font-style: normal; color: var(--orange-hi); }
+  .hero-lead { font-size: 14.5px; font-weight: 300; line-height: 2.1; color: rgba(255,255,255,0.82); max-width: 640px; letter-spacing: 0.05em; }
+  .hero-acronym { display: flex; gap: 28px; flex-wrap: wrap; margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line-dark); }
+  .hero-acronym li { list-style: none; display: flex; align-items: baseline; gap: 9px; }
+  .hero-acronym .l { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 600; color: var(--orange); line-height: 1; }
+  .hero-acronym .w { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-style: italic; color: rgba(255,255,255,0.80); }
+
+  /* ── SECTION SHELL ── */
+  section.block { padding: 84px 48px; background: #141414; }
+  section.block.smoke { background: #1b1b1b; }
+  section.block.dark { background: #0f0f0f; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  .sec-head { margin-bottom: 34px; display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; }
+  .sec-num { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 15px; letter-spacing: 0.14em; color: var(--orange); }
+  .sec-title { font-family: 'Noto Serif JP', serif; font-weight: 300; font-size: clamp(23px, 3.2vw, 32px); letter-spacing: 0.03em; color: #fff; }
+  .sec-title em { font-style: normal; color: var(--orange); }
+  .sec-desc { font-size: 12.5px; font-weight: 300; line-height: 1.8; color: rgba(255,255,255,0.66); letter-spacing: 0.02em; width: 100%; margin-top: -22px; margin-bottom: 30px; max-width: 720px; }
+
+  /* ── INTRO STRIP ── */
+  .intro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.10); }
+  .intro .cell { background: #161616; padding: 30px 22px; text-align: center; }
+  .intro .cell .t { font-family: 'Noto Serif JP', serif; font-size: 18px; color: var(--orange-hi); }
+  .intro .cell .s { font-size: 11.5px; letter-spacing: 0.06em; color: rgba(255,255,255,0.55); margin-top: 10px; line-height: 1.7; }
+
+  /* ── THUMBNAIL GRID ── */
+  .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(206px, 1fr)); gap: 18px; }
+  .thumb {
+    cursor: pointer; background: #1e1e1e;
+    border: 1px solid rgba(255,255,255,0.10); border-radius: 7px; overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s;
+  }
+  .thumb:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(0,0,0,0.5); border-color: rgba(224,122,63,0.6); }
+  .tw { position: relative; aspect-ratio: 16/9; background: #0b0b0b; overflow: hidden; }
+  .tw video, .tw img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+  .tw .play {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.28));
+    transition: background 0.2s;
+  }
+  .thumb:hover .tw .play { background: rgba(0,0,0,0.30); }
+  .tw .play i {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: rgba(224,122,63,0.94); display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3); transition: transform 0.2s;
+  }
+  .thumb:hover .tw .play i { transform: scale(1.08); }
+  .tw .play i::after { content: ''; margin-left: 3px; border-left: 12px solid #fff; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
+  .tw .badge {
+    position: absolute; top: 8px; left: 8px; z-index: 2;
+    font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+    background: rgba(20,20,20,0.78); color: #fff; padding: 3px 7px; border-radius: 3px;
+  }
+  .tcap { padding: 10px 12px 13px; }
+  .tcap .t { font-size: 12.5px; font-weight: 500; color: #f4f3f1; line-height: 1.45; }
+  .tcap .s { font-size: 10.5px; color: var(--orange-hi); margin-top: 4px; letter-spacing: 0.03em; }
+
+  /* ── LIGHTBOX ── */
+  .lb { position: fixed; inset: 0; z-index: 1000; background: rgba(10,10,10,0.93); display: none; align-items: center; justify-content: center; padding: 28px; }
+  .lb.open { display: flex; }
+  .lb-inner { width: min(940px, 94vw); position: relative; }
+  .lb-frame { position: relative; aspect-ratio: 16/9; background: #000; border-radius: 8px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .lb-frame video, .lb-frame iframe { width: 100%; height: 100%; border: 0; object-fit: contain; background: #000; }
+  .lb-cap { color: #fff; text-align: center; margin-top: 16px; font-size: 13px; letter-spacing: 0.04em; }
+  .lb-cap span { color: var(--orange-hi); margin-left: 10px; font-size: 11.5px; }
+  .lb-close { position: absolute; top: -14px; right: -6px; transform: translateY(-100%); color: #fff; font-size: 15px; letter-spacing: 0.08em; cursor: pointer; background: none; border: 1px solid rgba(255,255,255,0.3); border-radius: 999px; padding: 7px 16px; transition: background 0.2s; }
+  .lb-close:hover { background: rgba(255,255,255,0.12); }
+
+  /* ── PRIVATE GATE ── */
+  .gate { position: fixed; inset: 0; z-index: 1100; background: rgba(10,10,10,0.94); display: none; align-items: center; justify-content: center; padding: 24px; }
+  .gate.open { display: flex; }
+  .gate-box { width: min(420px, 92vw); background: #1a1a1a; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 36px 32px 32px; text-align: center; }
+  .gate-box .k { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--orange); letter-spacing: 0.12em; margin-bottom: 10px; }
+  .gate-box h3 { font-family: 'Noto Serif JP', serif; font-weight: 300; font-size: 22px; color: #fff; margin-bottom: 22px; }
+  .gate-box input {
+    width: 100%; padding: 12px 14px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.18);
+    background: #101010; color: #fff; font-size: 15px; letter-spacing: 0.08em; outline: none; text-align: center;
+  }
+  .gate-box input:focus { border-color: var(--orange); }
+  .gate-err { color: #e07a3f; font-size: 12px; min-height: 18px; margin: 10px 0 16px; }
+  .gate-row { display: flex; gap: 10px; justify-content: center; }
+  .gate-row button { padding: 10px 18px; border-radius: 3px; font-size: 13px; letter-spacing: 0.06em; cursor: pointer; font-family: inherit; }
+  .gate-ok { background: var(--orange); color: #fff; border: 0; }
+  .gate-ng { background: none; color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.2); }
+
+  #private { display: none; }
+  body.is-private #private { display: block; }
+  .priv-group { margin-bottom: 36px; }
+  .priv-group h3 { font-size: 13px; letter-spacing: 0.1em; color: var(--orange-hi); font-weight: 400; margin-bottom: 14px; }
+  .priv-lock { margin-top: 22px; }
+  .priv-lock button { background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); padding: 8px 14px; border-radius: 999px; cursor: pointer; font-size: 12px; letter-spacing: 0.06em; font-family: inherit; }
+  .priv-lock button:hover { color: #fff; border-color: var(--orange); }
+
+  /* ── VALUES (dark) ── */
+  .values .wrap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; }
+  .val { text-align: center; position: relative; }
+  .val + .val::before { content:''; position:absolute; left:-15px; top:16%; bottom:16%; width:1px; background: var(--line-dark); }
+  .val .l { font-family: 'Cormorant Garamond', serif; font-size: 52px; font-weight: 300; color: var(--orange); line-height: 1; }
+  .val .en { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 16px; color: rgba(255,255,255,0.86); margin-top: 8px; }
+  .val .ja { font-size: 11.5px; letter-spacing: 0.1em; color: rgba(255,255,255,0.45); margin-top: 8px; }
+
+  /* ── CTA ── */
+  .cta { background: #121212; text-align: center; padding: 92px 48px; }
+  .cta h2 { font-family: 'Noto Serif JP', serif; font-weight: 300; font-size: clamp(24px, 4vw, 36px); line-height: 1.5; margin-bottom: 18px; letter-spacing: 0.04em; color: #fff; }
+  .cta h2 em { font-style: normal; color: var(--orange-hi); }
+  .cta p { font-size: 13.5px; font-weight: 300; line-height: 2; color: rgba(255,255,255,0.58); margin-bottom: 32px; }
+  .cta-btn { display: inline-flex; align-items: center; gap: 12px; background: var(--orange); color: #fff; text-decoration: none; padding: 16px 34px; border-radius: 3px; font-size: 14px; letter-spacing: 0.06em; transition: background 0.25s, transform 0.22s; }
+  .cta-btn:hover { background: var(--orange-deep); transform: translateY(-2px); }
+
+  /* ── FOOTER ── */
+  footer { background: var(--ink); padding: 40px 48px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  footer .logo { font-size: 24px; }
+  footer .info { font-size: 11.5px; color: rgba(255,255,255,0.5); line-height: 1.9; letter-spacing: 0.04em; text-align: right; }
+  footer .info a { color: var(--orange-hi); text-decoration: none; }
+
+  /* ── ANIM ── */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
+  .reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 860px) {
+    header { padding: 14px 20px; }
+    nav a { display: none; }
+    nav a.nav-private { display: none !important; }
+    nav button.nav-lock { display: inline; }
+    section.block { padding: 56px 20px; }
+    .values .wrap { grid-template-columns: repeat(2, 1fr); gap: 34px 20px; }
+    .val + .val::before { display: none; }
+    .hero-inner { padding: 0 22px 60px; }
+    .cta, footer { padding: 60px 22px; }
+    footer { flex-direction: column; text-align: center; }
+    footer .info { text-align: center; }
+    .thumbs { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+    .intro { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">n<span>ARK</span></div>
+  <nav>
+    <a href="#patient">Patient</a>
+    <a href="#record">Record</a>
+    <a href="#ad">Ad</a>
+    <a href="#pr">PR</a>
+    <a href="#youtube">YouTube</a>
+    <a href="#private" class="nav-private">Private</a>
+    <a href="#contact">Contact</a>
+    <button type="button" class="nav-lock" id="lockBtn" title="非公開実績">🔑</button>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"><img src="hero.png" alt=""></div>
+  <div class="hero-inner">
+    <p class="hero-kicker">看護師が原点。誠実さと確かな実力。</p>
+    <div class="hero-brand">n<strong>ARK</strong></div>
+    <h1 class="hero-title">「あなたに頼んでよかった」を<em>積み重ねて</em>。</h1>
+    <p class="hero-lead">人がらや温度感を伝えながら、正確な情報を届けることを大切にして動画制作をしています。</p>
+    <ul class="hero-acronym">
+      <li><span class="l">n</span><span class="w">Nurse</span></li>
+      <li><span class="l">A</span><span class="w">Accuracy &amp; Articulate</span></li>
+      <li><span class="l">R</span><span class="w">ROI improvement</span></li>
+      <li><span class="l">K</span><span class="w">Kindness &amp; care</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- INTRO -->
+<section class="block" style="padding-top:56px; padding-bottom:28px;">
+  <div class="wrap">
+    <div class="intro reveal">
+      <div class="cell"><div class="t">看護師歴 8年</div><div class="s">現場で培った「伝える力」を映像に</div></div>
+      <div class="cell"><div class="t">企画〜撮影〜納品</div><div class="s">ワンストップで一貫対応</div></div>
+      <div class="cell"><div class="t">熊本拠点・全国対応</div><div class="s">オンライン打合せOK</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 01 患者説明動画 -->
+<section class="block smoke" id="patient">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="sec-num">01</span><h2 class="sec-title">患者説明<em>動画</em></h2></div>
+    <p class="sec-desc reveal">手術・検査の流れを、専門用語を日常語に置き換えて可視化。診察室での説明を補い、理解度と納得感を高めます。</p>
+    <div class="thumbs reveal">
+      <div class="thumb" data-yt="StuCoyh7Gk4" data-title="白内障手術動画" data-sub="サンプル">
+        <div class="tw"><span class="badge">患者説明</span><img src="https://img.youtube.com/vi/StuCoyh7Gk4/hqdefault.jpg" alt="白内障手術動画"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">白内障手術動画</div><div class="s">サンプル</div></div>
+      </div>
+      <div class="thumb" data-yt="qd6fd1SwAnw" data-title="待合室用動画" data-sub="サンプル">
+        <div class="tw"><span class="badge">患者説明</span><img src="https://img.youtube.com/vi/qd6fd1SwAnw/hqdefault.jpg" alt="待合室用動画"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">待合室用動画</div><div class="s">サンプル</div></div>
+      </div>
+      <div class="thumb" data-yt="GDU3z-iZh9Y" data-title="インプラント説明動画" data-sub="サンプル">
+        <div class="tw"><span class="badge">患者説明</span><img src="https://img.youtube.com/vi/GDU3z-iZh9Y/hqdefault.jpg" alt="インプラント説明動画"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">インプラント説明動画</div><div class="s">サンプル</div></div>
+      </div>
+      <div class="thumb" data-yt="7b9ngS62tsc" data-title="人工膝関節説明動画" data-sub="サンプル">
+        <div class="tw"><span class="badge">患者説明</span><img src="https://img.youtube.com/vi/7b9ngS62tsc/hqdefault.jpg" alt="人工膝関節説明動画"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">人工膝関節説明動画</div><div class="s">サンプル</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 記録動画 -->
+<section class="block" id="record">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="sec-num">02</span><h2 class="sec-title">記録<em>動画</em></h2></div>
+    <p class="sec-desc reveal">お祭りやイベント、活動の様子を「その日の空気」ごと残す記録映像。あとから見返せる一本に仕上げます。</p>
+    <div class="thumbs reveal">
+      <div class="thumb" data-yt="g_yyK4v1ElI" data-title="2025熊本台湾映画祭 記録動画" data-sub="イベント記録">
+        <div class="tw"><span class="badge">記録</span><img src="https://img.youtube.com/vi/g_yyK4v1ElI/hqdefault.jpg" alt="2025熊本台湾映画祭 記録動画"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">2025熊本台湾映画祭 記録動画</div><div class="s">イベント記録</div></div>
+      </div>
+      <div class="thumb" data-yt="gs4NlIjVwgA" data-title="チップ・オデッセイ　台湾の賭け　上映イベント記録" data-sub="イベント記録">
+        <div class="tw"><span class="badge">記録</span><img src="https://img.youtube.com/vi/gs4NlIjVwgA/hqdefault.jpg" alt="チップ・オデッセイ　台湾の賭け　上映イベント記録"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">チップ・オデッセイ　台湾の賭け　上映イベント記録</div><div class="s">イベント記録</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 広告動画 -->
+<section class="block smoke" id="ad">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="sec-num">03</span><h2 class="sec-title">広告<em>動画</em></h2></div>
+    <p class="sec-desc reveal">SNS広告・サイネージ向けのショート動画。「最初の3秒」で目を止める構成で、強みを短く伝えます。</p>
+    <div class="thumbs reveal">
+      <div class="thumb" data-yt="9nWUUzNGlZY" data-title="2025熊本台湾映画祭 予告" data-sub="広告">
+        <div class="tw"><span class="badge">広告</span><img src="https://img.youtube.com/vi/9nWUUzNGlZY/hqdefault.jpg" alt="2025熊本台湾映画祭 予告"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">2025熊本台湾映画祭 予告</div><div class="s">広告</div></div>
+      </div>
+      <div class="thumb" data-yt="XD2zV4tKoL8" data-title="歯科 トークリール 子供の矯正" data-sub="ショート">
+        <div class="tw"><span class="badge">広告</span><img src="https://img.youtube.com/vi/XD2zV4tKoL8/hqdefault.jpg" alt="歯科 トークリール 子供の矯正"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">歯科 トークリール 子供の矯正</div><div class="s">ショート</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 PR動画 -->
+<section class="block" id="pr">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="sec-num">04</span><h2 class="sec-title">PR<em>動画</em></h2></div>
+    <p class="sec-desc reveal">観光スポットや商品・場所の魅力を伝えるPR映像。「行ってみたい／知りたい」を引き出します。</p>
+    <div class="thumbs reveal">
+      <div class="thumb" data-yt="P6A9JWXIQI4" data-title="澤工匠様プロモーション動画" data-sub="PR">
+        <div class="tw"><span class="badge">PR</span><img src="https://img.youtube.com/vi/P6A9JWXIQI4/hqdefault.jpg" alt="澤工匠様プロモーション動画"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">澤工匠様プロモーション動画</div><div class="s">PR</div></div>
+      </div>
+      <div class="thumb" data-yt="z7zC6fLubLE" data-title="笠岡眼科様 受診の流れご紹介" data-sub="PR">
+        <div class="tw"><span class="badge">PR</span><img src="https://img.youtube.com/vi/z7zC6fLubLE/hqdefault.jpg" alt="笠岡眼科様 受診の流れご紹介"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">笠岡眼科様 受診の流れご紹介</div><div class="s">PR</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 YouTube動画 -->
+<section class="block smoke" id="youtube">
+  <div class="wrap">
+    <div class="sec-head reveal"><span class="sec-num">05</span><h2 class="sec-title">YouTube<em>動画</em></h2></div>
+    <p class="sec-desc reveal">チャンネル向けのコンテンツ。キャンプなど、日常や趣味の空気をそのまま届ける動画です。</p>
+    <div class="thumbs reveal">
+      <div class="thumb" data-yt="rdlqWp8zBaY" data-title="日頃の忙しさから逃避。久しぶりの飯盒だき（ASMR）" data-sub="キャンプ">
+        <div class="tw"><span class="badge">YouTube</span><img src="https://img.youtube.com/vi/rdlqWp8zBaY/hqdefault.jpg" alt="日頃の忙しさから逃避。久しぶりの飯盒だき（ASMR）"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">日頃の忙しさから逃避。久しぶりの飯盒だき（ASMR）</div><div class="s">キャンプ</div></div>
+      </div>
+      <div class="thumb" data-yt="I-tbxjT7T2s" data-title="日頃の忙しさから逃避。焚き火でじっくり焼き芋（ASMR）" data-sub="キャンプ">
+        <div class="tw"><span class="badge">YouTube</span><img src="https://img.youtube.com/vi/I-tbxjT7T2s/hqdefault.jpg" alt="日頃の忙しさから逃避。焚き火でじっくり焼き芋（ASMR）"><span class="play"><i></i></span></div>
+        <div class="tcap"><div class="t">日頃の忙しさから逃避。焚き火でじっくり焼き芋（ASMR）</div><div class="s">キャンプ</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 非公開（パスワード後に表示） -->
+<section class="block" id="private">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">06</span><h2 class="sec-title">非公開<em>実績</em></h2></div>
+    <p class="sec-desc">公開許可がまだ取れていないもの。このページを渡す相手には見えません。</p>
+    <div id="privateMount"></div>
+    <div class="priv-lock"><button type="button" id="lockAgain">鍵をかける</button></div>
+  </div>
+</section>
+
+<!-- VALUES -->
+<section class="block dark values">
+  <div class="wrap reveal">
+    <div class="val"><div class="l">n</div><div class="en">Nurse</div><div class="ja">看護師の視点</div></div>
+    <div class="val"><div class="l">A</div><div class="en">Accuracy</div><div class="ja">正確に、明快に</div></div>
+    <div class="val"><div class="l">R</div><div class="en">ROI</div><div class="ja">成果につなげる</div></div>
+    <div class="val"><div class="l">K</div><div class="en">Kindness</div><div class="ja">誠実さと思いやり</div></div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="contact">
+  <div class="wrap">
+    <h2>あなたの現場の想いを、<br><em>一本の動画</em>に。</h2>
+    <p>患者説明・記録・広告・PR・YouTube、どんな動画でもお気軽に。<br>企画から撮影・納品まで、一貫してお任せいただけます。</p>
+    <a class="cta-btn" href="tel:08027325456">お問い合わせ &nbsp;→&nbsp; 080-2732-5456</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="logo">n<span>ARK</span></div>
+  <div class="info">nARK ／ 緒方 和奈<br>〒861-5512 熊本県熊本市北区梶尾町837-2<br>TEL <a href="tel:08027325456">080-2732-5456</a></div>
+</footer>
+
+<!-- GATE -->
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <div class="k">Private works</div>
+    <h3>非公開実績</h3>
+    <input id="gatePass" type="password" autocomplete="current-password" placeholder="パスワード">
+    <div class="gate-err" id="gateErr"></div>
+    <div class="gate-row">
+      <button type="button" class="gate-ng" id="gateCancel">閉じる</button>
+      <button type="button" class="gate-ok" id="gateOk">開く</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb">
+  <div class="lb-inner">
+    <button class="lb-close" id="lbClose">✕ 閉じる</button>
+    <div class="lb-frame" id="lbFrame"></div>
+    <div class="lb-cap" id="lbCap"></div>
+  </div>
+</div>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  const lb = document.getElementById('lb');
+  const lbFrame = document.getElementById('lbFrame');
+  const lbCap = document.getElementById('lbCap');
+
+  function openLb(el){
+    const yt = el.dataset.yt;
+    const video = el.dataset.video;
+    const title = el.dataset.title || '';
+    const sub = el.dataset.sub || '';
+    lbFrame.innerHTML = '';
+    if (yt) {
+      const id = ytId(yt);
+      const f = document.createElement('iframe');
+      f.src = 'https://www.youtube-nocookie.com/embed/' + id + '?autoplay=1&rel=0';
+      f.allow = 'accelerometer; autoplay; encrypted-media; picture-in-picture';
+      f.allowFullscreen = true;
+      lbFrame.appendChild(f);
+    } else if (video) {
+      const v = document.createElement('video');
+      v.src = video; v.controls = true; v.autoplay = true; v.playsInline = true;
+      lbFrame.appendChild(v);
+    }
+    lbCap.innerHTML = title + (sub ? '<span>' + sub + '</span>' : '');
+    lb.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLb(){
+    lb.classList.remove('open');
+    lbFrame.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+  function ytId(s){
+    const m = String(s).match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([\w-]{11})/);
+    return m ? m[1] : s;
+  }
+  function bindThumbs(root){
+    (root || document).querySelectorAll('.thumb').forEach(t => {
+      if (t.dataset.bound) return;
+      t.dataset.bound = '1';
+      t.addEventListener('click', () => openLb(t));
+    });
+  }
+  bindThumbs(document);
+  document.getElementById('lbClose').addEventListener('click', closeLb);
+  lb.addEventListener('click', (e) => { if (e.target === lb) closeLb(); });
+
+  // 非公開実績は暗号化。ソースを見てもYouTubeの住所は出ない。
+  const PRIVATE_BLOB = {"v":1,"iter":150000,"salt":"KJ++q4FOVadORlDY+h4Pyg==","iv":"vy+/wRJHQjtOaby4","data":"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"};
+
+  function b64ToBytes(s){
+    const bin = atob(s);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  async function decryptWorks(password){
+    const salt = b64ToBytes(PRIVATE_BLOB.salt);
+    const iv = b64ToBytes(PRIVATE_BLOB.iv);
+    const data = b64ToBytes(PRIVATE_BLOB.data);
+    const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+    const key = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations: PRIVATE_BLOB.iter, hash: 'SHA-256' },
+      material,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, data);
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+
+  function thumbHtml(w){
+    const media = w.yt
+      ? `<img src="https://img.youtube.com/vi/${ytId(w.yt)}/hqdefault.jpg" alt="">`
+      : (w.video ? `<video src="${w.video}#t=1" muted preload="metadata" playsinline></video>` : '');
+    const yt = w.yt ? ` data-yt="${w.yt}"` : '';
+    const vid = w.video ? ` data-video="${w.video}"` : '';
+    return `<div class="thumb"${yt}${vid} data-title="${w.title}" data-sub="${w.sub}">
+      <div class="tw"><span class="badge">${w.badge}</span>${media}<span class="play"><i></i></span></div>
+      <div class="tcap"><div class="t">${w.title}</div><div class="s">${w.sub}</div></div>
+    </div>`;
+  }
+
+  function renderPrivate(works){
+    const mount = document.getElementById('privateMount');
+    const groups = {};
+    works.forEach(w => { (groups[w.group] ||= []).push(w); });
+    mount.innerHTML = Object.keys(groups).map(g =>
+      `<div class="priv-group"><h3>${g}</h3><div class="thumbs">${groups[g].map(thumbHtml).join('')}</div></div>`
+    ).join('');
+    bindThumbs(mount);
+  }
+
+  function unlock(works){
+    sessionStorage.setItem('nark-private', JSON.stringify(works));
+    document.body.classList.add('is-private');
+    renderPrivate(works);
+    closeGate();
+    document.getElementById('private').scrollIntoView({ behavior: 'smooth' });
+  }
+  function lock(){
+    sessionStorage.removeItem('nark-private');
+    document.body.classList.remove('is-private');
+    document.getElementById('privateMount').innerHTML = '';
+  }
+
+  const gate = document.getElementById('gate');
+  const gatePass = document.getElementById('gatePass');
+  const gateErr = document.getElementById('gateErr');
+  function openGate(){ gate.classList.add('open'); gateErr.textContent = ''; gatePass.value = ''; setTimeout(() => gatePass.focus(), 50); document.body.style.overflow = 'hidden'; }
+  function closeGate(){ gate.classList.remove('open'); if (!lb.classList.contains('open')) document.body.style.overflow = ''; }
+
+  async function tryUnlock(){
+    gateErr.textContent = '';
+    try {
+      const works = await decryptWorks(gatePass.value);
+      unlock(works);
+    } catch (e) {
+      gateErr.textContent = 'パスワードが違います';
+    }
+  }
+
+  document.getElementById('lockBtn').addEventListener('click', () => {
+    if (document.body.classList.contains('is-private')) document.getElementById('private').scrollIntoView({ behavior: 'smooth' });
+    else openGate();
+  });
+  document.getElementById('gateOk').addEventListener('click', tryUnlock);
+  document.getElementById('gateCancel').addEventListener('click', closeGate);
+  document.getElementById('lockAgain').addEventListener('click', lock);
+  gatePass.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+  gate.addEventListener('click', (e) => { if (e.target === gate) closeGate(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeLb(); closeGate(); }
+  });
+
+  try {
+    const saved = sessionStorage.getItem('nark-private');
+    if (saved && saved.startsWith('[')) {
+      const works = JSON.parse(saved);
+      document.body.classList.add('is-private');
+      renderPrivate(works);
+    }
+  } catch (e) {}
+</script>
+
+</body>
+</html>
