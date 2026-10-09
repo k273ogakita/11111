@@ -8790,7 +8790,7 @@ ${MAIL_FOOTER}`,
       if (funnelGroup) funnelGroup.style.display = isClient ? '' : 'none';
       document.getElementById('financeGroup').style.display = isClient ? '' : 'none';
       const followGroup = document.getElementById('followUpGroup');
-      if (followGroup && isFunnel) followGroup.style.display = 'none';
+      if (followGroup) followGroup.style.display = (isFunnel || isSns) ? 'none' : (isClient ? '' : 'none');
       const deadlineGroup = document.getElementById('deadlineGroup');
       if (deadlineGroup) deadlineGroup.style.display = isFunnel ? 'none' : deadlineGroup.style.display;
       const statusGroup = document.getElementById('projectStatus')?.closest('.form-group');
@@ -8867,14 +8867,16 @@ ${MAIL_FOOTER}`,
     window.updateDeadlineFieldsVisibility = updateDeadlineFieldsVisibility;
 
     function updateAdOpsGroupVisibility() {
-      const isSns = document.getElementById('projectCategory').value === 'sns';
+      const cat = document.getElementById('projectCategory').value;
+      const isSns = cat === 'sns';
+      const isFunnel = cat === 'funnel';
       const type = document.getElementById('projectType').value;
       const isAdOps = type === 'ad-ops';
       const adOpsGroup = document.getElementById('adOpsGroup');
       const followGroup = document.getElementById('followUpGroup');
       const invoiceHint = document.getElementById('invoiceDateHint');
-      if (adOpsGroup) adOpsGroup.style.display = (!isSns && isAdOps) ? '' : 'none';
-      if (followGroup) followGroup.style.display = (isSns || isAdOps) ? 'none' : '';
+      if (adOpsGroup) adOpsGroup.style.display = (!isSns && !isFunnel && isAdOps) ? '' : 'none';
+      if (followGroup) followGroup.style.display = (isSns || isAdOps || isFunnel) ? 'none' : '';
       if (invoiceHint) {
         invoiceHint.textContent = isAdOps
           ? '締日＝運用開始から1ヶ月後。請求日＝締日の月の月末（請求列へ移ると自動入力）'
