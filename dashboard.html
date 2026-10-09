@@ -2996,7 +2996,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v179</div>
+        <div class="logo-sub">Business Dashboard · v180</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
           <a class="btn" href="実績/index.html">実績</a>
@@ -3273,7 +3273,7 @@
           <option value="funnel">ファネル構築</option>
         </select>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="projectNameGroup">
         <label id="projectNameLabel">案件名</label>
         <input type="text" id="projectName" placeholder="例: 2026-06_○○クリニック_web">
       </div>
@@ -8763,6 +8763,8 @@ ${MAIL_FOOTER}`,
       const isClient = cat === 'client';
       const funnelBuildFields = document.getElementById('funnelBuildFields');
       if (funnelBuildFields) funnelBuildFields.style.display = isFunnel ? '' : 'none';
+      const nameGroup = document.getElementById('projectNameGroup');
+      if (nameGroup) nameGroup.style.display = isFunnel ? 'none' : '';
       document.getElementById('clientGroup').style.display = isClient ? '' : 'none';
       document.getElementById('typeGroup').style.display = isClient ? '' : 'none';
       const funnelGroup = document.getElementById('funnelGroup');
@@ -8774,11 +8776,10 @@ ${MAIL_FOOTER}`,
       if (deadlineGroup) deadlineGroup.style.display = isFunnel ? 'none' : deadlineGroup.style.display;
       const statusGroup = document.getElementById('projectStatus')?.closest('.form-group');
       if (statusGroup) statusGroup.style.display = isFunnel ? 'none' : '';
-      document.getElementById('projectNameLabel').textContent =
-        isSns ? 'タイトル' : (isFunnel ? '案件名' : '案件名');
+      document.getElementById('projectNameLabel').textContent = isSns ? 'タイトル' : '案件名';
       document.getElementById('projectName').placeholder = isSns
         ? '例: 2026-06-09_夏目漱石舊居'
-        : (isFunnel ? '例: 患者説明_フォーム営業_2026-10' : '例: 2026-06_○○クリニック_web');
+        : '例: 2026-06_○○クリニック_web';
       if (isClient) {
         document.getElementById('projectType').innerHTML = CLIENT_TYPES.map(t =>
           `<option value="${t.value}">${t.label}</option>`
@@ -8796,6 +8797,12 @@ ${MAIL_FOOTER}`,
       updateWorkflowGroupVisibility();
       updateAdOpsGroupVisibility();
       if (!isFunnel) onStatusChange();
+    }
+
+    function buildFunnelProjectName(service, kind) {
+      const kindLabel = funnelKindLabel(kind || 'form');
+      const svc = (service || '').trim();
+      return svc ? `${svc} · ${kindLabel}` : kindLabel;
     }
 
     function onProjectTypeChange() {
@@ -9153,7 +9160,13 @@ ${MAIL_FOOTER}`,
         focusProjectTimeLogSection(opts.timeLogNote || '');
       } else {
         document.getElementById('projectTimeLogSection')?.classList.remove('time-log-focus');
-        setTimeout(() => document.getElementById('projectName').focus(), 50);
+        setTimeout(() => {
+          const cat = document.getElementById('projectCategory').value;
+          const focusEl = cat === 'funnel'
+            ? document.getElementById('projectFunnelService')
+            : document.getElementById('projectName');
+          if (focusEl) focusEl.focus();
+        }, 50);
       }
     }
 
@@ -9177,10 +9190,18 @@ ${MAIL_FOOTER}`,
     }
 
     function saveProject() {
-      const name = document.getElementById('projectName').value.trim();
-      if (!name) { toast('名前を入力してください'); return; }
       const category = document.getElementById('projectCategory').value;
       const existing = editingProjectId ? state.projects.find(x => x.id === editingProjectId) : null;
+      let name = document.getElementById('projectName').value.trim();
+      if (category === 'funnel') {
+        const service = document.getElementById('projectFunnelService').value.trim();
+        const kind = document.getElementById('projectFunnelKind').value || 'form';
+        if (!service) { toast('サービス名を入力してください'); return; }
+        name = buildFunnelProjectName(service, kind);
+      } else if (!name) {
+        toast('名前を入力してください');
+        return;
+      }
       const status = category === 'funnel'
         ? ((existing && existing.status) || 'todo')
         : document.getElementById('projectStatus').value;
