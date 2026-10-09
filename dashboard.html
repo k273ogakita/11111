@@ -2996,7 +2996,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v180</div>
+        <div class="logo-sub">Business Dashboard · v181</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
           <a class="btn" href="実績/index.html">実績</a>
@@ -3640,6 +3640,7 @@
     const DOING_PHASES = ['ヒアリング・構成', '撮影', '制作中', 'クライアントチェック中', '納品済'];
     const DOING_PHASES_EDITOR = ['ヒアリング・構成', '撮影', '制作中', 'FB未', '提出待ち', 'クライアントチェック中', '納品済'];
     const SNS_DOING_PHASES = ['制作中', 'クライアントチェック中', '納品済'];
+    const FUNNEL_DOING_PHASES = ['構築中', 'テスト中', 'ブラッシュアップ中', '稼働中', '停止中'];
     const AD_OPS_DOING_PHASES = [
       '広告アカウント作成', '設定', 'キャンペーン設定', '広告開始',
       '分析（2W）', 'レポート作成（2W）', '分析（1M）', 'レポート作成（1M）',
@@ -3658,6 +3659,7 @@
     }
 
     function getDoingPhases(p) {
+      if (isFunnelBuildProject(p)) return FUNNEL_DOING_PHASES;
       if (p.category === 'sns') return SNS_DOING_PHASES;
       if (isAdOpsType(p)) return AD_OPS_DOING_PHASES;
       return isEditorOutsourceEnabled(p) ? DOING_PHASES_EDITOR : DOING_PHASES;
@@ -3669,6 +3671,7 @@
     }
 
     function getDefaultDoingPhase(p) {
+      if (isFunnelBuildProject(p)) return '構築中';
       if (p.category === 'sns') return '制作中';
       if (isAdOpsType(p)) return '広告アカウント作成';
       return 'ヒアリング・構成';
@@ -5207,6 +5210,10 @@ ${MAIL_FOOTER}`,
           if (p.funnelKind === 'google-ads' || p.funnelKind === 'ads') p.funnelKind = 'google-ads';
           if (p.funnelService === undefined) p.funnelService = '';
           if (p.funnelTarget === undefined) p.funnelTarget = '';
+          p.afterFollow = false;
+          p.followUpTiming = 'none';
+          if (!p.status || p.status === 'todo') p.status = 'doing';
+          if (!FUNNEL_DOING_PHASES.includes(p.phase)) p.phase = '構築中';
           migrateFunnelBuildChecklist(p);
         }
         if (p.status === 'done' && p.category === 'client' && !p.phase) p.phase = '';
@@ -8007,6 +8014,12 @@ ${MAIL_FOOTER}`,
             }).join('')}</div>
           </div>`;
         }
+        if (isFunnelBuildProject(p)) {
+          return `<div class="phase-btns">${FUNNEL_DOING_PHASES.map(ph => `
+            <button class="phase-btn${p.phase === ph ? ' active' : ''}"
+                    onclick="event.stopPropagation();setDoingPhase('${p.id}','${ph}')">${ph}</button>
+          `).join('')}</div>`;
+        }
         const phases = getDoingPhases(p);
         const eligible = isAfterFollowEligible(p);
         const phaseRow = `<div class="phase-btns">${phases.map(ph => {
@@ -8202,6 +8215,12 @@ ${MAIL_FOOTER}`,
         return;
       }
       p.phase = phase;
+      // ファネル構築は進行中のままフェーズだけ切替（納品・請求へ進めない）
+      if (isFunnelBuildProject(p)) {
+        saveState();
+        toast(`「${p.name}」→ ${phase}`);
+        return;
+      }
       if (phase === '納品済' && !isAdOpsType(p)) {
         if (!p.deliveredDate) p.deliveredDate = todayStr();
         // 自社事業整備は請求なし → 完了へ直行
@@ -9203,7 +9222,7 @@ ${MAIL_FOOTER}`,
         return;
       }
       const status = category === 'funnel'
-        ? ((existing && existing.status) || 'todo')
+        ? ((existing && existing.status && existing.status !== 'todo') ? existing.status : 'doing')
         : document.getElementById('projectStatus').value;
       const typeForSave = category === 'client'
         ? document.getElementById('projectType').value
@@ -9296,6 +9315,9 @@ ${MAIL_FOOTER}`,
         data.invoiceDate = '';
         data.variableCosts = [];
         data.timeLogs = [];
+        if (!existing || !FUNNEL_DOING_PHASES.includes(existing.phase)) {
+          data.phase = '構築中';
+        }
       }
       if (category === 'sns') {
         data.snsStatus = statusToSnsStatus(status);
