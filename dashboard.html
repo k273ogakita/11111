@@ -2970,7 +2970,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v176</div>
+        <div class="logo-sub">Business Dashboard · v177</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
           <a class="btn" href="実績/index.html">実績</a>
@@ -9622,6 +9622,13 @@ ${MAIL_FOOTER}`,
       });
 
       const parts = [];
+      if (unassigned.length) {
+        parts.push(`
+          <div class="biz-todo-group">
+            <div class="biz-todo-group-label">未分類</div>
+            ${unassigned.map(renderBizTodoItem).join('')}
+          </div>`);
+      }
       projects.forEach(p => {
         const list = byProject.get(p.id) || [];
         if (!list.length) return;
@@ -9631,13 +9638,6 @@ ${MAIL_FOOTER}`,
             ${list.map(renderBizTodoItem).join('')}
           </div>`);
       });
-      if (unassigned.length) {
-        parts.push(`
-          <div class="biz-todo-group">
-            <div class="biz-todo-group-label">未分類</div>
-            ${unassigned.map(renderBizTodoItem).join('')}
-          </div>`);
-      }
       el.innerHTML = parts.join('') || todos.map(renderBizTodoItem).join('');
     }
 
