@@ -2970,7 +2970,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v175</div>
+        <div class="logo-sub">Business Dashboard · v176</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
           <a class="btn" href="実績/index.html">実績</a>
@@ -3171,10 +3171,9 @@
       </div>
       <div class="form-group">
         <label>事業プロジェクト（任意）</label>
-        <select id="bizTodoProject">
-          <option value="">なし</option>
-        </select>
-        <div class="form-hint">就活動画・患者説明など。一覧は「プロジェクト設定」で増やせます</div>
+        <input type="text" id="bizTodoProject" list="bizTodoProjectList" placeholder="例: 就活動画（候補から選ぶ／新規入力）" autocomplete="off">
+        <datalist id="bizTodoProjectList"></datalist>
+        <div class="form-hint">手入力でOK。初めて入れた名前は次回から候補に出ます。改名・削除は「プロジェクト設定」</div>
       </div>
       <div class="form-group">
         <label>メモ</label>
@@ -3194,7 +3193,7 @@
       <div class="form-hint" style="margin-bottom:10px">事業TODOを振り分ける箱です。自社サービスの単位で追加・改名・削除できます。</div>
       <div class="biz-project-manage-list" id="bizProjectManageList"></div>
       <div class="biz-project-manage-add">
-        <input type="text" id="bizProjectNewName" placeholder="例: 終活動画" autocomplete="off"
+        <input type="text" id="bizProjectNewName" placeholder="例: 就活動画" autocomplete="off"
                onkeydown="if(event.key==='Enter'){event.preventDefault();addBizProjectFromModal()}">
         <button type="button" class="btn btn-primary" onclick="addBizProjectFromModal()">追加</button>
       </div>
@@ -9511,14 +9510,23 @@ ${MAIL_FOOTER}`,
     }
 
     function populateBizTodoProjectSelect(selectedId) {
-      const sel = document.getElementById('bizTodoProject');
+      const input = document.getElementById('bizTodoProject');
+      const list = document.getElementById('bizTodoProjectList');
       const projects = ensureBizProjects(state);
-      const selected = selectedId || '';
-      const stillThere = projects.some(p => p.id === selected);
-      sel.innerHTML = '<option value="">なし</option>' + projects.map(p =>
-        `<option value="${p.id}"${p.id === selected ? ' selected' : ''}>${esc(p.name)}</option>`
-      ).join('') + (!selected || stillThere ? '' :
-        `<option value="${esc(selected)}" selected>（削除済みプロジェクト）</option>`);
+      list.innerHTML = projects.map(p => `<option value="${attr(p.name)}"></option>`).join('');
+      input.value = selectedId ? (bizProjectNameById(selectedId) || '') : '';
+    }
+
+    /** 入力名を事業プロジェクトIDに解決。未登録名なら追加して返す */
+    function resolveBizProjectIdFromInput(rawName) {
+      const name = (rawName || '').trim();
+      if (!name) return '';
+      ensureBizProjects(state);
+      const found = state.bizProjects.find(p => p.name === name);
+      if (found) return found.id;
+      const id = uid();
+      state.bizProjects.push({ id, name });
+      return id;
     }
 
     function sortBizTodos(todos) {
@@ -9683,7 +9691,7 @@ ${MAIL_FOOTER}`,
         text,
         dueDate: document.getElementById('bizTodoDueDate').value,
         category: document.getElementById('bizTodoCategory').value,
-        bizProjectId: document.getElementById('bizTodoProject').value,
+        bizProjectId: resolveBizProjectIdFromInput(document.getElementById('bizTodoProject').value),
         memo: document.getElementById('bizTodoMemo').value.trim(),
       };
       if (editingBizTodoId) {
