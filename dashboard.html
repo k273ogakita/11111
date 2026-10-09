@@ -865,6 +865,32 @@
       margin-top: 4px;
     }
     .biz-project-manage-add input[type="text"] { flex: 1; min-width: 0; }
+    .funnel-tracks-list { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 8px; }
+    .funnel-track-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; background: #fff;
+    }
+    .funnel-track-row .funnel-track-name { flex: 1; font-size: .85rem; font-weight: 600; }
+    .funnel-tracks-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .funnel-tracks-add select { flex: 1; min-width: 160px; }
+    .funnel-release-banner {
+      margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; font-size: .82rem; font-weight: 700;
+    }
+    .funnel-release-banner.ready {
+      background: rgba(42,138,94,.12); color: #1f6b48; border: 1px solid rgba(42,138,94,.35);
+    }
+    .funnel-release-banner.blocked {
+      background: rgba(196,92,62,.1); color: #9a3d28; border: 1px solid rgba(196,92,62,.3);
+    }
+    .card-funnel-release {
+      margin-top: 6px; font-size: .72rem; font-weight: 700;
+    }
+    .card-funnel-release.ready { color: #2a8a5e; }
+    .card-funnel-release.blocked { color: #b04848; }
+    .checklist-tag.入口 { background: rgba(180,140,60,.1); color: #9a7a30; border: 1px solid rgba(180,140,60,.28); }
+    .checklist-tag.LP { background: rgba(100,140,200,.1); color: #5078b0; border: 1px solid rgba(100,140,200,.25); }
+    .checklist-tag.オファー { background: rgba(50,160,120,.1); color: #32a078; border: 1px solid rgba(50,160,120,.25); }
+    .checklist-tag.導線 { background: rgba(107,63,160,.1); color: #6b3fa0; border: 1px solid rgba(107,63,160,.28); }
     .filter-chip {
       padding: 4px 10px;
       border-radius: 20px;
@@ -2970,7 +2996,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v177</div>
+        <div class="logo-sub">Business Dashboard · v178</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
           <a class="btn" href="実績/index.html">実績</a>
@@ -3281,6 +3307,23 @@
         </select>
         <div class="form-hint">進行中カードをクリックするとチェックリストが開きます。種別と違うフローで進める場合はここで変更</div>
       </div>
+      <div class="form-group" id="funnelTracksGroup" style="display:none">
+        <label>この案件のファネル（入口）</label>
+        <div class="funnel-tracks-list" id="funnelTracksList"></div>
+        <div class="funnel-tracks-add">
+          <select id="funnelTrackAddChannel">
+            <option value="form">フォーム営業</option>
+            <option value="google-ads">検索広告（Google）</option>
+            <option value="meta-ads">広告（META）</option>
+            <option value="fax">FAX営業</option>
+            <option value="referral">知り合い紹介</option>
+            <option value="event">勉強会・イベント</option>
+            <option value="meo">MEO／HP流入</option>
+          </select>
+          <button type="button" class="btn btn-ghost" onclick="addFunnelTrackFromModal()">+ 追加</button>
+        </div>
+        <div class="form-hint">同じ案件にフォーム営業・検索広告などを複数持てます。カード／チェックリストで進捗を見ます。最低要素が揃うまでリリースしない想定です。</div>
+      </div>
       <div id="funnelGroup">
         <div class="form-row-2">
           <div class="form-group">
@@ -3559,6 +3602,7 @@
           <option value="shoot">撮影案件フロー</option>
         </select>
       </div>
+      <div id="funnelReleaseBanner" class="funnel-release-banner" style="display:none"></div>
       <div class="checklist-progress"><div class="checklist-progress-bar" id="checklistBar"></div></div>
       <div class="checklist-scroll" id="checklistBody"></div>
       <div class="modal-actions">
@@ -3785,7 +3829,40 @@ nark.visual.media@gmail.com
       { value: 'ad-ops', label: '広告運用' },
       { value: 'meo', label: 'MEO' },
       { value: 'doc', label: '資料制作' },
+      { value: 'funnel-build', label: 'ファネル構築' },
     ];
+
+    const FUNNEL_BUILD_CHANNELS = [
+      { id: 'form', label: 'フォーム営業' },
+      { id: 'google-ads', label: '検索広告（Google）' },
+      { id: 'meta-ads', label: '広告（META）' },
+      { id: 'fax', label: 'FAX営業' },
+      { id: 'referral', label: '知り合い紹介' },
+      { id: 'event', label: '勉強会・イベント' },
+      { id: 'meo', label: 'MEO／HP流入' },
+    ];
+
+    /** リリース前の最低要素（フォーム営業・検索広告で共通。後で入口別にブラッシュアップ） */
+    const FUNNEL_BUILD_STEPS = [
+      { id: 401, text: 'フォーム文章制作', tag: '入口' },
+      { id: 402, text: 'リスト選定', tag: '入口' },
+      { id: 403, text: 'ショートLP制作', tag: 'LP' },
+      { id: 404, text: 'リードマグネット作成', tag: 'オファー' },
+      { id: 405, text: 'ロングLP制作', tag: 'LP' },
+      { id: 406, text: 'サンクスページの整備', tag: '導線' },
+      { id: 407, text: 'ステップメールの設定', tag: '導線' },
+    ];
+
+    /** どこを直したら、その先も見直す（下流） */
+    const FUNNEL_BUILD_IMPACT = {
+      401: [403, 405, 406, 407],
+      402: [401, 404],
+      403: [404, 405, 406, 407],
+      404: [403, 405, 406, 407],
+      405: [406, 407],
+      406: [407],
+      407: [],
+    };
     const VIDEO_TYPE_VALUES = ['explainer-video', 'branding-video', 'record-video', 'recruit-video', 'shoot', 'ad-video', 'video', 'both'];
     const TYPE_MIGRATION = {
       video: 'explainer-video', both: 'explainer-video', web: 'web', meo: 'meo',
@@ -5125,6 +5202,7 @@ ${MAIL_FOOTER}`,
         if (p.editorDraftDueDate === undefined) p.editorDraftDueDate = '';
         if (p.editorDraftDays === undefined) p.editorDraftDays = '';
         if (p.editorRequestDate === undefined) p.editorRequestDate = '';
+        if (p.type === 'funnel-build') ensureFunnelTracks(p);
         if (p.status === 'done' && p.category === 'client' && !p.phase) p.phase = '';
         // 送付済で請求列に残っていた案件は「入金未」列へ移行
         if (p.status === 'billing' && p.phase === '送付済' && p.type !== 'ad-ops') p.status = 'unpaid';
@@ -7996,6 +8074,11 @@ ${MAIL_FOOTER}`,
             ? `<div class="phase-current">▸ 先払い ${esc(p.prepayPhase)}${p.phase ? ` · ${esc(p.phase)}` : ''}</div>`
             : ''));
       const flowProgress = renderCardFlowProgress(p);
+      const funnelRelease = isFunnelBuildType(p.type) && (p.status === 'todo' || p.status === 'doing')
+        ? (isFunnelBuildReleaseReady(p)
+          ? '<div class="card-funnel-release ready">リリース可（最低要素そろい）</div>'
+          : '<div class="card-funnel-release blocked">リリース前 — 最低要素が未完了</div>')
+        : '';
       const financeBlock = renderCardFinance(p);
       const showTimeLogBtn = p.status === 'doing' && p.category !== 'sns';
       const actions = p.status !== 'done' ? `
@@ -8009,7 +8092,9 @@ ${MAIL_FOOTER}`,
             <button class="btn btn-ghost" onclick="event.stopPropagation();editProject('${p.id}')">編集</button>
             <button class="btn btn-ghost" onclick="event.stopPropagation();duplicateProject('${p.id}')">複製</button>
           </div>`;
-      const hasWf = !isSns && getWorkflow(p) && p.status === 'doing';
+      const hasWf = !isSns && getWorkflow(p) && (
+        p.status === 'doing' || (isFunnelBuildType(p.type) && p.status === 'todo')
+      );
       return `
         <div class="card${isSns ? ' sns-card' : ''}" draggable="true" data-id="${p.id}"
              ondragstart="onDragStart(event,'${p.id}')" ondragend="onDragEnd(event)"
@@ -8029,6 +8114,7 @@ ${MAIL_FOOTER}`,
           ${memoBlock}
           ${phaseLabel}
           ${flowProgress}
+          ${funnelRelease}
           ${financeBlock}
           ${renderPhaseButtons(p)}
           ${renderHddMigrateButtons(p)}
@@ -8675,12 +8761,14 @@ ${MAIL_FOOTER}`,
       }
       updateWorkflowGroupVisibility();
       updateAdOpsGroupVisibility();
+      updateFunnelTracksGroupVisibility();
     }
 
     function onProjectTypeChange() {
       updateWorkflowGroupVisibility();
       updateAdOpsGroupVisibility();
       updateDeadlineFieldsVisibility();
+      updateFunnelTracksGroupVisibility();
     }
 
     function onShootModeChange() {
@@ -8761,8 +8849,71 @@ ${MAIL_FOOTER}`,
     }
     window.updatePaymentDueHint = updatePaymentDueHint;
 
+    function isFunnelBuildType(type) {
+      return type === 'funnel-build';
+    }
+
     function isWorkflowEligibleType(type) {
-      return ['explainer-video', 'branding-video', 'record-video', 'recruit-video', 'shoot', 'ad-video', 'video', 'both'].includes(type);
+      return ['explainer-video', 'branding-video', 'record-video', 'recruit-video', 'shoot', 'ad-video', 'video', 'both'].includes(type)
+        || isFunnelBuildType(type);
+    }
+
+    function funnelChannelLabel(id) {
+      const ch = FUNNEL_BUILD_CHANNELS.find(c => c.id === id);
+      return ch ? ch.label : (id || 'ファネル');
+    }
+
+    function ensureFunnelTracks(p) {
+      if (!p || !isFunnelBuildType(p.type)) return [];
+      if (!Array.isArray(p.funnelTracks)) p.funnelTracks = [];
+      return p.funnelTracks;
+    }
+
+    let modalFunnelTracks = [];
+
+    function renderFunnelTracksList() {
+      const el = document.getElementById('funnelTracksList');
+      if (!el) return;
+      if (!modalFunnelTracks.length) {
+        el.innerHTML = '<div class="task-empty" style="padding:8px 0">まだありません。下から入口を追加してください。</div>';
+        return;
+      }
+      el.innerHTML = modalFunnelTracks.map(t => `
+        <div class="funnel-track-row" data-id="${t.id}">
+          <span class="funnel-track-name">${esc(funnelChannelLabel(t.channel))}</span>
+          <button type="button" class="btn btn-ghost btn-danger" onclick="removeFunnelTrackFromModal('${t.id}')" title="削除">×</button>
+        </div>
+      `).join('');
+    }
+
+    function addFunnelTrackFromModal() {
+      const sel = document.getElementById('funnelTrackAddChannel');
+      const channel = sel ? sel.value : 'form';
+      if (modalFunnelTracks.some(t => t.channel === channel)) {
+        toast('同じ入口はすでにあります');
+        return;
+      }
+      modalFunnelTracks.push({ id: uid(), channel });
+      renderFunnelTracksList();
+    }
+    window.addFunnelTrackFromModal = addFunnelTrackFromModal;
+
+    function removeFunnelTrackFromModal(id) {
+      modalFunnelTracks = modalFunnelTracks.filter(t => t.id !== id);
+      renderFunnelTracksList();
+    }
+    window.removeFunnelTrackFromModal = removeFunnelTrackFromModal;
+
+    function updateFunnelTracksGroupVisibility() {
+      const group = document.getElementById('funnelTracksGroup');
+      const funnelGroup = document.getElementById('funnelGroup');
+      if (!group) return;
+      const isSns = document.getElementById('projectCategory').value === 'sns';
+      const type = document.getElementById('projectType')?.value;
+      const isFunnel = !isSns && isFunnelBuildType(type);
+      group.style.display = isFunnel ? '' : 'none';
+      // 成約ファネル紐づけはファネル構築案件では隠す（入口は上のトラックで管理）
+      if (funnelGroup && isFunnel) funnelGroup.style.display = 'none';
     }
 
     function updateWorkflowGroupVisibility() {
@@ -8770,7 +8921,45 @@ ${MAIL_FOOTER}`,
       if (!group) return;
       const isSns = document.getElementById('projectCategory').value === 'sns';
       const type = document.getElementById('projectType').value;
-      group.style.display = (!isSns && isWorkflowEligibleType(type)) ? '' : 'none';
+      // ファネル構築は専用フロー固定のため、制作フロー選択は出さない
+      group.style.display = (!isSns && isWorkflowEligibleType(type) && !isFunnelBuildType(type)) ? '' : 'none';
+      updateFunnelTracksGroupVisibility();
+    }
+
+    function buildFunnelBuildWorkflow(p) {
+      ensureFunnelTracks(p);
+      const groups = (p.funnelTracks || []).map(t => ({
+        label: funnelChannelLabel(t.channel),
+        steps: FUNNEL_BUILD_STEPS.map(s => ({
+          id: t.id + '__' + s.id,
+          text: s.text,
+          tag: s.tag,
+          baseId: s.id,
+        })),
+      }));
+      return {
+        title: 'ファネル構築フロー（最低要素）',
+        groups: groups.length ? groups : [{
+          label: 'ファネル未追加',
+          steps: [],
+        }],
+      };
+    }
+
+    function funnelTrackProgress(p, track) {
+      const checklist = getProjectChecklist(p, 'funnelBuild');
+      let done = 0;
+      FUNNEL_BUILD_STEPS.forEach(s => {
+        if (checklist[track.id + '__' + s.id]) done += 1;
+      });
+      return { done, total: FUNNEL_BUILD_STEPS.length, ready: done === FUNNEL_BUILD_STEPS.length };
+    }
+
+    function isFunnelBuildReleaseReady(p) {
+      if (!isFunnelBuildType(p.type)) return false;
+      const tracks = ensureFunnelTracks(p);
+      if (!tracks.length) return false;
+      return tracks.every(t => funnelTrackProgress(p, t).ready);
     }
 
     function onStatusChange() {
@@ -8938,6 +9127,10 @@ ${MAIL_FOOTER}`,
         updateAdOpsClosingPreview();
         renderVariableCostRows(p.variableCosts.length ? p.variableCosts : []);
         renderTimeLogRows(p.timeLogs.length ? p.timeLogs : []);
+        modalFunnelTracks = isFunnelBuildType(p.type)
+          ? ensureFunnelTracks(p).map(t => ({ id: t.id, channel: t.channel }))
+          : [];
+        renderFunnelTracksList();
       } else {
         document.getElementById('modalTitle').textContent = '案件を追加';
         document.getElementById('projectCategory').value = 'client';
@@ -8967,12 +9160,15 @@ ${MAIL_FOOTER}`,
         updateAdOpsClosingPreview();
         renderVariableCostRows([]);
         renderTimeLogRows([]);
+        modalFunnelTracks = [];
+        renderFunnelTracksList();
       }
       onStatusChange();
       onContractRouteChange();
       updateWorkflowGroupVisibility();
       updateAdOpsGroupVisibility();
       updateDeadlineFieldsVisibility();
+      updateFunnelTracksGroupVisibility();
       updateProjectProfitPreview();
       updatePaymentDueHint();
       document.getElementById('projectModal').classList.add('open');
@@ -9065,10 +9261,17 @@ ${MAIL_FOOTER}`,
         data.afterFollow = document.getElementById('projectAfterFollow').checked;
         data.funnelProduct = document.getElementById('projectFunnelProduct').value;
         data.funnelChannel = document.getElementById('projectFunnelChannel').value || 'referral';
-        if (isWorkflowEligibleType(data.type)) {
+        if (isFunnelBuildType(data.type)) {
+          data.workflowKey = 'funnelBuild';
+          data.funnelTracks = modalFunnelTracks.map(t => ({ id: t.id, channel: t.channel }));
+          data.funnelProduct = '';
+          data.funnelChannel = '';
+        } else if (isWorkflowEligibleType(data.type)) {
           data.workflowKey = document.getElementById('projectWorkflow').value;
+          data.funnelTracks = [];
         } else {
           data.workflowKey = 'auto';
+          data.funnelTracks = [];
         }
         if (data.type === 'ad-ops') {
           data.opsStartDate = document.getElementById('projectOpsStartDate').value;
@@ -9178,6 +9381,9 @@ ${MAIL_FOOTER}`,
         afterFollow: p.afterFollow !== undefined ? p.afterFollow : isAfterFollowEligible(p),
         funnelProduct: p.funnelProduct || '',
         funnelChannel: p.funnelChannel || 'referral',
+        funnelTracks: isFunnelBuildType(p.type)
+          ? (p.funnelTracks || []).map(t => ({ id: uid(), channel: t.channel }))
+          : [],
         afterFollowDone: { thanks: false, supportDirect: false, portfolio: false },
         afterFollowSchedule: { m1: false, m6: false, y1: false },
         editorOutsource: false,
@@ -9986,6 +10192,15 @@ ${MAIL_FOOTER}`,
           },
         ],
       },
+      funnelBuild: {
+        title: 'ファネル構築フロー（最低要素）',
+        groups: [
+          {
+            label: '最低要素',
+            steps: FUNNEL_BUILD_STEPS.map(s => ({ ...s })),
+          },
+        ],
+      },
     };
 
     let checklistProjectId = null;
@@ -9995,21 +10210,26 @@ ${MAIL_FOOTER}`,
       if (t === 'explainer-video' || t === 'video' || t === 'both' || t === 'ad-video') return 'explainer';
       if (t === 'branding-video' || t === 'record-video' || t === 'recruit-video') return 'brandingRecord';
       if (t === 'shoot') return 'shoot';
+      if (t === 'funnel-build') return 'funnelBuild';
       return null;
     }
 
     function getWorkflowKey(p) {
+      if (isFunnelBuildType(p.type)) return 'funnelBuild';
       if (p.workflowKey && p.workflowKey !== 'auto' && WORKFLOWS[p.workflowKey]) return p.workflowKey;
       return defaultWorkflowKey(p);
     }
 
     function getWorkflow(p) {
+      if (!p) return null;
+      if (isFunnelBuildType(p.type)) return buildFunnelBuildWorkflow(p);
       const key = getWorkflowKey(p);
       return key ? WORKFLOWS[key] : null;
     }
 
     function getWorkflowProgress(p) {
       if (!p || p.category === 'sns') return null;
+      if (isFunnelBuildType(p.type) && p.status !== 'doing' && p.status !== 'todo') return null;
       const wf = getWorkflow(p);
       if (!wf) return null;
       const wfKey = getWorkflowKey(p);
@@ -10076,16 +10296,18 @@ ${MAIL_FOOTER}`,
     }
 
     function renderCardFlowProgress(p) {
-      if (p.status !== 'doing') return '';
+      const show = p.status === 'doing' || (isFunnelBuildType(p.type) && p.status === 'todo');
+      if (!show) return '';
       const prog = getWorkflowProgress(p);
       if (!prog || !prog.total || !prog.groups.length) return '';
       const steps = prog.groups.map(g => {
         const cls = g.complete ? 'done' : (g.current ? 'current' : '');
         const mark = g.complete ? '✓' : (g.current ? '!' : '');
         const frac = g.total > 1 ? `<div class="card-flow-frac">${g.done}/${g.total}</div>` : '';
+        const label = isFunnelBuildType(p.type) ? g.label : shortFlowLabel(g.label);
         return `<div class="card-flow-step${cls ? ' ' + cls : ''}">
           <div class="card-flow-dot">${mark}</div>
-          <div class="card-flow-label">${esc(shortFlowLabel(g.label))}</div>
+          <div class="card-flow-label">${esc(label)}</div>
           ${frac}
         </div>`;
       }).join('');
@@ -10154,6 +10376,35 @@ ${MAIL_FOOTER}`,
     }
     window.deleteCustomStep = deleteCustomStep;
 
+    function updateFunnelReleaseBanner(p) {
+      const el = document.getElementById('funnelReleaseBanner');
+      if (!el) return;
+      if (!p || !isFunnelBuildType(p.type)) {
+        el.style.display = 'none';
+        el.className = 'funnel-release-banner';
+        el.textContent = '';
+        return;
+      }
+      const tracks = ensureFunnelTracks(p);
+      el.style.display = '';
+      if (!tracks.length) {
+        el.className = 'funnel-release-banner blocked';
+        el.textContent = '入口（ファネル）が未追加です。案件編集から追加してください。';
+        return;
+      }
+      if (isFunnelBuildReleaseReady(p)) {
+        el.className = 'funnel-release-banner ready';
+        el.textContent = 'リリース可 — 全入口の最低要素がそろっています';
+      } else {
+        const parts = tracks.map(t => {
+          const st = funnelTrackProgress(p, t);
+          return `${funnelChannelLabel(t.channel)} ${st.done}/${st.total}`;
+        });
+        el.className = 'funnel-release-banner blocked';
+        el.textContent = 'リリース前 — 飛ぶ先・導線が未完了の入口があります（' + parts.join(' · ') + '）';
+      }
+    }
+
     function openChecklist(id) {
       const p = state.projects.find(x => x.id === id);
       if (!p) return;
@@ -10163,7 +10414,10 @@ ${MAIL_FOOTER}`,
       ensureProjectChecklists(p);
       document.getElementById('checklistTitle').textContent = p.name;
       document.getElementById('checklistSubtitle').textContent = wf.title;
+      const wfRow = document.getElementById('checklistWorkflowRow');
+      if (wfRow) wfRow.style.display = isFunnelBuildType(p.type) ? 'none' : '';
       document.getElementById('checklistWorkflowSelect').value = p.workflowKey || 'auto';
+      updateFunnelReleaseBanner(p);
       renderChecklistBody(p, wf);
       document.getElementById('checklistModal').classList.add('open');
     }
@@ -10201,10 +10455,11 @@ ${MAIL_FOOTER}`,
         const actionBtn = s.action === 'openShootChecklist'
           ? `<button type="button" class="checklist-open-btn" onclick="event.preventDefault();event.stopPropagation();openShootChecklistPrint()">印刷用を開く</button>`
           : '';
+        const stepIdAttr = String(s.id).replace(/'/g, "\\'");
         const item = `
             <label class="checklist-item${checklist[s.id] ? ' checked' : ''}">
               <input type="checkbox" class="checklist-check" ${checklist[s.id] ? 'checked' : ''}
-                     onchange="toggleChecklist('${p.id}','${wfKey}',${s.id},this.checked)">
+                     onchange="toggleChecklist('${p.id}','${wfKey}','${stepIdAttr}',this.checked)">
               <div class="checklist-num">${num}</div>
               <div class="checklist-text">${esc(s.text)}</div>
               ${actionBtn}
@@ -10371,12 +10626,16 @@ ${MAIL_FOOTER}`,
       }
       const wf = getWorkflow(p);
       if (wf) renderChecklistBody(p, wf);
+      updateFunnelReleaseBanner(p);
       saveState();
     }
 
     function closeChecklistModal() {
       document.getElementById('checklistModal').classList.remove('open');
       checklistProjectId = null;
+      updateFunnelReleaseBanner(null);
+      const wfRow = document.getElementById('checklistWorkflowRow');
+      if (wfRow) wfRow.style.display = '';
     }
 
     /* ── Subscriptions ── */
