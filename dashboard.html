@@ -1463,6 +1463,39 @@
     .checklist-item:hover { border-color: #c9bfb0; }
     .checklist-item.checked { opacity: .55; }
     .checklist-item.checked .checklist-text { text-decoration: line-through; }
+    .checklist-item.skipped {
+      opacity: .5;
+      background: rgba(58,53,48,.04);
+      border-style: dashed;
+    }
+    .checklist-item.skipped .checklist-text {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    .checklist-item.skipped .checklist-check { pointer-events: none; opacity: .35; }
+    .checklist-skip-btn {
+      flex-shrink: 0;
+      font: inherit;
+      font-size: .68rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      line-height: 1.2;
+    }
+    .checklist-skip-btn:hover {
+      border-color: #9a7a30;
+      color: #9a7a30;
+      background: rgba(180,140,60,.08);
+    }
+    .checklist-skip-btn.on {
+      border-color: #9a7a30;
+      color: #9a7a30;
+      background: rgba(180,140,60,.14);
+    }
     .checklist-num {
       width: 22px; height: 22px;
       border-radius: 50%;
@@ -8952,13 +8985,25 @@ ${MAIL_FOOTER}`,
       };
     }
 
+    function isChecklistStepDone(checklist, stepId) {
+      return !!(checklist && (checklist[stepId] || checklist[String(stepId)]));
+    }
+
+    function isChecklistStepSkipped(skips, stepId) {
+      return !!(skips && (skips[stepId] || skips[String(stepId)]));
+    }
+
     function funnelBuildProgress(p) {
       const checklist = getProjectChecklist(p, 'funnelBuild');
+      const skips = getProjectChecklistSkips(p, 'funnelBuild');
       let done = 0;
+      let total = 0;
       FUNNEL_BUILD_STEPS.forEach(s => {
-        if (checklist[s.id] || checklist[String(s.id)]) done += 1;
+        if (isChecklistStepSkipped(skips, s.id)) return;
+        total += 1;
+        if (isChecklistStepDone(checklist, s.id)) done += 1;
       });
-      return { done, total: FUNNEL_BUILD_STEPS.length, ready: done === FUNNEL_BUILD_STEPS.length };
+      return { done, total, ready: total === 0 || done === total };
     }
 
     function isFunnelBuildReleaseReady(p) {
@@ -10282,6 +10327,7 @@ ${MAIL_FOOTER}`,
       if (!wf) return null;
       const wfKey = getWorkflowKey(p);
       const checklist = getProjectChecklist(p, wfKey);
+      const skips = getProjectChecklistSkips(p, wfKey);
       const customSteps = getProjectCustomSteps(p, wfKey);
       const groups = [];
       let checked = 0;
@@ -10289,8 +10335,8 @@ ${MAIL_FOOTER}`,
 
       wf.groups.forEach(g => {
         if (g.optional && g.gateKey === EDITOR_OUTSOURCE_GATE && !isEditorOutsourceEnabled(p)) return;
-        const steps = g.steps || [];
-        const gDone = steps.filter(s => checklist[s.id]).length;
+        const steps = (g.steps || []).filter(s => !isChecklistStepSkipped(skips, s.id));
+        const gDone = steps.filter(s => isChecklistStepDone(checklist, s.id)).length;
         const gTotal = steps.length;
         groups.push({
           label: g.label,
@@ -10304,13 +10350,14 @@ ${MAIL_FOOTER}`,
       });
 
       if (customSteps.length) {
-        const cDone = customSteps.filter(s => checklist[s.id]).length;
-        const cTotal = customSteps.length;
+        const activeCustom = customSteps.filter(s => !isChecklistStepSkipped(skips, s.id));
+        const cDone = activeCustom.filter(s => isChecklistStepDone(checklist, s.id)).length;
+        const cTotal = activeCustom.length;
         groups.push({
           label: '追加',
           done: cDone,
           total: cTotal,
-          complete: cDone === cTotal,
+          complete: cTotal > 0 && cDone === cTotal,
           current: false,
         });
         checked += cDone;
@@ -10370,12 +10417,19 @@ ${MAIL_FOOTER}`,
           p.checklists[legacyKey] = { ...p.checklist };
         }
       }
+      if (!p.checklistSkips || typeof p.checklistSkips !== 'object') p.checklistSkips = {};
     }
 
     function getProjectChecklist(p, wfKey) {
       ensureProjectChecklists(p);
       if (!p.checklists[wfKey]) p.checklists[wfKey] = {};
       return p.checklists[wfKey];
+    }
+
+    function getProjectChecklistSkips(p, wfKey) {
+      ensureProjectChecklists(p);
+      if (!p.checklistSkips[wfKey]) p.checklistSkips[wfKey] = {};
+      return p.checklistSkips[wfKey];
     }
 
     function getProjectCustomSteps(p, wfKey) {
@@ -10417,6 +10471,7 @@ ${MAIL_FOOTER}`,
       if (idx === -1) return;
       steps.splice(idx, 1);
       delete getProjectChecklist(p, wfKey)[stepId];
+      delete getProjectChecklistSkips(p, wfKey)[stepId];
       const wf = getWorkflow(p);
       if (wf) renderChecklistBody(p, wf);
       saveState();
@@ -10477,33 +10532,45 @@ ${MAIL_FOOTER}`,
     function renderChecklistBody(p, wf) {
       const wfKey = getWorkflowKey(p);
       const checklist = getProjectChecklist(p, wfKey);
+      const skips = getProjectChecklistSkips(p, wfKey);
       const customSteps = getProjectCustomSteps(p, wfKey);
       const countedSteps = wf.groups.flatMap(g => {
         if (g.optional && g.gateKey === EDITOR_OUTSOURCE_GATE && !isEditorOutsourceEnabled(p)) return [];
         return g.steps;
-      }).concat(customSteps);
-      const checked = countedSteps.filter(s => checklist[s.id]).length;
-      const pct = countedSteps.length ? Math.round(checked / countedSteps.length * 100) : 0;
+      }).concat(customSteps).filter(s => !isChecklistStepSkipped(skips, s.id));
+      const checked = countedSteps.filter(s => isChecklistStepDone(checklist, s.id)).length;
+      const pct = countedSteps.length ? Math.round(checked / countedSteps.length * 100) : 100;
       document.getElementById('checklistBar').style.width = pct + '%';
       let stepNum = 0;
+
+      function renderSkipBtn(stepId) {
+        const stepIdAttr = String(stepId).replace(/'/g, "\\'");
+        const skipped = isChecklistStepSkipped(skips, stepId);
+        return `<button type="button" class="checklist-skip-btn${skipped ? ' on' : ''}"
+                  onclick="event.preventDefault();event.stopPropagation();toggleChecklistSkip('${p.id}','${wfKey}','${stepIdAttr}')"
+                  title="${skipped ? 'この項目を再び必要にする' : 'この案件では不要'}">${skipped ? '不要 ✓' : '不要'}</button>`;
+      }
 
       function renderStepItem(s) {
         stepNum++;
         const num = stepNum;
         const isDeadline = s.type === 'editorDeadline';
+        const skipped = isChecklistStepSkipped(skips, s.id);
+        const done = !skipped && isChecklistStepDone(checklist, s.id);
         const actionBtn = s.action === 'openShootChecklist'
           ? `<button type="button" class="checklist-open-btn" onclick="event.preventDefault();event.stopPropagation();openShootChecklistPrint()">印刷用を開く</button>`
           : '';
         const stepIdAttr = String(s.id).replace(/'/g, "\\'");
         const item = `
-            <label class="checklist-item${checklist[s.id] ? ' checked' : ''}">
-              <input type="checkbox" class="checklist-check" ${checklist[s.id] ? 'checked' : ''}
+            <div class="checklist-item${done ? ' checked' : ''}${skipped ? ' skipped' : ''}">
+              <input type="checkbox" class="checklist-check" ${done ? 'checked' : ''} ${skipped ? 'disabled' : ''}
                      onchange="toggleChecklist('${p.id}','${wfKey}','${stepIdAttr}',this.checked)">
               <div class="checklist-num">${num}</div>
-              <div class="checklist-text">${esc(s.text)}</div>
+              <div class="checklist-text">${esc(s.text)}${skipped ? '（不要）' : ''}</div>
               ${actionBtn}
               <span class="checklist-tag ${esc(s.tag)}">${esc(s.tag)}</span>
-            </label>`;
+              ${renderSkipBtn(s.id)}
+            </div>`;
         if (!isDeadline) return item;
         const days = Number(p.editorDraftDays) || '';
         const due = p.editorDraftDueDate || '';
@@ -10552,13 +10619,16 @@ ${MAIL_FOOTER}`,
           ${customSteps.map(s => {
             stepNum++;
             const num = stepNum;
+            const skipped = isChecklistStepSkipped(skips, s.id);
+            const done = !skipped && isChecklistStepDone(checklist, s.id);
             return `
-            <div class="checklist-item checklist-item-custom${checklist[s.id] ? ' checked' : ''}">
-              <input type="checkbox" class="checklist-check" ${checklist[s.id] ? 'checked' : ''}
+            <div class="checklist-item checklist-item-custom${done ? ' checked' : ''}${skipped ? ' skipped' : ''}">
+              <input type="checkbox" class="checklist-check" ${done ? 'checked' : ''} ${skipped ? 'disabled' : ''}
                      onchange="toggleChecklist('${p.id}','${wfKey}','${s.id}',this.checked)">
               <div class="checklist-num">${num}</div>
-              <div class="checklist-text">${esc(s.text)}</div>
+              <div class="checklist-text">${esc(s.text)}${skipped ? '（不要）' : ''}</div>
               <span class="checklist-tag ${esc(s.tag)}">${esc(s.tag)}</span>
+              ${renderSkipBtn(s.id)}
               <button type="button" class="checklist-del" onclick="deleteCustomStep('${s.id}')" title="このステップを削除">×</button>
             </div>`;
           }).join('')}
@@ -10658,6 +10728,7 @@ ${MAIL_FOOTER}`,
     function toggleChecklist(projectId, wfKey, stepId, checked) {
       const p = state.projects.find(x => x.id === projectId);
       if (!p) return;
+      if (isChecklistStepSkipped(getProjectChecklistSkips(p, wfKey), stepId)) return;
       const checklist = getProjectChecklist(p, wfKey);
       checklist[stepId] = checked;
       if (checked && Number(stepId) === SHOOT_CHECKLIST_PRINT_STEP) {
@@ -10668,6 +10739,27 @@ ${MAIL_FOOTER}`,
       updateFunnelReleaseBanner(p);
       saveState();
     }
+
+    function toggleChecklistSkip(projectId, wfKey, stepId) {
+      const p = state.projects.find(x => x.id === projectId);
+      if (!p) return;
+      const skips = getProjectChecklistSkips(p, wfKey);
+      const wasSkipped = isChecklistStepSkipped(skips, stepId);
+      delete skips[stepId];
+      delete skips[String(stepId)];
+      if (!wasSkipped) {
+        skips[stepId] = true;
+        const checklist = getProjectChecklist(p, wfKey);
+        delete checklist[stepId];
+        delete checklist[String(stepId)];
+      }
+      const wf = getWorkflow(p);
+      if (wf) renderChecklistBody(p, wf);
+      updateFunnelReleaseBanner(p);
+      saveState();
+      toast(wasSkipped ? 'この項目を必要に戻しました' : 'この項目を不要にしました');
+    }
+    window.toggleChecklistSkip = toggleChecklistSkip;
 
     function closeChecklistModal() {
       document.getElementById('checklistModal').classList.remove('open');
