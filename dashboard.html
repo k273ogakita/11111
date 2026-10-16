@@ -2386,6 +2386,42 @@
       font-weight: 800;
       margin: 4px 0 18px;
     }
+    .human-goals-card {
+      border-radius: 12px;
+      padding: 14px 14px 12px;
+      margin: 0 0 8px;
+      border: 1px solid #d4c4a8;
+      background: linear-gradient(165deg, #fffaf2 0%, #f3ead8 100%);
+    }
+    .human-goals-card .horizon-step {
+      color: #7a5c2e;
+    }
+    .human-goals-card .horizon-title {
+      color: #5c4524;
+      margin-bottom: 8px;
+    }
+    .human-goals-card textarea {
+      width: 100%;
+      min-height: 110px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(122,92,46,.18);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font: inherit;
+      font-size: .85rem;
+      line-height: 1.55;
+      color: var(--text);
+      resize: vertical;
+      box-sizing: border-box;
+    }
+    .human-goals-card textarea:focus {
+      outline: none;
+      border-color: rgba(122,92,46,.45);
+      background: #fff;
+    }
+    .human-goals-card textarea::placeholder {
+      color: #a89478;
+    }
     .compass-block-title {
       font-size: .78rem;
       font-weight: 800;
@@ -3029,7 +3065,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v181</div>
+        <div class="logo-sub">Business Dashboard · v184</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
           <a class="btn" href="実績/index.html">実績</a>
@@ -4611,6 +4647,7 @@ nark.visual.media@gmail.com
 
     function emptyVision() {
       return {
+        humanGoals: '',
         grandmother: '',
         tenYears: '',
         threeYears: '',
@@ -6886,9 +6923,18 @@ ${MAIL_FOOTER}`,
       const r = ensureCurrentReview();
       const monthKey = currentReviewMonthKey();
 
+      const v = state.vision || emptyVision();
       el.innerHTML = `
         <div class="compass-kicker">Direction</div>
         <div class="compass-heading">理想の状態と、いまの自分</div>
+
+        <div class="compass-block-title">人間目標<span class="compass-block-note">人として、こうありたい</span></div>
+        <div class="human-goals-card">
+          <div class="horizon-step">Human</div>
+          <div class="horizon-title">人間目標</div>
+          <textarea placeholder="例：誠実で地道であること／家族を第一にすること／人の役に立つ仕事を続けること…"
+                    oninput="onVisionInput('humanGoals', this)">${esc(v.humanGoals || '')}</textarea>
+        </div>
 
         <div class="compass-block-title">時間の軸<span class="compass-block-note">健康・家族・お金・仕事・趣味</span></div>
         <div class="vision-faces">
