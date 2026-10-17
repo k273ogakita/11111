@@ -3065,7 +3065,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v184</div>
+        <div class="logo-sub">Business Dashboard · v185</div>
         <div class="header-page-links">
           <a class="btn" href="funnel.html">営業ファネル</a>
           <a class="btn" href="実績/index.html">実績</a>
@@ -3131,6 +3131,21 @@
       </div>
       <div class="collapse-body" id="adCollapse">
         <div class="sub-list" id="adList"></div>
+      </div>
+    </section>
+
+    <section class="section" id="opsSection">
+      <div class="section-header collapsible-header" onclick="toggleOps()">
+        <div class="collapsible-header-left">
+          <div class="section-title">事業運営費（変動費）<span class="collapse-chevron" id="opsChevron">▸</span></div>
+          <div class="collapse-summary" id="opsSummary"></div>
+        </div>
+        <div class="collapsible-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-primary" onclick="openOpsModal()">+ 追加</button>
+        </div>
+      </div>
+      <div class="collapse-body" id="opsCollapse">
+        <div class="sub-list" id="opsList"></div>
       </div>
     </section>
 
@@ -3655,6 +3670,36 @@
       <div class="modal-actions">
         <button class="btn" onclick="closeAdModal()">キャンセル</button>
         <button class="btn btn-primary" onclick="saveAd()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ops Expense Modal（事業運営費） -->
+  <div class="modal-overlay" id="opsModal">
+    <div class="modal">
+      <h3 id="opsModalTitle">事業運営費を追加</h3>
+      <div class="form-group">
+        <label>内容</label>
+        <input type="text" id="opsName" placeholder="例: ドメイン更新・交通費・備品・外注費">
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label>支出月</label>
+          <input type="month" id="opsMonth">
+        </div>
+        <div class="form-group">
+          <label>金額（税抜）</label>
+          <input type="number" id="opsAmount" min="0" step="1" placeholder="3000">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>メモ</label>
+        <textarea id="opsMemo" placeholder="任意"></textarea>
+      </div>
+      <div class="form-hint">ここに入れた金額は、その月の「変動費」に合算されます（案件の変動費とは別）。</div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeOpsModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveOps()">保存</button>
       </div>
     </div>
   </div>
@@ -4586,6 +4631,7 @@ nark.visual.media@gmail.com
     let modalTimeIds = [];
     let subsExpanded = false;
     let adsExpanded = false;
+    let opsExpanded = false;
     let compassDetailsExpanded = false;
     let milestonesExpanded = true; // 常時開いておく
     let snsIdeasExpanded = false; // 普段は折りたたみ
@@ -4595,6 +4641,7 @@ nark.visual.media@gmail.com
     let compassPathExpanded = false;
     let doneExpanded = false;
     let editingAdId = null;
+    let editingOpsId = null;
     let editingBizTodoId = null;
     let bizTodoFilter = 'open';
     let bizTodoShowDone = false;
@@ -4611,6 +4658,7 @@ nark.visual.media@gmail.com
         tasks: [],
         subscriptions: [],
         adExpenses: [],
+        opsExpenses: [],
         bizTodos: [],
         bizProjects: defaultBizProjects(),
         weeklyGoals: {},
@@ -5224,6 +5272,7 @@ ${MAIL_FOOTER}`,
     function migrateState(data) {
       if (!data.subscriptions) data.subscriptions = [];
       if (!data.adExpenses) data.adExpenses = [];
+      if (!data.opsExpenses) data.opsExpenses = [];
       if (!data.bizTodos) data.bizTodos = [];
       if (!Array.isArray(data.bizProjects)) data.bizProjects = defaultBizProjects();
       if (!data.weeklyGoals || typeof data.weeklyGoals !== 'object') data.weeklyGoals = {};
@@ -6328,15 +6377,25 @@ ${MAIL_FOOTER}`,
       }, 0);
     }
 
+    function getOpsSpendForMonth(y, m) {
+      const key = monthKey(y, m);
+      return (state.opsExpenses || []).reduce((sum, op) => {
+        if (op.month !== key) return sum;
+        return sum + (Number(op.amount) || 0);
+      }, 0);
+    }
+
     function getMonthFinance(y, m) {
       const fixed = getFixedCostForMonth(y, m);
       const billed = projectsBilledInMonth(y, m);
       const revenue = billed.reduce((s, p) => s + (Number(p.revenue) || 0), 0);
-      const variable = billed.reduce((s, p) => s + projectVariableTotal(p), 0);
+      const projectVariable = billed.reduce((s, p) => s + projectVariableTotal(p), 0);
+      const opsVariable = getOpsSpendForMonth(y, m);
+      const variable = projectVariable + opsVariable;
       const adSpend = getAdSpendForMonth(y, m);
       const breakEven = fixed + variable + adSpend;
       const netProfit = revenue - fixed - variable - adSpend;
-      return { fixed, variable, adSpend, revenue, breakEven, netProfit };
+      return { fixed, variable, adSpend, revenue, breakEven, netProfit, projectVariable, opsVariable };
     }
 
     function projectVariableTotal(p) {
@@ -6396,6 +6455,7 @@ ${MAIL_FOOTER}`,
       renderFinance();
       renderSubscriptions();
       renderAdExpenses();
+      renderOpsExpenses();
       renderBizTodos();
       renderCalendar();
       renderKanban();
@@ -6408,6 +6468,7 @@ ${MAIL_FOOTER}`,
       renderFinance();
       renderSubscriptions();
       renderAdExpenses();
+      renderOpsExpenses();
     }
 
     function financeNext() {
@@ -6416,6 +6477,7 @@ ${MAIL_FOOTER}`,
       renderFinance();
       renderSubscriptions();
       renderAdExpenses();
+      renderOpsExpenses();
     }
 
     function financeGoTo(y, m) {
@@ -6424,6 +6486,7 @@ ${MAIL_FOOTER}`,
       renderFinance();
       renderSubscriptions();
       renderAdExpenses();
+      renderOpsExpenses();
     }
 
     function renderFinance() {
@@ -6493,7 +6556,7 @@ ${MAIL_FOOTER}`,
             `).join('')}
           </div>
         </div>
-        <div class="tax-note">請求ベース · 変動費は請求月 · 広告費は支出月 · 案件カードの純利益は固定費・広告費を含みません · 年度は4月始まり</div>
+        <div class="tax-note">請求ベース · 変動費＝案件の変動費（請求月）＋事業運営費（支出月） · 広告費は支出月 · 案件カードの純利益は固定費・広告費・事業運営費を含みません · 年度は4月始まり</div>
       `;
     }
 
@@ -6633,6 +6696,47 @@ ${MAIL_FOOTER}`,
       adsExpanded = !adsExpanded;
       renderAdExpenses();
     }
+
+    function renderOpsExpenses() {
+      const ops = (state.opsExpenses || []).slice().sort((a, b) => {
+        if (a.month !== b.month) return b.month.localeCompare(a.month);
+        return String(b.name || '').localeCompare(String(a.name || ''), 'ja');
+      });
+      const monthTotal = getOpsSpendForMonth(financeYear, financeMonth);
+      const monthCount = ops.filter(o => o.month === monthKey(financeYear, financeMonth)).length;
+      document.getElementById('opsSummary').textContent =
+        ops.length === 0 ? '未登録' : `${formatMonthLabel(monthKey(financeYear, financeMonth))} ${formatYen(monthTotal)}${monthCount ? ' · ' + monthCount + '件' : ''}`;
+      document.getElementById('opsChevron').textContent = opsExpanded ? '▾' : '▸';
+      document.getElementById('opsCollapse').classList.toggle('open', opsExpanded);
+
+      const el = document.getElementById('opsList');
+      if (ops.length === 0) {
+        el.innerHTML = '<div class="sub-empty">事業運営費が登録されていません。「+ 追加」から入力してください。ドメイン・交通費・備品など、案件以外で使ったお金です。</div>';
+        return;
+      }
+      el.innerHTML = ops.map(op => {
+        const isViewMonth = op.month === monthKey(financeYear, financeMonth);
+        return `
+          <div class="sub-item${isViewMonth ? ' renewal-soon' : ''}">
+            <div class="sub-info">
+              <div class="sub-name">${esc(op.name || '事業運営費')} · ${formatMonthLabel(op.month)}</div>
+              <div class="sub-meta">支出月 ${formatMonthLabel(op.month)}${op.memo ? ' · ' + esc(op.memo) : ''}</div>
+            </div>
+            <div class="sub-amount">${formatYen(Number(op.amount) || 0)}</div>
+            <div class="sub-actions">
+              <button class="btn btn-ghost" onclick="openOpsModal('${op.id}')">編集</button>
+              <button class="btn btn-ghost btn-danger" onclick="deleteOps('${op.id}')">削除</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleOps() {
+      opsExpanded = !opsExpanded;
+      renderOpsExpenses();
+    }
+    window.toggleOps = toggleOps;
 
     function toggleDoneColumn() {
       doneExpanded = !doneExpanded;
@@ -10963,6 +11067,69 @@ ${MAIL_FOOTER}`,
       toast('広告費を削除しました');
     }
 
+    /* ── Ops Expenses（事業運営費 → 変動費） ── */
+    function openOpsModal(id) {
+      editingOpsId = id || null;
+      const defaultMonth = monthKey(financeYear, financeMonth);
+      if (id) {
+        const op = state.opsExpenses.find(a => a.id === id);
+        document.getElementById('opsModalTitle').textContent = '事業運営費を編集';
+        document.getElementById('opsName').value = op.name || '';
+        document.getElementById('opsMonth').value = op.month || defaultMonth;
+        document.getElementById('opsAmount').value = op.amount || '';
+        document.getElementById('opsMemo').value = op.memo || '';
+      } else {
+        document.getElementById('opsModalTitle').textContent = '事業運営費を追加';
+        document.getElementById('opsName').value = '';
+        document.getElementById('opsMonth').value = defaultMonth;
+        document.getElementById('opsAmount').value = '';
+        document.getElementById('opsMemo').value = '';
+      }
+      document.getElementById('opsModal').classList.add('open');
+      setTimeout(() => document.getElementById('opsName').focus(), 50);
+    }
+    window.openOpsModal = openOpsModal;
+
+    function closeOpsModal() {
+      document.getElementById('opsModal').classList.remove('open');
+      editingOpsId = null;
+    }
+    window.closeOpsModal = closeOpsModal;
+
+    function saveOps() {
+      const name = document.getElementById('opsName').value.trim();
+      if (!name) { toast('内容を入力してください'); return; }
+      const month = document.getElementById('opsMonth').value;
+      if (!month) { toast('支出月を選択してください'); return; }
+      const amount = Number(document.getElementById('opsAmount').value) || 0;
+      if (amount <= 0) { toast('金額を入力してください'); return; }
+      const data = {
+        name,
+        month,
+        amount,
+        memo: document.getElementById('opsMemo').value.trim(),
+      };
+      if (editingOpsId) {
+        const op = state.opsExpenses.find(a => a.id === editingOpsId);
+        Object.assign(op, data);
+        toast('事業運営費を更新しました');
+      } else {
+        state.opsExpenses.push({ id: uid(), ...data });
+        toast('事業運営費を追加しました');
+      }
+      closeOpsModal();
+      saveState();
+    }
+    window.saveOps = saveOps;
+
+    function deleteOps(id) {
+      if (!confirm('この事業運営費を削除しますか？')) return;
+      state.opsExpenses = state.opsExpenses.filter(a => a.id !== id);
+      saveState();
+      toast('事業運営費を削除しました');
+    }
+    window.deleteOps = deleteOps;
+
     /* ── Calendar ── */
     function buildCalendarMonthHtml(year, monthIndex, events, today, monthLabel) {
       const DOW = ['日', '月', '火', '水', '木', '金', '土'];
@@ -11265,6 +11432,9 @@ ${MAIL_FOOTER}`,
     document.getElementById('adModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeAdModal();
     });
+    document.getElementById('opsModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeOpsModal();
+    });
     document.getElementById('bizTodoModal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeBizTodoModal();
     });
@@ -11285,7 +11455,7 @@ ${MAIL_FOOTER}`,
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
         closeProjectModal(); closePathModal(); closeChecklistModal();
-        closeSubModal(); closeAdModal(); closeBizTodoModal(); closeBizProjectModal(); closeTaskModal();
+        closeSubModal(); closeAdModal(); closeOpsModal(); closeBizTodoModal(); closeBizProjectModal(); closeTaskModal();
       }
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z') {
         const t = e.target;
