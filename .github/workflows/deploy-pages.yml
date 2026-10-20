@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'dashboard.html'
+      - 'list.html'
       - 'funnel.html'
       - 'funnel-data.js'
       - 'vision-*.jpg'
@@ -38,6 +39,7 @@ jobs:
           mkdir -p _site "_site/リファレンス/thumbs" "_site/実績"
           cp dashboard.html _site/dashboard.html
           cp dashboard.html _site/index.html
+          cp list.html _site/list.html
           cp funnel.html _site/funnel.html
           cp funnel-data.js _site/funnel-data.js
           cp vision-*.jpg _site/

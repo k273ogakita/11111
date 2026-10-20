@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>nARK リスト管理</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f3ede4;
+      --surface: #faf7f2;
+      --surface-2: #efe9df;
+      --border: #ddd5c8;
+      --text: #3a3530;
+      --muted: #8c8278;
+      --red: #e8956a;
+      --red-dim: #d47a4a;
+      --red-glow: rgba(232, 149, 106, 0.22);
+      --good: #5b8f6a;
+      --good-bg: rgba(91, 143, 106, 0.14);
+      --ok: #c4a15a;
+      --ok-bg: rgba(196, 161, 90, 0.16);
+      --poor: #c56b42;
+      --poor-bg: rgba(197, 107, 66, 0.14);
+      --radius: 10px;
+      --font: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    }
+
+    html { font-size: 15px; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(58,53,48,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(58,53,48,.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .app { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 28px 24px 64px; }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+    .logo span { color: var(--red); }
+    .logo-sub { font-size: .75rem; color: var(--muted); margin-top: 6px; letter-spacing: .08em; text-transform: uppercase; }
+    .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; margin-left: auto; }
+    .header-links { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+    .header-backup { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+    .header-backup-label {
+      font-size: .68rem; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+    }
+
+    a.btn { text-decoration: none; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 14px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--surface-2);
+      color: var(--text); font-size: .78rem; font-weight: 600;
+      cursor: pointer; font-family: var(--font); white-space: nowrap;
+    }
+    .btn:hover { border-color: #c9bfb0; }
+    .btn-primary { background: var(--red); border-color: var(--red); color: #fff; }
+    .btn-primary:hover { border-color: var(--red-dim); background: var(--red-dim); }
+    .btn-ghost { background: transparent; color: var(--muted); border-color: transparent; }
+    .btn-danger { color: var(--poor); border-color: rgba(197,107,66,.35); background: var(--poor-bg); }
+    .btn-sm { padding: 5px 10px; font-size: .72rem; }
+
+    .def-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .def-toggle {
+      width: 100%;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 12px 16px;
+      background: transparent; border: 0; cursor: pointer;
+      font-family: var(--font); color: var(--text); text-align: left;
+    }
+    .def-toggle strong { font-size: .88rem; }
+    .def-toggle span { font-size: .72rem; color: var(--muted); }
+    .def-body {
+      display: none;
+      padding: 0 16px 16px;
+      border-top: 1px solid var(--border);
+      font-size: .82rem;
+      color: var(--muted);
+    }
+    .def-box.open .def-body { display: block; padding-top: 14px; }
+    .def-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    .def-card {
+      background: var(--surface-2);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .def-card h4 {
+      font-size: .78rem; font-weight: 700; color: var(--text);
+      margin-bottom: 6px; letter-spacing: .04em;
+    }
+    .def-card ul { padding-left: 1.1em; }
+    .def-card li + li { margin-top: 4px; }
+    .def-flow {
+      font-size: .8rem; color: var(--text);
+      padding: 10px 12px;
+      background: rgba(232,149,106,.1);
+      border-radius: 8px;
+      border-left: 3px solid var(--red);
+    }
+
+    .stats {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+      margin-bottom: 16px; padding: 10px 14px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      font-size: .72rem; color: var(--muted);
+    }
+    .stat-chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .stat-chip strong { font-size: .9rem; font-weight: 700; color: var(--text); }
+    .stat-chip.highlight strong { color: var(--red); }
+    .stat-chip.alert strong { color: var(--poor); }
+    .stat-divider { width: 1px; height: 14px; background: var(--border); }
+
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      margin-bottom: 16px;
+    }
+    .filters { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+    .filter-chip {
+      padding: 5px 12px; border-radius: 20px;
+      border: 1px solid var(--border); background: var(--surface-2);
+      font-size: .72rem; font-weight: 600; color: var(--muted);
+      cursor: pointer; font-family: var(--font);
+    }
+    .filter-chip.active {
+      background: var(--red-glow);
+      border-color: rgba(232,149,106,.45);
+      color: var(--red-dim);
+    }
+    .search-wrap { display: flex; gap: 8px; align-items: center; }
+    .search-wrap input {
+      width: min(240px, 40vw);
+      padding: 7px 12px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--surface);
+      font-family: var(--font); font-size: .82rem; color: var(--text);
+    }
+    .search-wrap input:focus { outline: none; border-color: var(--red); }
+
+    .remind-banner {
+      display: none;
+      margin-bottom: 16px; padding: 12px 14px;
+      background: var(--poor-bg); border: 1px solid rgba(197,107,66,.35);
+      border-radius: var(--radius); font-size: .82rem;
+    }
+    .remind-banner.show { display: block; }
+    .remind-banner strong { color: var(--poor); }
+    .remind-list { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .remind-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--surface); border: 1px solid rgba(197,107,66,.25);
+      font-size: .72rem; font-weight: 600; cursor: pointer; font-family: var(--font); color: var(--text);
+    }
+    .remind-pill:hover { border-color: var(--poor); }
+
+    .person-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 12px;
+    }
+    .person-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--font);
+      color: inherit;
+      transition: border-color .15s, box-shadow .15s;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .person-card:hover { border-color: var(--red); }
+    .person-card.due { border-color: rgba(197,107,66,.55); box-shadow: 0 0 0 3px var(--poor-bg); }
+    .person-card.prospect { border-color: rgba(91,143,106,.45); }
+    .person-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .person-name { font-size: 1.02rem; font-weight: 700; line-height: 1.25; }
+    .person-meta { font-size: .75rem; color: var(--muted); }
+    .person-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: .68rem; font-weight: 700; letter-spacing: .02em;
+    }
+    .badge-list { background: var(--ok-bg); color: #8a6d2e; }
+    .badge-prospect { background: var(--good-bg); color: var(--good); }
+    .badge-excluded { background: var(--surface-2); color: var(--muted); }
+    .badge-due { background: var(--poor-bg); color: var(--poor); }
+    .badge-soon { background: rgba(232,149,106,.18); color: var(--red-dim); }
+    .person-snippet {
+      font-size: .78rem; color: var(--muted);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .person-foot {
+      display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+      font-size: .72rem; color: var(--muted); margin-top: auto; padding-top: 4px;
+      border-top: 1px solid var(--border);
+    }
+    .empty {
+      grid-column: 1 / -1;
+      padding: 48px 20px; text-align: center;
+      background: var(--surface); border: 1px dashed var(--border);
+      border-radius: var(--radius); color: var(--muted); font-size: .88rem;
+    }
+
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(58,53,48,.35);
+      display: none; align-items: flex-start; justify-content: center;
+      padding: 40px 16px; overflow-y: auto;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      width: min(720px, 100%);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 16px 48px rgba(58,53,48,.18);
+      margin-bottom: 40px;
+    }
+    .modal-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 16px 18px; border-bottom: 1px solid var(--border);
+    }
+    .modal-head h2 { font-size: 1.05rem; font-weight: 700; }
+    .modal-body { padding: 18px; display: flex; flex-direction: column; gap: 18px; }
+    .modal-foot {
+      display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px; border-top: 1px solid var(--border);
+      background: var(--surface-2); border-radius: 0 0 12px 12px;
+    }
+    .modal-foot-right { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+
+    .form-section-title {
+      font-size: .72rem; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+    .field label {
+      display: block; font-size: .7rem; font-weight: 700; color: var(--muted);
+      margin-bottom: 4px; letter-spacing: .04em;
+    }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 8px 10px; border-radius: 7px;
+      border: 1px solid var(--border); background: #fff;
+      font-family: var(--font); font-size: .85rem; color: var(--text);
+    }
+    .field textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: var(--red);
+    }
+    .hint { font-size: .68rem; color: var(--muted); margin-top: 4px; }
+
+    .check-list { display: flex; flex-direction: column; gap: 8px; }
+    .check-line {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: .82rem; line-height: 1.4;
+      padding: 8px 10px; background: var(--surface-2); border-radius: 8px;
+    }
+    .check-line input { margin-top: 3px; }
+    .status-hint {
+      font-size: .75rem; padding: 8px 10px; border-radius: 8px;
+      background: var(--good-bg); color: var(--good); margin-top: 8px;
+    }
+    .status-hint.warn { background: var(--ok-bg); color: #8a6d2e; }
+
+    .log-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+    .log-item {
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px; font-size: .8rem;
+    }
+    .log-meta { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+    .log-meta strong { font-size: .72rem; color: var(--muted); }
+    .log-actions { display: flex; gap: 4px; }
+    .log-add {
+      display: grid; grid-template-columns: 110px 120px 1fr auto;
+      gap: 8px; align-items: start; margin-top: 10px;
+    }
+    .log-add textarea { min-height: 56px; }
+
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 2000;
+      max-width: min(380px, calc(100vw - 48px));
+      padding: 12px 14px; background: var(--surface);
+      border: 1px solid var(--red); border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(58,53,48,.12);
+      font-size: .82rem; display: none;
+    }
+    .toast.show { display: block; }
+
+    @media (max-width: 720px) {
+      .def-grid, .form-grid { grid-template-columns: 1fr; }
+      .log-add { grid-template-columns: 1fr 1fr; }
+      .log-add textarea { grid-column: 1 / -1; }
+      .header-right { align-items: flex-start; width: 100%; }
+      .header-links, .header-backup { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <div class="logo">n<span>ARK</span></div>
+        <div class="logo-sub">リスト管理 · v1</div>
+      </div>
+      <div class="header-right">
+        <div class="header-links">
+          <a class="btn" href="dashboard.html">Dashboard</a>
+          <a class="btn" href="funnel.html">営業ファネル</a>
+          <a class="btn" href="実績/index.html">実績</a>
+          <a class="btn" href="リファレンス/index.html">リファレンス</a>
+        </div>
+        <div class="header-backup">
+          <span class="header-backup-label">データ</span>
+          <button type="button" class="btn" onclick="exportJson()">JSONバックアップ</button>
+          <button type="button" class="btn" onclick="triggerImport()">復元</button>
+          <input type="file" id="importInput" accept=".json,application/json" style="display:none" onchange="importJson(event)">
+        </div>
+      </div>
+    </header>
+
+    <div class="def-box" id="defBox">
+      <button type="button" class="def-toggle" onclick="toggleDef()">
+        <strong>リストと見込み客の定義（濃厚型セールス）</strong>
+        <span id="defChevron">開く ▾</span>
+      </button>
+      <div class="def-body">
+        <div class="def-grid">
+          <div class="def-card">
+            <h4>リスト</h4>
+            <ul>
+              <li>連絡先を知っている人</li>
+              <li>一見不要でも、嫌な人でなく条件が揃えば保持</li>
+              <li>ここでは売らない。信頼構築と「できる人」認知が目的</li>
+            </ul>
+          </div>
+          <div class="def-card">
+            <h4>見込み客</h4>
+            <ul>
+              <li>対面／Zoomで課題をヒアリングしたことがある</li>
+              <li>サービスの必要性を認めた（「そういう動画いいね」等）</li>
+              <li>支払い能力がある（ビジネスをしている個人・法人）</li>
+            </ul>
+          </div>
+        </div>
+        <div class="def-flow">
+          濃厚型の流れ：人脈づくり → 信頼構築 → 様子を見てタイミングで連絡・提案 → 見込み客化
+        </div>
+      </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="remind-banner" id="remindBanner">
+      <strong>そろそろ連絡</strong> — 最終連絡からリマインド日数を過ぎた人です。
+      <div class="remind-list" id="remindList"></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="filters" id="filters"></div>
+      <div class="search-wrap">
+        <input type="search" id="searchInput" placeholder="名前・職業・課題で検索" oninput="render()">
+        <button type="button" class="btn btn-primary" onclick="openModal()">+ 追加</button>
+      </div>
+    </div>
+
+    <div class="person-grid" id="personGrid"></div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay" onclick="overlayClick(event)">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2 id="modalTitle">リストを追加</h2>
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">閉じる</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editId">
+
+        <div>
+          <div class="form-section-title">基本プロフィール</div>
+          <div class="form-grid">
+            <div class="field"><label>名前 *</label><input id="fName" type="text" required></div>
+            <div class="field"><label>会社・屋号</label><input id="fCompany" type="text"></div>
+            <div class="field"><label>職業</label><input id="fOccupation" type="text" placeholder="例: 開業医 / 税理士"></div>
+            <div class="field"><label>どんな人</label><input id="fPersonType" type="text" placeholder="例: 穏やか・紹介好き"></div>
+            <div class="field"><label>趣味</label><input id="fHobbies" type="text"></div>
+            <div class="field"><label>家族構成</label><input id="fFamily" type="text"></div>
+            <div class="field full"><label>連絡先</label><input id="fContact" type="text" placeholder="電話・メール・SNSなど"></div>
+            <div class="field full"><label>悩み事</label><textarea id="fConcerns" rows="2"></textarea></div>
+            <div class="field full"><label>抱えている課題</label><textarea id="fChallenges" rows="2"></textarea></div>
+            <div class="field full"><label>今後の可能性</label><textarea id="fPotential" rows="2" placeholder="この人からどんな展開がありそうか"></textarea></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="form-section-title">選別・ステージ</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>ステータス</label>
+              <select id="fStatus">
+                <option value="list">リスト</option>
+                <option value="prospect">見込み客</option>
+                <option value="excluded">除外</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>連絡リマインド</label>
+              <select id="fReminderDays">
+                <option value="30">30日ごと</option>
+                <option value="60">60日ごと</option>
+                <option value="90">90日ごと</option>
+              </select>
+            </div>
+            <div class="field full">
+              <div class="check-list">
+                <label class="check-line"><input type="checkbox" id="fKeepAsList"> リストとして保持する（一見不要でも、条件が揃えば持つ）</label>
+                <label class="check-line"><input type="checkbox" id="fHasMet" onchange="syncProspectHint()"> 対面／Zoomで課題をヒアリングした</label>
+                <label class="check-line"><input type="checkbox" id="fRecognizesNeed" onchange="syncProspectHint()"> サービスの必要性を認めた</label>
+                <label class="check-line"><input type="checkbox" id="fHasPayingAbility" onchange="syncProspectHint()"> 支払い能力がある（ビジネスをしている個人・法人）</label>
+              </div>
+              <div class="status-hint" id="prospectHint" style="display:none"></div>
+            </div>
+            <div class="field full"><label>反応メモ</label><textarea id="fReaction" rows="2" placeholder="どんな反応だったか"></textarea></div>
+            <div class="field full"><label>提案タイミング仮説</label><textarea id="fProposalTiming" rows="2" placeholder="いつ自分のサービスが必要になりそうか"></textarea></div>
+            <div class="field"><label>次のアクション日</label><input id="fNextAction" type="date"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="form-section-title">関係ログ（いつ会った・話した・連絡した）</div>
+          <div class="log-list" id="logList"></div>
+          <div class="log-add">
+            <input type="date" id="logDate">
+            <select id="logType">
+              <option value="meet">会った</option>
+              <option value="talk">話した（Zoom等）</option>
+              <option value="contact">連絡した</option>
+            </select>
+            <textarea id="logContent" placeholder="内容・反応"></textarea>
+            <button type="button" class="btn btn-sm" onclick="addLogDraft()">追記</button>
+          </div>
+          <p class="hint">保存前でもログを積み上げられます。最終連絡日はログから自動計算します。</p>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-danger" id="deleteBtn" style="display:none" onclick="deletePerson()">削除</button>
+        <div class="modal-foot-right">
+          <button type="button" class="btn btn-ghost" onclick="closeModal()">キャンセル</button>
+          <button type="button" class="btn btn-primary" onclick="savePerson()">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = 'nark_list_v1';
+    const STORAGE_PREV_KEY = 'nark_list_v1_prev';
+    const FILTERS = [
+      { id: 'all', label: 'すべて' },
+      { id: 'list', label: 'リスト' },
+      { id: 'prospect', label: '見込み客' },
+      { id: 'due', label: '未連絡が長い' },
+      { id: 'soon', label: '提案タイミング近い' },
+      { id: 'excluded', label: '除外' },
+    ];
+    const LOG_TYPE_LABEL = { meet: '会った', talk: '話した', contact: '連絡した' };
+
+    let state = { people: [], version: 1 };
+    let currentFilter = 'all';
+    let logDraft = [];
+    let toastTimer = null;
+
+    function uid() {
+      return (crypto.randomUUID && crypto.randomUUID()) || ('id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+    }
+    function todayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function daysBetween(a, b) {
+      if (!a) return null;
+      const da = new Date(a + 'T00:00:00');
+      const db = new Date(b + 'T00:00:00');
+      return Math.floor((db - da) / 86400000);
+    }
+    function lastLogDate(person) {
+      const logs = person.logs || [];
+      if (!logs.length) return person.createdAt || '';
+      return logs.map(l => l.date).filter(Boolean).sort().slice(-1)[0] || person.createdAt || '';
+    }
+    function isDue(person, today) {
+      if (person.status === 'excluded') return false;
+      const last = lastLogDate(person);
+      if (!last) return true;
+      const days = daysBetween(last, today);
+      const rem = Number(person.reminderDays) || 30;
+      return days != null && days >= rem;
+    }
+    function isSoon(person, today) {
+      if (!person.nextActionDate || person.status === 'excluded') return false;
+      const d = daysBetween(today, person.nextActionDate);
+      return d != null && d >= 0 && d <= 14;
+    }
+    function meetsProspect(person) {
+      return !!(person.hasMet && person.recognizesNeed && person.hasPayingAbility);
+    }
+    function statusBadge(status) {
+      if (status === 'prospect') return '<span class="badge badge-prospect">見込み客</span>';
+      if (status === 'excluded') return '<span class="badge badge-excluded">除外</span>';
+      return '<span class="badge badge-list">リスト</span>';
+    }
+
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data && Array.isArray(data.people)) state = data;
+      } catch (_) {}
+    }
+    function save() {
+      try {
+        const current = localStorage.getItem(STORAGE_KEY);
+        if (current) localStorage.setItem(STORAGE_PREV_KEY, current);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        toast('保存に失敗しました（容量など）');
+      }
+    }
+
+    function toast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+    }
+
+    function toggleDef() {
+      const box = document.getElementById('defBox');
+      box.classList.toggle('open');
+      document.getElementById('defChevron').textContent = box.classList.contains('open') ? '閉じる ▴' : '開く ▾';
+    }
+
+    function filteredPeople() {
+      const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      const today = todayStr();
+      return state.people.filter(p => {
+        if (currentFilter === 'list' && p.status !== 'list') return false;
+        if (currentFilter === 'prospect' && p.status !== 'prospect') return false;
+        if (currentFilter === 'excluded' && p.status !== 'excluded') return false;
+        if (currentFilter === 'due' && !isDue(p, today)) return false;
+        if (currentFilter === 'soon' && !isSoon(p, today)) return false;
+        if (currentFilter === 'all' && p.status === 'excluded') return false;
+        if (!q) return true;
+        const hay = [p.name, p.company, p.occupation, p.personType, p.hobbies, p.family, p.concerns, p.challenges, p.potential, p.contact, p.proposalTiming, p.reaction]
+          .join(' ').toLowerCase();
+        return hay.includes(q);
+      }).sort((a, b) => {
+        const today = todayStr();
+        const da = isDue(a, today) ? 0 : 1;
+        const db = isDue(b, today) ? 0 : 1;
+        if (da !== db) return da - db;
+        return (lastLogDate(b) || '').localeCompare(lastLogDate(a) || '');
+      });
+    }
+
+    function renderFilters() {
+      document.getElementById('filters').innerHTML = FILTERS.map(f =>
+        `<button type="button" class="filter-chip${currentFilter === f.id ? ' active' : ''}" onclick="setFilter('${f.id}')">${f.label}</button>`
+      ).join('');
+    }
+    function setFilter(id) {
+      currentFilter = id;
+      renderFilters();
+      render();
+    }
+
+    function renderStats() {
+      const today = todayStr();
+      const active = state.people.filter(p => p.status !== 'excluded');
+      const lists = active.filter(p => p.status === 'list').length;
+      const prospects = active.filter(p => p.status === 'prospect').length;
+      const due = active.filter(p => isDue(p, today)).length;
+      const month = today.slice(0, 7);
+      const soonMonth = active.filter(p => p.nextActionDate && p.nextActionDate.startsWith(month)).length;
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-chip"><span>リスト</span><strong>${lists}</strong></div>
+        <div class="stat-divider"></div>
+        <div class="stat-chip highlight"><span>見込み客</span><strong>${prospects}</strong></div>
+        <div class="stat-divider"></div>
+        <div class="stat-chip alert"><span>未連絡が長い</span><strong>${due}</strong></div>
+        <div class="stat-divider"></div>
+        <div class="stat-chip"><span>今月アクション予定</span><strong>${soonMonth}</strong></div>
+        <div class="stat-divider"></div>
+        <div class="stat-chip"><span>合計（除外除く）</span><strong>${active.length}</strong></div>
+      `;
+
+      const duePeople = active.filter(p => isDue(p, today));
+      const banner = document.getElementById('remindBanner');
+      const list = document.getElementById('remindList');
+      if (!duePeople.length) {
+        banner.classList.remove('show');
+        list.innerHTML = '';
+        return;
+      }
+      banner.classList.add('show');
+      list.innerHTML = duePeople.slice(0, 12).map(p => {
+        const last = lastLogDate(p);
+        const days = last ? daysBetween(last, today) : null;
+        return `<button type="button" class="remind-pill" onclick="openModal('${p.id}')">${esc(p.name)}${days != null ? ` · ${days}日` : ''}</button>`;
+      }).join('');
+    }
+
+    function render() {
+      renderStats();
+      const people = filteredPeople();
+      const today = todayStr();
+      const grid = document.getElementById('personGrid');
+      if (!people.length) {
+        grid.innerHTML = `<div class="empty">${state.people.length ? '条件に合う人がいません' : 'まだリストがありません。「+ 追加」から1人目を登録しましょう'}</div>`;
+        return;
+      }
+      grid.innerHTML = people.map(p => {
+        const last = lastLogDate(p);
+        const due = isDue(p, today);
+        const soon = isSoon(p, today);
+        const days = last ? daysBetween(last, today) : null;
+        const snippet = p.challenges || p.concerns || p.potential || p.proposalTiming || '';
+        const cls = [
+          due ? 'due' : '',
+          p.status === 'prospect' ? 'prospect' : '',
+        ].filter(Boolean).join(' ');
+        return `<button type="button" class="person-card ${cls}" onclick="openModal('${p.id}')">
+          <div class="person-top">
+            <div>
+              <div class="person-name">${esc(p.name)}</div>
+              <div class="person-meta">${esc([p.occupation, p.company].filter(Boolean).join(' · ') || '職業・会社未記入')}</div>
+            </div>
+            <div class="person-tags">
+              ${statusBadge(p.status)}
+              ${due ? '<span class="badge badge-due">連絡そろそろ</span>' : ''}
+              ${soon ? '<span class="badge badge-soon">提案タイミング</span>' : ''}
+            </div>
+          </div>
+          ${snippet ? `<div class="person-snippet">${esc(snippet)}</div>` : ''}
+          <div class="person-foot">
+            <span>最終連絡 ${esc(last || '—')}${days != null ? `（${days}日前）` : ''}</span>
+            <span>${p.nextActionDate ? '次: ' + esc(p.nextActionDate) : '次アクション未設定'}</span>
+          </div>
+        </button>`;
+      }).join('');
+    }
+
+    function blankForm() {
+      document.getElementById('editId').value = '';
+      document.getElementById('modalTitle').textContent = 'リストを追加';
+      document.getElementById('deleteBtn').style.display = 'none';
+      ['fName','fCompany','fOccupation','fPersonType','fHobbies','fFamily','fContact','fConcerns','fChallenges','fPotential','fReaction','fProposalTiming','fNextAction'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('fStatus').value = 'list';
+      document.getElementById('fReminderDays').value = '30';
+      document.getElementById('fKeepAsList').checked = true;
+      document.getElementById('fHasMet').checked = false;
+      document.getElementById('fRecognizesNeed').checked = false;
+      document.getElementById('fHasPayingAbility').checked = false;
+      document.getElementById('logDate').value = todayStr();
+      document.getElementById('logType').value = 'meet';
+      document.getElementById('logContent').value = '';
+      logDraft = [];
+      renderLogs();
+      syncProspectHint();
+    }
+
+    function fillForm(p) {
+      document.getElementById('editId').value = p.id;
+      document.getElementById('modalTitle').textContent = p.name || '編集';
+      document.getElementById('deleteBtn').style.display = '';
+      document.getElementById('fName').value = p.name || '';
+      document.getElementById('fCompany').value = p.company || '';
+      document.getElementById('fOccupation').value = p.occupation || '';
+      document.getElementById('fPersonType').value = p.personType || '';
+      document.getElementById('fHobbies').value = p.hobbies || '';
+      document.getElementById('fFamily').value = p.family || '';
+      document.getElementById('fContact').value = p.contact || '';
+      document.getElementById('fConcerns').value = p.concerns || '';
+      document.getElementById('fChallenges').value = p.challenges || '';
+      document.getElementById('fPotential').value = p.potential || '';
+      document.getElementById('fStatus').value = p.status || 'list';
+      document.getElementById('fReminderDays').value = String(p.reminderDays || 30);
+      document.getElementById('fKeepAsList').checked = p.keepAsList !== false;
+      document.getElementById('fHasMet').checked = !!p.hasMet;
+      document.getElementById('fRecognizesNeed').checked = !!p.recognizesNeed;
+      document.getElementById('fHasPayingAbility').checked = !!p.hasPayingAbility;
+      document.getElementById('fReaction').value = p.reaction || '';
+      document.getElementById('fProposalTiming').value = p.proposalTiming || '';
+      document.getElementById('fNextAction').value = p.nextActionDate || '';
+      document.getElementById('logDate').value = todayStr();
+      document.getElementById('logType').value = 'contact';
+      document.getElementById('logContent').value = '';
+      logDraft = (p.logs || []).map(l => ({ ...l }));
+      renderLogs();
+      syncProspectHint();
+    }
+
+    function syncProspectHint() {
+      const hint = document.getElementById('prospectHint');
+      const met = document.getElementById('fHasMet').checked;
+      const need = document.getElementById('fRecognizesNeed').checked;
+      const pay = document.getElementById('fHasPayingAbility').checked;
+      const all = met && need && pay;
+      const status = document.getElementById('fStatus');
+      if (all) {
+        hint.style.display = '';
+        hint.className = 'status-hint';
+        hint.textContent = '3条件が揃っています → 見込み客にできます';
+        if (status.value === 'list') status.value = 'prospect';
+      } else if (met || need || pay) {
+        const left = [];
+        if (!met) left.push('ヒアリング');
+        if (!need) left.push('必要性の認知');
+        if (!pay) left.push('支払い能力');
+        hint.style.display = '';
+        hint.className = 'status-hint warn';
+        hint.textContent = 'まだリスト段階。足りない条件: ' + left.join('・');
+      } else {
+        hint.style.display = 'none';
+      }
+    }
+
+    function renderLogs() {
+      const el = document.getElementById('logList');
+      if (!logDraft.length) {
+        el.innerHTML = '<div class="hint" style="padding:8px 0">まだログがありません</div>';
+        return;
+      }
+      const sorted = logDraft.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      el.innerHTML = sorted.map(l => `
+        <div class="log-item">
+          <div class="log-meta">
+            <strong>${esc(l.date || '—')} · ${esc(LOG_TYPE_LABEL[l.type] || l.type)}</strong>
+            <div class="log-actions">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="removeLogDraft('${l.id}')">削除</button>
+            </div>
+          </div>
+          <div>${esc(l.content || '（内容なし）')}</div>
+        </div>
+      `).join('');
+    }
+
+    function addLogDraft() {
+      const date = document.getElementById('logDate').value;
+      const type = document.getElementById('logType').value;
+      const content = document.getElementById('logContent').value.trim();
+      if (!date) { toast('ログの日付を入れてください'); return; }
+      logDraft.push({ id: uid(), date, type, content });
+      document.getElementById('logContent').value = '';
+      renderLogs();
+    }
+    function removeLogDraft(id) {
+      logDraft = logDraft.filter(l => l.id !== id);
+      renderLogs();
+    }
+
+    function openModal(id) {
+      if (id) {
+        const p = state.people.find(x => x.id === id);
+        if (!p) return;
+        fillForm(p);
+      } else {
+        blankForm();
+      }
+      document.getElementById('modalOverlay').classList.add('show');
+      setTimeout(() => document.getElementById('fName').focus(), 50);
+    }
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('show');
+    }
+    function overlayClick(e) {
+      if (e.target === document.getElementById('modalOverlay')) closeModal();
+    }
+
+    function savePerson() {
+      const name = document.getElementById('fName').value.trim();
+      if (!name) { toast('名前は必須です'); document.getElementById('fName').focus(); return; }
+      const id = document.getElementById('editId').value || uid();
+      const existing = state.people.find(p => p.id === id);
+      const person = {
+        id,
+        name,
+        company: document.getElementById('fCompany').value.trim(),
+        occupation: document.getElementById('fOccupation').value.trim(),
+        personType: document.getElementById('fPersonType').value.trim(),
+        hobbies: document.getElementById('fHobbies').value.trim(),
+        family: document.getElementById('fFamily').value.trim(),
+        contact: document.getElementById('fContact').value.trim(),
+        concerns: document.getElementById('fConcerns').value.trim(),
+        challenges: document.getElementById('fChallenges').value.trim(),
+        potential: document.getElementById('fPotential').value.trim(),
+        status: document.getElementById('fStatus').value,
+        reminderDays: Number(document.getElementById('fReminderDays').value) || 30,
+        keepAsList: document.getElementById('fKeepAsList').checked,
+        hasMet: document.getElementById('fHasMet').checked,
+        recognizesNeed: document.getElementById('fRecognizesNeed').checked,
+        hasPayingAbility: document.getElementById('fHasPayingAbility').checked,
+        reaction: document.getElementById('fReaction').value.trim(),
+        proposalTiming: document.getElementById('fProposalTiming').value.trim(),
+        nextActionDate: document.getElementById('fNextAction').value,
+        logs: logDraft.slice().sort((a, b) => (a.date || '').localeCompare(b.date || '')),
+        createdAt: existing ? existing.createdAt : todayStr(),
+        updatedAt: todayStr(),
+      };
+      if (meetsProspect(person) && person.status === 'list') person.status = 'prospect';
+      if (existing) {
+        state.people = state.people.map(p => p.id === id ? person : p);
+      } else {
+        state.people.push(person);
+      }
+      save();
+      closeModal();
+      render();
+      toast(existing ? '更新しました' : '追加しました');
+    }
+
+    function deletePerson() {
+      const id = document.getElementById('editId').value;
+      const p = state.people.find(x => x.id === id);
+      if (!p) return;
+      if (!confirm(`「${p.name}」を削除しますか？`)) return;
+      state.people = state.people.filter(x => x.id !== id);
+      save();
+      closeModal();
+      render();
+      toast('削除しました');
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      const d = todayStr();
+      a.href = URL.createObjectURL(blob);
+      a.download = `nark-list-${d}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('JSONを書き出しました');
+    }
+    function triggerImport() {
+      document.getElementById('importInput').click();
+    }
+    function importJson(e) {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!data || !Array.isArray(data.people)) throw new Error('形式が違います');
+          if (!confirm(`復元しますか？（現在 ${state.people.length} 人 → ${data.people.length} 人）`)) return;
+          state = { people: data.people, version: data.version || 1 };
+          save();
+          render();
+          toast('復元しました');
+        } catch (_) {
+          toast('読み込めませんでした');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('modalOverlay').classList.contains('show')) closeModal();
+    });
+
+    load();
+    renderFilters();
+    render();
+  </script>
+</body>
+</html>
