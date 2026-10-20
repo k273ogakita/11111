@@ -1,6 +1,6 @@
 ---
-description: list.html 変更後は GitHub Pages へ push する
-globs: list.html
+description: list.html / list-data.js 変更後は GitHub Pages へ push する
+globs: list.html,list-data.js
 alwaysApply: false
 ---
 
@@ -12,19 +12,25 @@ https://k273ogakita.github.io/11111/list.html
 ## リポジトリ
 - remote: `https://github.com/k273ogakita/11111.git`
 - branch: `main`
-- デプロイ対象: `list.html`（ワークフローは `.github/workflows/deploy-pages.yml`）
+- デプロイ対象: `list.html` と `list-data.js`（ワークフローは `.github/workflows/deploy-pages.yml`）
+
+## データの正本
+- ファイル: `list-data.js`（`window.LIST_DATA`）
+- ブラウザの localStorage（`nark_list_v1`）にも保存。起動時にファイルとマージする
+- 口頭でリストを追加／更新したら **必ず `list-data.js` も更新して push**
+- ユーザーが「GitHubに上げて」と言ったら、ブラウザの内容を `list-data.js` に反映して push
 
 ## 必須ワークフロー
-`list.html` を編集したら、作業完了時に必ず：
+`list.html` または `list-data.js` を編集したら、作業完了時に必ず：
 
-1. `git add list.html`
+1. `git add list.html list-data.js`（触った方）
 2. `git commit`
 3. `git push origin main`
 
 ユーザーが「push しないで」と言った場合のみ省略する。
 
 ## バージョン表示
-`list.html` ヘッダーの `リスト管理 · vN` を、見た目や機能を変えたときに上げる。
+`list.html` ヘッダーの `リスト管理 · vN` を、見た目や機能を変えたときに上げる。データだけの更新では上げなくてよい。
 
-## データの場所
-人物データはブラウザの `localStorage`（キー `nark_list_v1`）。JSONバックアップ／復元ボタンあり。
+## 注意（公開範囲）
+Pages に `list-data.js` を載せるため、**URLを知っている人は人物データを見られる**。機密性が高い場合はパスワード化や非公開化を検討する。

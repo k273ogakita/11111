@@ -69,6 +69,16 @@
       font-size: .68rem; font-weight: 700; letter-spacing: .08em;
       text-transform: uppercase; color: var(--muted);
     }
+    .sync-note {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: .82rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .sync-note b { color: var(--text); }
 
     a.btn { text-decoration: none; }
     .btn {
@@ -383,7 +393,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">リスト管理 · v2</div>
+        <div class="logo-sub">リスト管理 · v3</div>
       </div>
       <div class="header-right">
         <div class="header-links">
@@ -395,11 +405,14 @@
         <div class="header-backup">
           <span class="header-backup-label">データ</span>
           <button type="button" class="btn" onclick="exportJson()">JSONバックアップ</button>
+          <button type="button" class="btn" onclick="exportListDataJs()">GitHub用書き出し</button>
           <button type="button" class="btn" onclick="triggerImport()">復元</button>
           <input type="file" id="importInput" accept=".json,application/json" style="display:none" onchange="importJson(event)">
         </div>
       </div>
     </header>
+
+    <p class="sync-note" id="syncNote">正本は GitHub の <b>list-data.js</b>。ブラウザでも保存する。口頭で追加したあと「GitHubに上げて」と言うとリポジトリに反映する。</p>
 
     <div class="def-box" id="defBox">
       <button type="button" class="def-toggle" onclick="toggleDef()">
@@ -559,6 +572,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="list-data.js"></script>
   <script>
     const STORAGE_KEY = 'nark_list_v1';
     const STORAGE_PREV_KEY = 'nark_list_v1_prev';
@@ -664,13 +678,41 @@
     }
     window.setTrustStage = setTrustStage;
 
+    function filePeople() {
+      const d = window.LIST_DATA;
+      return (d && Array.isArray(d.people)) ? d.people : [];
+    }
+    function personStamp(p) {
+      return String(p && (p.updatedAt || p.createdAt || '') || '');
+    }
+    function mergePeople(fileList, localList) {
+      const map = new Map();
+      (fileList || []).forEach(p => { if (p && p.id) map.set(p.id, p); });
+      (localList || []).forEach(p => {
+        if (!p || !p.id) return;
+        const cur = map.get(p.id);
+        if (!cur || personStamp(p) >= personStamp(cur)) map.set(p.id, p);
+      });
+      return Array.from(map.values());
+    }
     function load() {
+      let local = null;
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const data = JSON.parse(raw);
-        if (data && Array.isArray(data.people)) state = data;
+        if (raw) local = JSON.parse(raw);
       } catch (_) {}
+      const fromFile = filePeople();
+      const localPeople = (local && Array.isArray(local.people)) ? local.people : [];
+      if (fromFile.length || localPeople.length) {
+        state = {
+          people: mergePeople(fromFile, localPeople),
+          version: (local && local.version) || (window.LIST_DATA && window.LIST_DATA.version) || 1,
+        };
+      }
+      const note = document.getElementById('syncNote');
+      if (note && window.LIST_DATA && window.LIST_DATA.updated) {
+        note.innerHTML = `正本は GitHub の <b>list-data.js</b>（更新 ${esc(window.LIST_DATA.updated)}）。ブラウザでも保存する。口頭追加のあと「GitHubに上げて」でリポジトリへ反映。`;
+      }
     }
     function save() {
       try {
@@ -1013,6 +1055,23 @@
       URL.revokeObjectURL(a.href);
       toast('JSONを書き出しました');
     }
+    function exportListDataJs() {
+      const payload = {
+        updated: todayStr(),
+        version: state.version || 1,
+        people: state.people,
+      };
+      const header = '/* nARK リスト管理の正本データ。人が増えたらここを直して GitHub に上げる。\n   ※ GitHub Pages に載ると、URLを知っている人は中身を見られる。 */\n';
+      const body = header + 'window.LIST_DATA = ' + JSON.stringify(payload, null, 2) + ';\n';
+      const blob = new Blob([body], { type: 'text/javascript' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'list-data.js';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast('list-data.js を書き出しました（GitHub用）');
+    }
+    window.exportListDataJs = exportListDataJs;
     function triggerImport() {
       document.getElementById('importInput').click();
     }
@@ -1047,3 +1106,4 @@
   </script>
 </body>
 </html>
+
