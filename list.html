@@ -393,7 +393,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">リスト管理 · v3</div>
+        <div class="logo-sub">リスト管理 · v4</div>
       </div>
       <div class="header-right">
         <div class="header-links">
@@ -545,14 +545,17 @@
         </div>
 
         <div>
-          <div class="form-section-title">関係ログ（いつ会った・話した・連絡した）</div>
+          <div class="form-section-title">関係ログ</div>
           <div class="log-list" id="logList"></div>
           <div class="log-add">
             <input type="date" id="logDate">
             <select id="logType">
               <option value="meet">会った</option>
-              <option value="talk">話した（Zoom等）</option>
+              <option value="talk">話した</option>
               <option value="contact">連絡した</option>
+              <option value="consulted">相談された</option>
+              <option value="proposed">提案した</option>
+              <option value="meeting">商談した</option>
             </select>
             <textarea id="logContent" placeholder="内容・反応"></textarea>
             <button type="button" class="btn btn-sm" onclick="addLogDraft()">追記</button>
@@ -584,7 +587,14 @@
       { id: 'soon', label: '提案タイミング近い' },
       { id: 'excluded', label: '除外' },
     ];
-    const LOG_TYPE_LABEL = { meet: '会った', talk: '話した', contact: '連絡した' };
+    const LOG_TYPE_LABEL = {
+      meet: '会った',
+      talk: '話した',
+      contact: '連絡した',
+      consulted: '相談された',
+      proposed: '提案した',
+      meeting: '商談した',
+    };
     const TRUST_STAGES = [
       { n: 1, title: '認知', desc: 'この人誰だろう — 相手が自分を知っている（リスト登録時点でだいたいクリア）' },
       { n: 2, title: '警戒の解除', desc: '怪しい人ではない・押し売りしない、と思われている' },
