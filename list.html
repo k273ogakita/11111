@@ -222,6 +222,46 @@
     .badge-excluded { background: var(--surface-2); color: var(--muted); }
     .badge-due { background: var(--poor-bg); color: var(--poor); }
     .badge-soon { background: rgba(232,149,106,.18); color: var(--red-dim); }
+    .badge-org { background: var(--surface-2); color: var(--text); }
+    .badge-trust { background: rgba(91,143,106,.14); color: var(--good); }
+    .person-trust-line {
+      font-size: .72rem; color: var(--muted);
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .trust-dots { display: inline-flex; gap: 3px; }
+    .trust-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border);
+    }
+    .trust-dot.on { background: var(--good); }
+    .trust-steps {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .trust-step {
+      display: flex; align-items: flex-start; gap: 10px;
+      width: 100%; text-align: left;
+      padding: 8px 10px; border-radius: 8px;
+      border: 1px solid var(--border); background: #fff;
+      cursor: pointer; font-family: var(--font); color: var(--text);
+    }
+    .trust-step:hover { border-color: #c9bfb0; }
+    .trust-step.active {
+      border-color: var(--good);
+      background: var(--good-bg);
+      box-shadow: 0 0 0 2px rgba(91,143,106,.12);
+    }
+    .trust-step.passed { border-color: rgba(91,143,106,.35); background: rgba(91,143,106,.06); }
+    .trust-step-num {
+      flex-shrink: 0; width: 1.6em; height: 1.6em;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 50%; font-size: .72rem; font-weight: 800;
+      background: var(--surface-2); color: var(--muted);
+    }
+    .trust-step.active .trust-step-num,
+    .trust-step.passed .trust-step-num { background: var(--good); color: #fff; }
+    .trust-step-body { flex: 1; min-width: 0; }
+    .trust-step-title { font-size: .82rem; font-weight: 700; }
+    .trust-step-desc { font-size: .72rem; color: var(--muted); margin-top: 2px; line-height: 1.35; }
     .person-snippet {
       font-size: .78rem; color: var(--muted);
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -343,7 +383,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">リスト管理 · v1</div>
+        <div class="logo-sub">リスト管理 · v2</div>
       </div>
       <div class="header-right">
         <div class="header-links">
@@ -386,7 +426,7 @@
           </div>
         </div>
         <div class="def-flow">
-          濃厚型の流れ：人脈づくり → 信頼構築 → 様子を見てタイミングで連絡・提案 → 見込み客化
+          濃厚型の流れ：人脈づくり → 信頼構築（認知→警戒解除→親近感→人柄→能力→課題共有→相談）→ 様子を見てタイミングで連絡・提案 → 見込み客化
         </div>
       </div>
     </div>
@@ -401,7 +441,7 @@
     <div class="toolbar">
       <div class="filters" id="filters"></div>
       <div class="search-wrap">
-        <input type="search" id="searchInput" placeholder="名前・職業・課題で検索" oninput="render()">
+        <input type="search" id="searchInput" placeholder="名前・団体・職業・課題で検索" oninput="render()">
         <button type="button" class="btn btn-primary" onclick="openModal()">+ 追加</button>
       </div>
     </div>
@@ -425,6 +465,14 @@
             <div class="field"><label>会社・屋号</label><input id="fCompany" type="text"></div>
             <div class="field"><label>職業</label><input id="fOccupation" type="text" placeholder="例: 開業医 / 税理士"></div>
             <div class="field"><label>どんな人</label><input id="fPersonType" type="text" placeholder="例: 穏やか・紹介好き"></div>
+            <div class="field">
+              <label>所属団体</label>
+              <input id="fOrg" type="text" list="orgSuggestions" placeholder="例: 倫理法人会 / 商工会議所">
+            </div>
+            <div class="field">
+              <label>どこで出会ったか</label>
+              <input id="fMetWhere" type="text" placeholder="例: 倫理のモーニング / くま台湾Neo撮影">
+            </div>
             <div class="field"><label>趣味</label><input id="fHobbies" type="text"></div>
             <div class="field"><label>家族構成</label><input id="fFamily" type="text"></div>
             <div class="field full"><label>連絡先</label><input id="fContact" type="text" placeholder="電話・メール・SNSなど"></div>
@@ -432,6 +480,21 @@
             <div class="field full"><label>抱えている課題</label><textarea id="fChallenges" rows="2"></textarea></div>
             <div class="field full"><label>今後の可能性</label><textarea id="fPotential" rows="2" placeholder="この人からどんな展開がありそうか"></textarea></div>
           </div>
+          <datalist id="orgSuggestions">
+            <option value="倫理法人会"></option>
+            <option value="くま台湾Neo"></option>
+            <option value="商工会議所"></option>
+            <option value="VL"></option>
+            <option value="医師会"></option>
+            <option value="紹介"></option>
+          </datalist>
+        </div>
+
+        <div>
+          <div class="form-section-title">信頼関係の段階（いまの到達点を選ぶ）</div>
+          <input type="hidden" id="fTrustStage" value="1">
+          <div class="trust-steps" id="trustSteps"></div>
+          <p class="hint">上から順に積み上がるイメージ。クリックした段階までクリア済みとして記録します。</p>
         </div>
 
         <div>
@@ -508,6 +571,15 @@
       { id: 'excluded', label: '除外' },
     ];
     const LOG_TYPE_LABEL = { meet: '会った', talk: '話した', contact: '連絡した' };
+    const TRUST_STAGES = [
+      { n: 1, title: '認知', desc: 'この人誰だろう — 相手が自分を知っている（リスト登録時点でだいたいクリア）' },
+      { n: 2, title: '警戒の解除', desc: '怪しい人ではない・押し売りしない、と思われている' },
+      { n: 3, title: '親近感', desc: '話しやすい人だな、と思われている' },
+      { n: 4, title: '人柄への信頼', desc: '誠実そう・安心して関わってもらえる' },
+      { n: 5, title: '能力への信頼', desc: 'この人なら仕事を任せられそう、と思ってもらえている' },
+      { n: 6, title: '課題の共有', desc: '実はこんなことで困っている、と話せる関係' },
+      { n: 7, title: '相談してみよう', desc: 'この人に相談してみようかな、と思えるフェーズ' },
+    ];
 
     let state = { people: [], version: 1 };
     let currentFilter = 'all';
@@ -558,6 +630,39 @@
       if (status === 'excluded') return '<span class="badge badge-excluded">除外</span>';
       return '<span class="badge badge-list">リスト</span>';
     }
+    function trustStageOf(p) {
+      const n = Number(p && p.trustStage);
+      if (!n || n < 1) return 1;
+      if (n > 7) return 7;
+      return n;
+    }
+    function trustLabel(n) {
+      const s = TRUST_STAGES.find(x => x.n === n);
+      return s ? s.title : '';
+    }
+    function trustDotsHtml(n) {
+      return `<span class="trust-dots" aria-hidden="true">${[1,2,3,4,5,6,7].map(i =>
+        `<span class="trust-dot${i <= n ? ' on' : ''}"></span>`
+      ).join('')}</span>`;
+    }
+    function renderTrustSteps(selected) {
+      const cur = trustStageOf({ trustStage: selected });
+      document.getElementById('fTrustStage').value = String(cur);
+      document.getElementById('trustSteps').innerHTML = TRUST_STAGES.map(s => {
+        const cls = s.n === cur ? 'active' : (s.n < cur ? 'passed' : '');
+        return `<button type="button" class="trust-step ${cls}" onclick="setTrustStage(${s.n})">
+          <span class="trust-step-num">${s.n}</span>
+          <span class="trust-step-body">
+            <div class="trust-step-title">${esc(s.title)}</div>
+            <div class="trust-step-desc">${esc(s.desc)}</div>
+          </span>
+        </button>`;
+      }).join('');
+    }
+    function setTrustStage(n) {
+      renderTrustSteps(n);
+    }
+    window.setTrustStage = setTrustStage;
 
     function load() {
       try {
@@ -602,7 +707,7 @@
         if (currentFilter === 'soon' && !isSoon(p, today)) return false;
         if (currentFilter === 'all' && p.status === 'excluded') return false;
         if (!q) return true;
-        const hay = [p.name, p.company, p.occupation, p.personType, p.hobbies, p.family, p.concerns, p.challenges, p.potential, p.contact, p.proposalTiming, p.reaction]
+        const hay = [p.name, p.company, p.occupation, p.personType, p.org, p.metWhere, p.hobbies, p.family, p.concerns, p.challenges, p.potential, p.contact, p.proposalTiming, p.reaction, trustLabel(trustStageOf(p))]
           .join(' ').toLowerCase();
         return hay.includes(q);
       }).sort((a, b) => {
@@ -676,6 +781,7 @@
         const soon = isSoon(p, today);
         const days = last ? daysBetween(last, today) : null;
         const snippet = p.challenges || p.concerns || p.potential || p.proposalTiming || '';
+        const trust = trustStageOf(p);
         const cls = [
           due ? 'due' : '',
           p.status === 'prospect' ? 'prospect' : '',
@@ -688,9 +794,15 @@
             </div>
             <div class="person-tags">
               ${statusBadge(p.status)}
+              ${p.org ? `<span class="badge badge-org">${esc(p.org)}</span>` : ''}
               ${due ? '<span class="badge badge-due">連絡そろそろ</span>' : ''}
               ${soon ? '<span class="badge badge-soon">提案タイミング</span>' : ''}
             </div>
+          </div>
+          <div class="person-trust-line">
+            ${trustDotsHtml(trust)}
+            <span class="badge badge-trust">${trust}. ${esc(trustLabel(trust))}</span>
+            ${p.metWhere ? `<span>出会い: ${esc(p.metWhere)}</span>` : ''}
           </div>
           ${snippet ? `<div class="person-snippet">${esc(snippet)}</div>` : ''}
           <div class="person-foot">
@@ -705,7 +817,7 @@
       document.getElementById('editId').value = '';
       document.getElementById('modalTitle').textContent = 'リストを追加';
       document.getElementById('deleteBtn').style.display = 'none';
-      ['fName','fCompany','fOccupation','fPersonType','fHobbies','fFamily','fContact','fConcerns','fChallenges','fPotential','fReaction','fProposalTiming','fNextAction'].forEach(id => {
+      ['fName','fCompany','fOccupation','fPersonType','fOrg','fMetWhere','fHobbies','fFamily','fContact','fConcerns','fChallenges','fPotential','fReaction','fProposalTiming','fNextAction'].forEach(id => {
         document.getElementById(id).value = '';
       });
       document.getElementById('fStatus').value = 'list';
@@ -718,6 +830,7 @@
       document.getElementById('logType').value = 'meet';
       document.getElementById('logContent').value = '';
       logDraft = [];
+      renderTrustSteps(1);
       renderLogs();
       syncProspectHint();
     }
@@ -730,6 +843,8 @@
       document.getElementById('fCompany').value = p.company || '';
       document.getElementById('fOccupation').value = p.occupation || '';
       document.getElementById('fPersonType').value = p.personType || '';
+      document.getElementById('fOrg').value = p.org || '';
+      document.getElementById('fMetWhere').value = p.metWhere || '';
       document.getElementById('fHobbies').value = p.hobbies || '';
       document.getElementById('fFamily').value = p.family || '';
       document.getElementById('fContact').value = p.contact || '';
@@ -749,6 +864,7 @@
       document.getElementById('logType').value = 'contact';
       document.getElementById('logContent').value = '';
       logDraft = (p.logs || []).map(l => ({ ...l }));
+      renderTrustSteps(trustStageOf(p));
       renderLogs();
       syncProspectHint();
     }
@@ -841,12 +957,15 @@
         company: document.getElementById('fCompany').value.trim(),
         occupation: document.getElementById('fOccupation').value.trim(),
         personType: document.getElementById('fPersonType').value.trim(),
+        org: document.getElementById('fOrg').value.trim(),
+        metWhere: document.getElementById('fMetWhere').value.trim(),
         hobbies: document.getElementById('fHobbies').value.trim(),
         family: document.getElementById('fFamily').value.trim(),
         contact: document.getElementById('fContact').value.trim(),
         concerns: document.getElementById('fConcerns').value.trim(),
         challenges: document.getElementById('fChallenges').value.trim(),
         potential: document.getElementById('fPotential').value.trim(),
+        trustStage: trustStageOf({ trustStage: document.getElementById('fTrustStage').value }),
         status: document.getElementById('fStatus').value,
         reminderDays: Number(document.getElementById('fReminderDays').value) || 30,
         keepAsList: document.getElementById('fKeepAsList').checked,
