@@ -334,7 +334,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">営業ファネル · v8</div>
+        <div class="logo-sub">営業ファネル · v10</div>
       </div>
       <div class="header-links">
         <a class="btn" href="dashboard.html">Dashboard</a>
@@ -345,7 +345,7 @@
       </div>
     </header>
 
-    <p class="sync-note">成約と金額は、<b>同じアドレスのダッシュボード</b>の案件から読みます。かけた費用は、ファネル側の営業記録と、ダッシュボードの広告費（サービスを選んだ分）です。フォーム営業は費用0です。</p>
+    <p class="sync-note">成約と金額は、<b>同じアドレスのダッシュボード</b>の案件から読みます。<b>フォーム営業</b>の6000などは「送信した件数」で、いまはお金がかからないので費用は常に¥0。Google広告など実費があるものだけ、ダッシュボードの広告費から費用に載ります。</p>
 
     <section class="section" id="productGrid"></section>
 
@@ -466,7 +466,14 @@
       });
     }
 
+    function campaignCost(c) {
+      // フォーム営業は送信件数≠費用。いまは無料なので常に0。
+      if (c.channelId === "form") return 0;
+      return Number(c.cost) || 0;
+    }
+
     function sum(list, key) {
+      if (key === "cost") return list.reduce((s, c) => s + campaignCost(c), 0);
       return list.reduce((s, c) => s + (Number(c[key]) || 0), 0);
     }
 
@@ -608,6 +615,8 @@
       }
       if (t.cost > 0) {
         lines.push(`費用は <b>${fmtYen(t.cost)}</b>、利益は <b>${fmtYen(t.profit)}</b>、回収は <b>${t.roas.toFixed(1)}倍</b>。`);
+      } else if (t.reach && chan === "form") {
+        lines.push(`接触 <b>${fmt(t.reach)}</b> はフォーム送信の件数。費用は <b>¥0</b>（フォーム営業はいま無料）。`);
       } else {
         lines.push(`費用は <b>¥0</b>（このサービスはまだお金をかけていない）。`);
       }
@@ -716,12 +725,12 @@
         const cr = rates(ct, ch.id);
         return `<div class="channel-card">
           <h4>${ch.name}</h4>
-          <div class="channel-line">${ch.unit} <b>${fmt(ct.reach)}</b></div>
+          <div class="channel-line">${ch.unit} <b>${fmt(ct.reach)}</b>${ch.id === "form" ? " <span class=\"muted\">（件数）</span>" : ""}</div>
           <div class="channel-line">問い合わせ <b>${fmt(ct.inquiries)}</b> ${ct.reach ? gradeHtml(cr.inquiryFromReach.grade) : ""}</div>
           <div class="channel-line">商談 <b>${fmt(ct.meetings)}</b></div>
           <div class="channel-line">成約 <b>${fmt(ct.wins)}</b></div>
           <div class="channel-line">金額 <b>${fmtYen(ct.revenue)}</b></div>
-          <div class="channel-line">費用 <b>${fmtYen(ct.cost)}</b></div>
+          <div class="channel-line">費用 <b>${fmtYen(ct.cost)}</b>${ch.id === "form" ? " <span class=\"muted\">（無料）</span>" : ""}</div>
         </div>`;
       }).join("");
 
@@ -741,7 +750,7 @@
               <td>${fmt(c.meetings)}</td>
               <td>${fmt(c.wins)}</td>
               <td>${fmtYen(c.revenue)}</td>
-              <td>${fmtYen(c.cost)}</td>
+              <td>${fmtYen(campaignCost(c))}${c.channelId === "form" ? " <span class=\"muted\">無料</span>" : ""}</td>
             </tr>`;
           }).join("")
         : `<tr><td colspan="11" style="text-align:center;color:var(--muted)">まだキャンペーンなし</td></tr>`;
@@ -767,9 +776,14 @@
       document.getElementById("detail").innerHTML = `
         ${empty}
         <section class="section">
+          <div class="section-title">チャネル</div>
+          <div class="channel-grid">${channelCards}</div>
+        </section>
+
+        <section class="section">
           <div class="section-title">${product.brand} · ${product.name} のいま</div>
           <div class="kpi-row">
-            <div class="kpi"><div class="kpi-label">接触</div><div class="kpi-value">${fmt(t.reach)}</div><div class="kpi-sub">送信・表示・声かけ</div></div>
+            <div class="kpi"><div class="kpi-label">接触</div><div class="kpi-value">${fmt(t.reach)}</div><div class="kpi-sub">${primaryChannelId(product.id) === "form" ? "フォーム送信の件数（円ではない）" : "送信・表示・声かけ"}</div></div>
             <div class="kpi"><div class="kpi-label">クリック</div><div class="kpi-value">${fmt(t.clicks)}</div><div class="kpi-sub">${pctLabel(t.clickRate, 1)} ${gradeHtml(r.click.grade)}</div></div>
             <div class="kpi"><div class="kpi-label">問い合わせ</div><div class="kpi-value">${fmt(t.inquiries)}</div><div class="kpi-sub">${pctLabel(r.inquiryFromReach.value, 2)} ${gradeHtml(r.inquiryFromReach.grade)}</div></div>
             <div class="kpi"><div class="kpi-label">商談</div><div class="kpi-value">${fmt(t.meetings)}</div><div class="kpi-sub">${pctLabel(r.meetingFromInquiry.value, 0)} ${gradeHtml(r.meetingFromInquiry.grade)}</div></div>
@@ -781,12 +795,12 @@
         <section class="section">
           <div class="section-title">費用対効果（税抜）</div>
           <div class="kpi-row">
-            <div class="kpi"><div class="kpi-label">かけた費用</div><div class="kpi-value yen">${fmtYen(t.cost)}</div><div class="kpi-sub">${t.cpa != null && t.cost ? "成約1件 " + fmtYen(Math.round(t.cpa)) : "広告・営業の実費"}</div></div>
+            <div class="kpi"><div class="kpi-label">かけた費用</div><div class="kpi-value yen">${fmtYen(t.cost)}</div><div class="kpi-sub">${t.cpa != null && t.cost ? "成約1件 " + fmtYen(Math.round(t.cpa)) : (primaryChannelId(product.id) === "form" && !t.cost ? "フォーム営業は送信しても¥0" : "広告・営業の実費")}</div></div>
             <div class="kpi"><div class="kpi-label">戻ってきた売上</div><div class="kpi-value yen">${fmtYen(t.revenue)}</div><div class="kpi-sub">案件の受注額</div></div>
             <div class="kpi"><div class="kpi-label">利益</div><div class="kpi-value yen">${fmtYen(t.profit)}</div><div class="kpi-sub">${gradeHtml(moneyGrade(t))}</div></div>
             <div class="kpi"><div class="kpi-label">回収</div><div class="kpi-value yen">${recoverLabel(t)}</div><div class="kpi-sub">売上 ÷ 費用</div></div>
           </div>
-          <p class="note">Google広告はダッシュボードの「広告費」でサービスを選ぶと、ここに足されます。${unassignedAdCost() ? "サービス未選択の広告費が " + fmtYen(unassignedAdCost()) + " あります。" : ""}</p>
+          <p class="note">フォーム営業の数字は「何件送ったか」。費用には入れません。Google広告はダッシュボードの「広告費」でサービスを選ぶと、ここに足されます。${unassignedAdCost() ? "サービス未選択の広告費が " + fmtYen(unassignedAdCost()) + " あります。" : ""}</p>
         </section>
 
         <section class="section">
@@ -821,11 +835,6 @@
             <h3>チャネル別の接触</h3>
             ${channelChart(product.id)}
           </div>
-        </section>
-
-        <section class="section">
-          <div class="section-title">チャネル</div>
-          <div class="channel-grid">${channelCards}</div>
         </section>
 
         <section class="section">
