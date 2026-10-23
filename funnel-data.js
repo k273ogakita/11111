@@ -80,7 +80,7 @@ window.FUNNEL_DATA = {
     { id: "fax", name: "FAX営業", unit: "送信" },
     { id: "mail", name: "郵送", unit: "通", groups: ["patient", "later"] },
     { id: "visit", name: "駆け込み営業", unit: "訪問", groups: ["patient", "later"] },
-    { id: "ads", name: "広告", unit: "表示" },
+    { id: "ads", name: "検索広告", unit: "表示" },
     { id: "referral", name: "知り合い紹介", unit: "声かけ" },
   ],
 
