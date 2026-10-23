@@ -334,7 +334,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">営業ファネル · v10</div>
+        <div class="logo-sub">営業ファネル · v11</div>
       </div>
       <div class="header-links">
         <a class="btn" href="dashboard.html">Dashboard</a>
@@ -520,10 +520,19 @@
       };
     }
 
+    function channelsForProduct(productId) {
+      const product = DATA.products.find((p) => p.id === productId);
+      const group = product && product.group;
+      return (DATA.channels || []).filter((ch) => {
+        if (!ch.groups || !ch.groups.length) return true;
+        return group && ch.groups.indexOf(group) !== -1;
+      });
+    }
+
     function primaryChannelId(productId) {
       let bestId = "form";
       let best = -1;
-      DATA.channels.forEach((ch) => {
+      channelsForProduct(productId).forEach((ch) => {
         const ct = totals(productId, ch.id);
         const score = ct.wins * 10000 + ct.inquiries * 100 + ct.reach;
         if (ct.list.length && score >= best) {
@@ -674,12 +683,14 @@
     }
 
     function channelChart(productId) {
-      const w = 520, h = 180, pad = 108;
-      const chans = DATA.channels;
-      const max = Math.max(...chans.map((ch) => totals(productId, ch.id).reach), 1);
+      const chans = channelsForProduct(productId);
       const barH = 22;
       const gap = 12;
       const startY = 18;
+      const w = 520;
+      const h = Math.max(180, startY + chans.length * (barH + gap) + 8);
+      const pad = 108;
+      const max = Math.max(...chans.map((ch) => totals(productId, ch.id).reach), 1);
       const inner = w - pad - 16;
       return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="チャネル別接触数">${
         chans.map((ch, i) => {
@@ -720,7 +731,7 @@
         </div>`;
       }).join("");
 
-      const channelCards = DATA.channels.map((ch) => {
+      const channelCards = channelsForProduct(product.id).map((ch) => {
         const ct = totals(product.id, ch.id);
         const cr = rates(ct, ch.id);
         return `<div class="channel-card">

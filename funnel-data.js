@@ -1,7 +1,7 @@
 /* nARK 営業ファネル正本。数字が増えたらここを直して GitHub に上げる。 */
 window.FUNNEL_DATA = {
-  updated: "2026-09-28",
-  version: 2,
+  updated: "2026-10-23",
+  version: 3,
 
   productGroups: [
     { id: "patient", title: "患者説明動画" },
@@ -78,6 +78,8 @@ window.FUNNEL_DATA = {
   channels: [
     { id: "form", name: "フォーム営業", unit: "送信" },
     { id: "fax", name: "FAX営業", unit: "送信" },
+    { id: "mail", name: "郵送", unit: "通", groups: ["patient", "later"] },
+    { id: "visit", name: "駆け込み営業", unit: "訪問", groups: ["patient", "later"] },
     { id: "ads", name: "広告", unit: "表示" },
     { id: "referral", name: "知り合い紹介", unit: "声かけ" },
   ],
@@ -94,6 +96,16 @@ window.FUNNEL_DATA = {
     fax: {
       inquiryFromReach: { ok: 0.03, good: 0.15, hint: "FAXは反応が薄い前提。" },
       meetingFromInquiry: { ok: 30, good: 60, hint: "問い合わせから商談。" },
+      winFromMeeting: { ok: 20, good: 40, hint: "商談から成約。" },
+    },
+    mail: {
+      inquiryFromReach: { ok: 0.05, good: 0.2, hint: "郵送。反応はフォームより薄めの前提。" },
+      meetingFromInquiry: { ok: 30, good: 60, hint: "問い合わせから商談。" },
+      winFromMeeting: { ok: 20, good: 40, hint: "商談から成約。" },
+    },
+    visit: {
+      inquiryFromReach: { ok: 5, good: 15, hint: "駆け込み（飛び込み）訪問。面会できた割合の目安。" },
+      meetingFromInquiry: { ok: 40, good: 70, hint: "訪問できた先からの商談。" },
       winFromMeeting: { ok: 20, good: 40, hint: "商談から成約。" },
     },
     ads: {
