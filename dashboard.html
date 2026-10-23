@@ -3065,7 +3065,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v188</div>
+        <div class="logo-sub">Business Dashboard · v189</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -3417,7 +3417,8 @@
             <label>ファネルのサービス</label>
             <select id="projectFunnelProduct">
               <option value="">ファネルに出さない</option>
-              <option value="patient-nark">患者説明動画（nARK）</option>
+              <option value="patient-nark">患者説明動画・全般（nARK）</option>
+              <option value="patient-nark-eye">眼科用患者説明動画（nARK）</option>
               <option value="patient-wslink">患者説明動画（W's Link）</option>
               <option value="video-produce">動画制作</option>
               <option value="video-edit">動画編集</option>
@@ -3655,7 +3656,8 @@
       <div class="form-group">
         <label>ファネルのサービス</label>
         <select id="adFunnelProduct">
-          <option value="patient-nark">患者説明動画（nARK）</option>
+          <option value="patient-nark">患者説明動画・全般（nARK）</option>
+          <option value="patient-nark-eye">眼科用患者説明動画（nARK）</option>
           <option value="patient-wslink">患者説明動画（W's Link）</option>
           <option value="video-produce">動画制作</option>
           <option value="video-edit">動画編集</option>
@@ -6648,7 +6650,8 @@ ${MAIL_FOOTER}`,
 
     function funnelProductLabel(id) {
       const labels = {
-        'patient-nark': '患者説明動画（nARK）',
+        'patient-nark': '患者説明動画・全般（nARK）',
+        'patient-nark-eye': '眼科用患者説明動画（nARK）',
         'patient-wslink': "患者説明動画（W's Link）",
         'video-produce': '動画制作',
         'video-edit': '動画編集',

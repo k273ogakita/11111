@@ -1,7 +1,7 @@
 /* nARK 営業ファネル正本。数字が増えたらここを直して GitHub に上げる。 */
 window.FUNNEL_DATA = {
   updated: "2026-10-23",
-  version: 3,
+  version: 4,
 
   productGroups: [
     { id: "patient", title: "患者説明動画" },
@@ -13,11 +13,20 @@ window.FUNNEL_DATA = {
     {
       id: "patient-nark",
       group: "patient",
-      name: "患者説明動画",
+      name: "患者説明動画（全般）",
       brand: "nARK",
       status: "active",
       statusLabel: "稼働中",
-      blurb: "nARKとして売る。動画の買い切り。ツール一式が欲しい院は狙わない。",
+      blurb: "科を問わない患者説明。nARKとして売る。動画の買い切り。ツール一式が欲しい院は狙わない。",
+    },
+    {
+      id: "patient-nark-eye",
+      group: "patient",
+      name: "眼科用患者説明動画",
+      brand: "nARK",
+      status: "active",
+      statusLabel: "稼働中",
+      blurb: "眼科向け。白内障など既に作っている領域。全般とは分けて数字を見る。",
     },
     {
       id: "patient-wslink",
