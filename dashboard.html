@@ -3150,7 +3150,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v190</div>
+        <div class="logo-sub">Business Dashboard · v191</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -6589,27 +6589,168 @@ ${MAIL_FOOTER}`,
     /* ── 1日のタイムスケジュール ── */
     let dayScheduleViewDate = '';
 
+    function dayScheduleBlock(start, end, text, kind) {
+      return { id: uid(), start, end, text, kind };
+    }
+
+    function buildOctNovDaySchedules() {
+      // 正本: 事業運営/タイムスケジュール_2026-10-26〜11.md
+      const plan = {
+        '2026-10-26': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
+          dayScheduleBlock('15:30', '17:00', 'サービス／LP（今週やること1行）', 'work'),
+        ],
+        '2026-10-27': [
+          dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
+          dayScheduleBlock('10:00', '11:00', 'コーチング', 'event'),
+          dayScheduleBlock('11:00', '12:00', 'LP・サービス構築', 'work'),
+          dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
+          dayScheduleBlock('13:30', '15:30', 'めちゃうる MT', 'event'),
+          dayScheduleBlock('15:30', '17:00', '撮影段取り／事業づくり', 'work'),
+        ],
+        '2026-10-28': [
+          dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
+          dayScheduleBlock('09:30', '12:00', '患者説明サービス改良（週1）', 'work'),
+          dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
+          dayScheduleBlock('13:00', '17:00', '映画祭撮影の最終確認（空きで園田を軽く）', 'work'),
+        ],
+        '2026-10-30': [
+          dayScheduleBlock('13:30', '14:30', '駆け込み（短め可）', 'sales'),
+          dayScheduleBlock('14:30', '15:00', '連絡・ログ', 'remote'),
+          dayScheduleBlock('15:00', '17:00', '映画祭撮影の荷物・タイムテーブル', 'event'),
+        ],
+        '2026-10-31': [
+          dayScheduleBlock('09:00', '17:00', '台湾映画祭 撮影（終日優先・駆け込み休み）', 'event'),
+        ],
+        '2026-11-02': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
+          dayScheduleBlock('15:30', '17:00', '映画祭素材の仮整理・バックアップ', 'work'),
+        ],
+        '2026-11-04': [
+          dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
+          dayScheduleBlock('09:30', '12:00', '患者説明サービス改良（週1）', 'work'),
+          dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
+          dayScheduleBlock('13:00', '17:00', '事業づくり／11/11勉強会メモ', 'work'),
+        ],
+        '2026-11-06': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
+          dayScheduleBlock('15:30', '17:00', '訪問ログ週次まとめ', 'work'),
+        ],
+        '2026-11-07': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '17:00', '動画ファネル or LP（1テーマ）', 'work'),
+        ],
+        '2026-11-09': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
+          dayScheduleBlock('15:30', '17:00', '勉強会の不足チェック', 'work'),
+        ],
+        '2026-11-10': [
+          dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
+          dayScheduleBlock('09:30', '12:00', '病院受診＋眼科フォーム・ブラッシュアップ／提携フォーム着手（駆け込みなし）', 'event'),
+          dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
+          dayScheduleBlock('13:00', '17:00', '勉強会準備（PC）', 'work'),
+        ],
+        '2026-11-11': [
+          dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
+          dayScheduleBlock('09:30', '12:00', '勉強会最終準備', 'work'),
+          dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
+          dayScheduleBlock('13:00', '16:00', '軽作業のみ', 'work'),
+          dayScheduleBlock('16:00', '17:00', '勉強会会場へ移動・準備', 'event'),
+          dayScheduleBlock('17:00', '20:00', 'Instagram勉強会', 'event'),
+        ],
+        '2026-11-13': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
+          dayScheduleBlock('15:30', '17:00', '勉強会振り返り1行', 'work'),
+        ],
+        '2026-11-14': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '17:00', '提携フォームを出す／業者に投げる（W\'s Linkかめちゃうる）', 'work'),
+        ],
+        '2026-11-16': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
+          dayScheduleBlock('15:30', '17:00', '事業づくり（空きで園田を軽く）', 'work'),
+        ],
+        '2026-11-17': [
+          dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
+          dayScheduleBlock('09:30', '12:00', 'LP／サービス構築', 'work'),
+          dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '17:00', 'LP／サービス構築の続き', 'work'),
+        ],
+        '2026-11-18': [
+          dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
+          dayScheduleBlock('09:30', '12:00', '患者説明サービス改良（週1）', 'work'),
+          dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
+          dayScheduleBlock('13:00', '17:00', '動画ファネル or 提携フォロー', 'work'),
+        ],
+        '2026-11-20': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
+          dayScheduleBlock('15:30', '17:00', '事業づくり', 'work'),
+        ],
+        '2026-11-21': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '17:00', '動画ファネル1本', 'work'),
+        ],
+        '2026-11-24': [
+          dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
+          dayScheduleBlock('09:30', '12:00', '請求書まわり', 'work'),
+          dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
+          dayScheduleBlock('13:30', '14:30', '駆け込み（短縮）', 'sales'),
+          dayScheduleBlock('14:30', '17:00', '事業づくり', 'work'),
+        ],
+        '2026-11-25': [
+          dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
+          dayScheduleBlock('09:30', '12:00', '患者説明サービス改良（11月締め）', 'work'),
+          dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
+          dayScheduleBlock('13:00', '17:00', 'ダッシュボード整理・12月キックオフメモ', 'work'),
+        ],
+        '2026-11-27': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
+          dayScheduleBlock('15:30', '17:00', '11月訪問ふりかえり', 'work'),
+        ],
+        '2026-11-28': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '17:00', '12月計画（園田本格開始・提携の残り1社）', 'work'),
+        ],
+        '2026-11-30': [
+          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
+          dayScheduleBlock('15:30', '17:00', '繰り越しリスト作成', 'work'),
+        ],
+      };
+      return plan;
+    }
+
     function seedKnownDaySchedules(data) {
       if (!data.daySchedules || typeof data.daySchedules !== 'object') data.daySchedules = {};
       if (!data.dayScheduleSeeded || typeof data.dayScheduleSeeded !== 'object') data.dayScheduleSeeded = {};
       if (!Array.isArray(data.tasks)) data.tasks = [];
-      const seedKey = '2026-10-27-coaching-mechauru';
+      const seedKey = '2026-10-26-nov-plan-v1';
       if (data.dayScheduleSeeded[seedKey]) return;
-      const date = '2026-10-27';
-      data.daySchedules[date] = [
-        { id: uid(), start: '09:00', end: '09:30', text: '連絡', kind: 'remote' },
-        { id: uid(), start: '10:00', end: '11:00', text: 'コーチング', kind: 'event' },
-        { id: uid(), start: '11:00', end: '12:00', text: 'LP・サービス構築', kind: 'work' },
-        { id: uid(), start: '12:00', end: '13:00', text: '休憩', kind: 'remote' },
-        { id: uid(), start: '13:30', end: '15:30', text: 'めちゃうる MT', kind: 'event' },
-        { id: uid(), start: '15:30', end: '17:00', text: '撮影段取り／事業づくり', kind: 'work' },
+      const plan = buildOctNovDaySchedules();
+      Object.keys(plan).forEach(date => {
+        data.daySchedules[date] = plan[date];
+      });
+      const calendarEvents = [
+        { date: '2026-10-27', text: '10:00–11:00 コーチング' },
+        { date: '2026-10-27', text: '13:30–15:30 めちゃうる MT' },
+        { date: '2026-10-31', text: '台湾映画祭 撮影' },
+        { date: '2026-11-10', text: '病院受診（駆け込みなし・PC可）' },
+        { date: '2026-11-11', text: '夕方〜 Instagram勉強会' },
+        { date: '2026-11-14', text: '提携フォーム提出期限（W\'s Link／めちゃうる）' },
+        { date: '2026-11-24', text: '請求書まわり' },
       ];
-      [
-        '10:00–11:00 コーチング',
-        '13:30–15:30 めちゃうる MT',
-      ].forEach(text => {
-        const exists = data.tasks.some(t => t.date === date && t.type === 'event' && (t.text || '') === text);
-        if (!exists) data.tasks.unshift({ id: uid(), text, date, done: false, type: 'event' });
+      calendarEvents.forEach(ev => {
+        const exists = data.tasks.some(t => t.date === ev.date && t.type === 'event' && (t.text || '') === ev.text);
+        if (!exists) data.tasks.unshift({ id: uid(), text: ev.text, date: ev.date, done: false, type: 'event' });
       });
       data.dayScheduleSeeded[seedKey] = true;
       seedFunnelDirty = true;
