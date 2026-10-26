@@ -810,6 +810,91 @@
     .task-item.task-dragging { opacity: .4; }
     .task-item.task-item-event { background: rgba(107,63,160,.05); }
     .task-item.task-item-remote { background: rgba(50,120,200,.04); }
+    .day-schedule-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .day-schedule-toolbar input[type="date"] {
+      font: inherit;
+      padding: 7px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .day-schedule-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+      min-height: 8px;
+    }
+    .day-schedule-row {
+      display: grid;
+      grid-template-columns: 118px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    .day-schedule-row.kind-event {
+      background: rgba(107,63,160,.06);
+      border-color: rgba(107,63,160,.22);
+    }
+    .day-schedule-row.kind-sales {
+      background: rgba(232,149,106,.08);
+      border-color: rgba(232,149,106,.28);
+    }
+    .day-schedule-row.kind-remote {
+      background: rgba(50,120,200,.05);
+      border-color: rgba(50,120,200,.2);
+    }
+    .day-schedule-time {
+      font-size: .82rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: .02em;
+      white-space: nowrap;
+    }
+    .day-schedule-text {
+      font-size: .88rem;
+      color: var(--text);
+      min-width: 0;
+    }
+    .day-schedule-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .day-schedule-empty {
+      font-size: .82rem;
+      color: var(--muted);
+      padding: 8px 2px 4px;
+    }
+    .day-schedule-add {
+      display: grid;
+      grid-template-columns: 72px 72px 110px 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+    .day-schedule-add input[type="time"],
+    .day-schedule-add input[type="text"],
+    .day-schedule-add select {
+      font: inherit;
+      padding: 7px 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      min-width: 0;
+    }
+    @media (max-width: 720px) {
+      .day-schedule-row { grid-template-columns: 1fr auto; }
+      .day-schedule-time { grid-column: 1 / -1; }
+      .day-schedule-add { grid-template-columns: 1fr 1fr; }
+      .day-schedule-add .btn { grid-column: 1 / -1; }
+    }
     .task-list.task-drop-over { outline: 2px dashed var(--red); outline-offset: -4px; background: var(--red-glow); }
     .task-list { min-height: 48px; }
     .task-item.overdue .task-date { color: var(--red-dim); font-weight: 700; }
@@ -3065,7 +3150,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v189</div>
+        <div class="logo-sub">Business Dashboard · v190</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -3241,6 +3326,34 @@
         <div class="task-list" id="projectTaskList"
              ondragover="onTaskListDragOver(event)" ondragleave="onTaskListDragLeave(event)" ondrop="onTaskListDrop(event,'backlog')"></div>
       </div>
+    </section>
+
+    <section class="section" id="dayScheduleSection">
+      <div class="section-header">
+        <div class="section-title">1日のタイムスケジュール</div>
+        <div class="section-actions">
+          <button class="btn btn-ghost" type="button" onclick="dayScheduleGoToday()">今日</button>
+        </div>
+      </div>
+      <div class="day-schedule-toolbar">
+        <input type="date" id="dayScheduleDate" onchange="onDayScheduleDateChange()">
+        <span class="task-add-hint" style="margin:0" id="dayScheduleDateLabel"></span>
+      </div>
+      <div class="day-schedule-list" id="dayScheduleList"></div>
+      <div class="day-schedule-add">
+        <input type="time" id="dayScheduleStart" value="13:30" title="開始">
+        <input type="time" id="dayScheduleEnd" value="15:00" title="終了">
+        <select id="dayScheduleKind" title="種類">
+          <option value="work">机仕事</option>
+          <option value="sales">駆け込み・営業</option>
+          <option value="event">イベント・MT</option>
+          <option value="remote">在宅・連絡</option>
+        </select>
+        <input type="text" id="dayScheduleText" placeholder="内容（例: 駆け込み／コーチング）" autocomplete="off"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();addDayScheduleBlock()}">
+        <button class="btn btn-primary" type="button" onclick="addDayScheduleBlock()">追加</button>
+      </div>
+      <div class="task-add-hint">その日の時間割。イベント・MTはカレンダーの「イベント・現場」にも同期します。曜日の型は週ごとにここへ書いて使えます。</div>
     </section>
 
     <section class="section">
@@ -4669,6 +4782,8 @@ nark.visual.media@gmail.com
         weeklyGoals: {},
         weeklyAdHoc: {},
         weeklyGoalSeeded: {},
+        daySchedules: {},
+        dayScheduleSeeded: {},
         snsIdeas: defaultSnsIdeas(),
         milestoneDone: {},
         vision: emptyVision(),
@@ -5283,6 +5398,8 @@ ${MAIL_FOOTER}`,
       if (!data.weeklyGoals || typeof data.weeklyGoals !== 'object') data.weeklyGoals = {};
       if (!data.weeklyAdHoc || typeof data.weeklyAdHoc !== 'object') data.weeklyAdHoc = {};
       if (!data.weeklyGoalSeeded || typeof data.weeklyGoalSeeded !== 'object') data.weeklyGoalSeeded = {};
+      if (!data.daySchedules || typeof data.daySchedules !== 'object') data.daySchedules = {};
+      if (!data.dayScheduleSeeded || typeof data.dayScheduleSeeded !== 'object') data.dayScheduleSeeded = {};
       if (!Object.prototype.hasOwnProperty.call(data, 'snsIdeas') || data.snsIdeas === undefined) {
         data.snsIdeas = defaultSnsIdeas();
       } else if (!Array.isArray(data.snsIdeas)) {
@@ -5290,6 +5407,7 @@ ${MAIL_FOOTER}`,
       }
       ensureMilestones(data);
       ensureVisionAndReviews(data);
+      seedKnownDaySchedules(data);
       data.projects.forEach(p => {
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
         if (TYPE_MIGRATION[p.type]) p.type = TYPE_MIGRATION[p.type];
@@ -6465,7 +6583,160 @@ ${MAIL_FOOTER}`,
       renderCalendar();
       renderKanban();
       renderTasks();
+      renderDaySchedule();
     }
+
+    /* ── 1日のタイムスケジュール ── */
+    let dayScheduleViewDate = '';
+
+    function seedKnownDaySchedules(data) {
+      if (!data.daySchedules || typeof data.daySchedules !== 'object') data.daySchedules = {};
+      if (!data.dayScheduleSeeded || typeof data.dayScheduleSeeded !== 'object') data.dayScheduleSeeded = {};
+      if (!Array.isArray(data.tasks)) data.tasks = [];
+      const seedKey = '2026-10-27-coaching-mechauru';
+      if (data.dayScheduleSeeded[seedKey]) return;
+      const date = '2026-10-27';
+      data.daySchedules[date] = [
+        { id: uid(), start: '09:00', end: '09:30', text: '連絡', kind: 'remote' },
+        { id: uid(), start: '10:00', end: '11:00', text: 'コーチング', kind: 'event' },
+        { id: uid(), start: '11:00', end: '12:00', text: 'LP・サービス構築', kind: 'work' },
+        { id: uid(), start: '12:00', end: '13:00', text: '休憩', kind: 'remote' },
+        { id: uid(), start: '13:30', end: '15:30', text: 'めちゃうる MT', kind: 'event' },
+        { id: uid(), start: '15:30', end: '17:00', text: '撮影段取り／事業づくり', kind: 'work' },
+      ];
+      [
+        '10:00–11:00 コーチング',
+        '13:30–15:30 めちゃうる MT',
+      ].forEach(text => {
+        const exists = data.tasks.some(t => t.date === date && t.type === 'event' && (t.text || '') === text);
+        if (!exists) data.tasks.unshift({ id: uid(), text, date, done: false, type: 'event' });
+      });
+      data.dayScheduleSeeded[seedKey] = true;
+      seedFunnelDirty = true;
+    }
+
+    function getDayScheduleDate() {
+      const el = document.getElementById('dayScheduleDate');
+      if (el && el.value) return el.value;
+      if (dayScheduleViewDate) return dayScheduleViewDate;
+      return todayStr();
+    }
+
+    function getDayScheduleBlocks(dateStr) {
+      if (!state.daySchedules || typeof state.daySchedules !== 'object') state.daySchedules = {};
+      if (!Array.isArray(state.daySchedules[dateStr])) state.daySchedules[dateStr] = [];
+      return state.daySchedules[dateStr];
+    }
+
+    function sortDayScheduleBlocks(blocks) {
+      blocks.sort((a, b) => String(a.start || '').localeCompare(String(b.start || '')));
+    }
+
+    function formatDayScheduleLabel(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr + 'T00:00:00');
+      const week = ['日', '月', '火', '水', '木', '金', '土'][d.getDay()];
+      const today = todayStr();
+      const tag = dateStr === today ? '（今日）' : '';
+      return `${dateStr.slice(5).replace('-', '/')}（${week}）${tag}`;
+    }
+
+    function dayScheduleKindClass(kind) {
+      if (kind === 'event') return 'kind-event';
+      if (kind === 'sales') return 'kind-sales';
+      if (kind === 'remote') return 'kind-remote';
+      return '';
+    }
+
+    function renderDaySchedule() {
+      const dateInput = document.getElementById('dayScheduleDate');
+      const list = document.getElementById('dayScheduleList');
+      const label = document.getElementById('dayScheduleDateLabel');
+      if (!dateInput || !list) return;
+      if (!dayScheduleViewDate) dayScheduleViewDate = todayStr();
+      if (!dateInput.value) dateInput.value = dayScheduleViewDate;
+      else dayScheduleViewDate = dateInput.value;
+      const dateStr = dateInput.value;
+      if (label) label.textContent = formatDayScheduleLabel(dateStr);
+      const blocks = getDayScheduleBlocks(dateStr).slice();
+      sortDayScheduleBlocks(blocks);
+      if (!blocks.length) {
+        list.innerHTML = '<div class="day-schedule-empty">この日の枠はまだありません。「追加」で時間割を作れます。</div>';
+        return;
+      }
+      list.innerHTML = blocks.map(b => `
+        <div class="day-schedule-row ${dayScheduleKindClass(b.kind)}">
+          <div class="day-schedule-time">${escapeHtml(b.start || '')}${b.end ? '–' + escapeHtml(b.end) : ''}</div>
+          <div class="day-schedule-text">${escapeHtml(b.text || '')}</div>
+          <div class="day-schedule-actions">
+            <button class="btn btn-ghost" type="button" onclick="deleteDayScheduleBlock('${b.id}')">削除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function onDayScheduleDateChange() {
+      const el = document.getElementById('dayScheduleDate');
+      dayScheduleViewDate = el ? el.value : todayStr();
+      renderDaySchedule();
+    }
+    window.onDayScheduleDateChange = onDayScheduleDateChange;
+
+    function dayScheduleGoToday() {
+      dayScheduleViewDate = todayStr();
+      const el = document.getElementById('dayScheduleDate');
+      if (el) el.value = dayScheduleViewDate;
+      renderDaySchedule();
+    }
+    window.dayScheduleGoToday = dayScheduleGoToday;
+
+    function syncDayScheduleEventToTasks(dateStr, block) {
+      if (block.kind !== 'event') return;
+      const text = `${block.start}${block.end ? '–' + block.end : ''} ${block.text}`;
+      const exists = state.tasks.some(t => t.date === dateStr && t.type === 'event' && t.text === text);
+      if (!exists) {
+        state.tasks.unshift({ id: uid(), text, date: dateStr, done: false, type: 'event' });
+      }
+    }
+
+    function addDayScheduleBlock() {
+      const dateStr = getDayScheduleDate();
+      const start = document.getElementById('dayScheduleStart')?.value || '';
+      const end = document.getElementById('dayScheduleEnd')?.value || '';
+      const kind = document.getElementById('dayScheduleKind')?.value || 'work';
+      const text = (document.getElementById('dayScheduleText')?.value || '').trim();
+      if (!start) {
+        toast('開始時刻を入れてください');
+        return;
+      }
+      if (!text) {
+        toast('内容を入力してください');
+        document.getElementById('dayScheduleText')?.focus();
+        return;
+      }
+      const block = { id: uid(), start, end, text, kind };
+      const blocks = getDayScheduleBlocks(dateStr);
+      blocks.push(block);
+      sortDayScheduleBlocks(blocks);
+      syncDayScheduleEventToTasks(dateStr, block);
+      document.getElementById('dayScheduleText').value = '';
+      saveState();
+      toast(`${formatDayScheduleLabel(dateStr)} に追加しました`);
+    }
+    window.addDayScheduleBlock = addDayScheduleBlock;
+
+    function deleteDayScheduleBlock(id) {
+      const dateStr = getDayScheduleDate();
+      const blocks = getDayScheduleBlocks(dateStr);
+      const before = blocks.find(b => b.id === id);
+      state.daySchedules[dateStr] = blocks.filter(b => b.id !== id);
+      if (before && before.kind === 'event') {
+        const text = `${before.start}${before.end ? '–' + before.end : ''} ${before.text}`;
+        state.tasks = state.tasks.filter(t => !(t.date === dateStr && t.type === 'event' && t.text === text && !t.done));
+      }
+      saveState();
+    }
+    window.deleteDayScheduleBlock = deleteDayScheduleBlock;
 
     function financePrev() {
       financeMonth--;
