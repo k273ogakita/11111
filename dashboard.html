@@ -813,9 +813,19 @@
     .day-schedule-toolbar {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
       margin-bottom: 10px;
+    }
+    .day-schedule-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .day-schedule-nav .btn {
+      min-width: 36px;
+      padding: 7px 10px;
+      font-weight: 700;
     }
     .day-schedule-toolbar input[type="date"] {
       font: inherit;
@@ -3150,7 +3160,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v191</div>
+        <div class="logo-sub">Business Dashboard · v192</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -3332,11 +3342,17 @@
       <div class="section-header">
         <div class="section-title">1日のタイムスケジュール</div>
         <div class="section-actions">
+          <button class="btn btn-ghost" type="button" onclick="dayScheduleShiftDay(-1)" title="前の日">‹ 前日</button>
           <button class="btn btn-ghost" type="button" onclick="dayScheduleGoToday()">今日</button>
+          <button class="btn btn-ghost" type="button" onclick="dayScheduleShiftDay(1)" title="次の日">翌日 ›</button>
         </div>
       </div>
       <div class="day-schedule-toolbar">
-        <input type="date" id="dayScheduleDate" onchange="onDayScheduleDateChange()">
+        <div class="day-schedule-nav">
+          <button class="btn btn-ghost" type="button" onclick="dayScheduleShiftDay(-1)" aria-label="前の日">‹</button>
+          <input type="date" id="dayScheduleDate" onchange="onDayScheduleDateChange()">
+          <button class="btn btn-ghost" type="button" onclick="dayScheduleShiftDay(1)" aria-label="次の日">›</button>
+        </div>
         <span class="task-add-hint" style="margin:0" id="dayScheduleDateLabel"></span>
       </div>
       <div class="day-schedule-list" id="dayScheduleList"></div>
@@ -6830,6 +6846,24 @@ ${MAIL_FOOTER}`,
       renderDaySchedule();
     }
     window.dayScheduleGoToday = dayScheduleGoToday;
+
+    function shiftDateStr(dateStr, deltaDays) {
+      const d = new Date((dateStr || todayStr()) + 'T00:00:00');
+      d.setDate(d.getDate() + deltaDays);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function dayScheduleShiftDay(delta) {
+      const el = document.getElementById('dayScheduleDate');
+      const current = (el && el.value) || dayScheduleViewDate || todayStr();
+      dayScheduleViewDate = shiftDateStr(current, delta);
+      if (el) el.value = dayScheduleViewDate;
+      renderDaySchedule();
+    }
+    window.dayScheduleShiftDay = dayScheduleShiftDay;
 
     function syncDayScheduleEventToTasks(dateStr, block) {
       if (block.kind !== 'event') return;
