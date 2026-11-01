@@ -1301,6 +1301,71 @@
       color: var(--red-dim);
       line-height: 1.5;
     }
+    .morning-start-panel {
+      background: linear-gradient(165deg, #fff7f0 0%, #fde8dc 100%);
+      border: 1px solid rgba(232,149,106,.4);
+      border-radius: var(--radius);
+      padding: 16px 18px 14px;
+      margin-bottom: 18px;
+    }
+    .morning-start-kicker {
+      font-size: .68rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--red-dim);
+    }
+    .morning-start-title {
+      font-size: 1.02rem;
+      font-weight: 800;
+      margin: 4px 0 10px;
+      color: var(--text);
+    }
+    .morning-start-meta {
+      font-size: .75rem;
+      color: var(--muted);
+      margin: -4px 0 12px;
+    }
+    .morning-start-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .morning-start-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(232,149,106,.28);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 600;
+      line-height: 1.4;
+      transition: opacity .15s, border-color .15s;
+    }
+    .morning-start-item:hover { border-color: var(--red); }
+    .morning-start-item.done {
+      opacity: .55;
+      text-decoration: line-through;
+    }
+    .morning-start-item input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--red);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .morning-start-progress {
+      margin-top: 10px;
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--red-dim);
+    }
     .task-item-reminder {
       background: rgba(232,149,106,.06);
       border: 1px solid rgba(232,149,106,.25);
@@ -3160,7 +3225,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v193</div>
+        <div class="logo-sub">Business Dashboard · v194</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -3193,6 +3258,8 @@
     </div>
 
     <div class="notice-bar" id="noticeBar" style="display:none"></div>
+
+    <section class="morning-start-panel" id="morningStartPanel"></section>
 
     <section class="compass-panel" id="compassPanel"></section>
 
@@ -4805,8 +4872,15 @@ nark.visual.media@gmail.com
         vision: emptyVision(),
         reviews: {},
         reviewTextSaved: {},
+        morningStart: {},
       };
     }
+
+    const MORNING_START_STEPS = [
+      { id: 'taskList', text: '今日のタスクだし' },
+      { id: 'breakdown', text: 'タスクの細分化、必要時間の算出' },
+      { id: 'schedule', text: '時間割の作成' },
+    ];
 
     const SNS_IDEA_CATEGORIES = ['想い', '実績', 'サービス', 'その他'];
 
@@ -5409,6 +5483,7 @@ ${MAIL_FOOTER}`,
       if (!data.subscriptions) data.subscriptions = [];
       if (!data.adExpenses) data.adExpenses = [];
       if (!data.opsExpenses) data.opsExpenses = [];
+      if (!data.morningStart || typeof data.morningStart !== 'object') data.morningStart = {};
       if (!data.bizTodos) data.bizTodos = [];
       if (!Array.isArray(data.bizProjects)) data.bizProjects = defaultBizProjects();
       if (!data.weeklyGoals || typeof data.weeklyGoals !== 'object') data.weeklyGoals = {};
@@ -6586,6 +6661,7 @@ ${MAIL_FOOTER}`,
       }
       renderDateTime();
       renderNotices();
+      renderMorningStart();
       renderCompass();
       renderStats();
       renderWeeklyGoals();
@@ -7207,6 +7283,46 @@ ${MAIL_FOOTER}`,
     function filteredProjects() {
       return state.projects;
     }
+
+    function getMorningStartForToday() {
+      if (!state.morningStart || typeof state.morningStart !== 'object') state.morningStart = {};
+      const key = todayStr();
+      if (!state.morningStart[key] || typeof state.morningStart[key] !== 'object') {
+        state.morningStart[key] = {};
+      }
+      return state.morningStart[key];
+    }
+
+    function renderMorningStart() {
+      const el = document.getElementById('morningStartPanel');
+      if (!el) return;
+      const doneMap = getMorningStartForToday();
+      const doneCount = MORNING_START_STEPS.filter(s => !!doneMap[s.id]).length;
+      const allDone = doneCount === MORNING_START_STEPS.length;
+      el.innerHTML = `
+        <div class="morning-start-kicker">Morning · 30min</div>
+        <div class="morning-start-title">仕事始めの30分ですること</div>
+        <div class="morning-start-meta">朝イチのルーティン · チェックは今日分だけ残ります</div>
+        <ul class="morning-start-list">
+          ${MORNING_START_STEPS.map(s => `
+            <li>
+              <label class="morning-start-item${doneMap[s.id] ? ' done' : ''}">
+                <input type="checkbox" ${doneMap[s.id] ? 'checked' : ''}
+                       onchange="toggleMorningStart('${s.id}', this.checked)">
+                <span>${esc(s.text)}</span>
+              </label>
+            </li>`).join('')}
+        </ul>
+        <div class="morning-start-progress">${allDone ? '今日の朝イチ、完了' : `進捗 ${doneCount}/${MORNING_START_STEPS.length}`}</div>
+      `;
+    }
+
+    function toggleMorningStart(stepId, checked) {
+      const doneMap = getMorningStartForToday();
+      doneMap[stepId] = !!checked;
+      saveState();
+    }
+    window.toggleMorningStart = toggleMorningStart;
 
     function renderNotices() {
       const el = document.getElementById('noticeBar');
