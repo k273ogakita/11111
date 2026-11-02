@@ -36,7 +36,7 @@ jobs:
       # リポジトリ全体（SNSメディア等）は上げない。大きな実績mp4も上げない。
       - name: Prepare Pages bundle
         run: |
-          mkdir -p _site "_site/リファレンス/thumbs" "_site/実績"
+          mkdir -p _site "_site/リファレンス/thumbs" "_site/実績" _site/works
           cp dashboard.html _site/dashboard.html
           cp dashboard.html _site/index.html
           cp list.html _site/list.html
@@ -47,6 +47,7 @@ jobs:
           cp "リファレンス/index.html" "リファレンス/items.js" "_site/リファレンス/"
           find "リファレンス/thumbs" -maxdepth 1 -type f \( -name '*.jpg' -o -name '*.png' \) -exec cp {} "_site/リファレンス/thumbs/" \;
           cp "実績/index.html" "実績/hero.png" "_site/実績/"
+          cp "実績/index.html" "実績/hero.png" _site/works/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
