@@ -3261,7 +3261,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v195</div>
+        <div class="logo-sub">Business Dashboard · v196</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -3676,6 +3676,7 @@
       <div class="form-group">
         <label>ステータス</label>
         <select id="projectStatus" onchange="onStatusChange()">
+          <option value="negotiating">商談中</option>
           <option value="todo">未着手</option>
           <option value="doing">進行中</option>
           <option value="billing">請求</option>
@@ -3970,16 +3971,18 @@
     const ROOT = '/Users/ogata/Desktop/nARK';
 
     const STATUSES = [
-      { id: 'todo',    label: '未着手',  colClass: '' },
-      { id: 'doing',   label: '進行中',  colClass: '' },
-      { id: 'billing', label: '請求',    colClass: '' },
-      { id: 'unpaid',  label: '入金未',  colClass: '' },
-      { id: 'done',    label: '完了',    colClass: 'col-done' },
+      { id: 'negotiating', label: '商談中',  colClass: '' },
+      { id: 'todo',        label: '未着手',  colClass: '' },
+      { id: 'doing',       label: '進行中',  colClass: '' },
+      { id: 'billing',     label: '請求',    colClass: '' },
+      { id: 'unpaid',      label: '入金未',  colClass: '' },
+      { id: 'done',        label: '完了',    colClass: 'col-done' },
     ];
 
     // 表示用の列。afterfollow は案件の実ステータスではなく、
     // 「アフターフォローが必要な案件」を請求／入金未／完了とは別に重複表示する仮想列。
     const BOARD_COLUMNS = [
+      { id: 'negotiating', label: '商談中',        kind: 'status', colClass: '' },
       { id: 'todo',        label: '未着手',        kind: 'status', colClass: '' },
       { id: 'doing',       label: '進行中',        kind: 'status', colClass: '' },
       { id: 'billing',     label: '請求',          kind: 'status', colClass: '' },
@@ -3988,6 +3991,7 @@
       { id: 'done',        label: '完了',          kind: 'status', colClass: 'col-done' },
     ];
 
+    const NEGOTIATING_PHASES = ['初回ヒアリング準備', '提案書・見積書の作成', '契約書の作成'];
     const DOING_PHASES = ['ヒアリング・構成', '撮影', '制作中', 'クライアントチェック中', '納品済'];
     const DOING_PHASES_EDITOR = ['ヒアリング・構成', '撮影', '制作中', 'FB未', '提出待ち', 'クライアントチェック中', '納品済'];
     const SNS_DOING_PHASES = ['制作中', 'クライアントチェック中', '納品済'];
@@ -4007,6 +4011,27 @@
 
     function isEditorOutsourceEnabled(p) {
       return !!(p && p.editorOutsource);
+    }
+
+    function getNegotiatingPhases() {
+      return NEGOTIATING_PHASES;
+    }
+
+    function getDefaultNegotiatingPhase() {
+      return NEGOTIATING_PHASES[0];
+    }
+
+    function negotiatingPhaseSortIndex(p) {
+      const idx = NEGOTIATING_PHASES.indexOf(p.phase);
+      return idx === -1 ? NEGOTIATING_PHASES.length : idx;
+    }
+
+    function sortNegotiatingProjects(list) {
+      return list.slice().sort((a, b) => {
+        const byPhase = negotiatingPhaseSortIndex(a) - negotiatingPhaseSortIndex(b);
+        if (byPhase !== 0) return byPhase;
+        return (a.created || '').localeCompare(b.created || '');
+      });
     }
 
     function getDoingPhases(p) {
@@ -7465,7 +7490,11 @@ ${MAIL_FOOTER}`,
       const thisWeekKey = weekStartKey(0);
       const wg = weekGoalStats(thisWeekKey);
 
+      const negotiating = projects.filter(p => p.status === 'negotiating').length;
+
       document.getElementById('stats').innerHTML = `
+        <span class="stat-chip">商談中 <strong>${negotiating}</strong></span>
+        <span class="stat-divider"></span>
         <span class="stat-chip">未着手 <strong>${todo}</strong></span>
         <span class="stat-divider"></span>
         <span class="stat-chip highlight">進行中 <strong>${doing}</strong></span>
@@ -8639,6 +8668,7 @@ ${MAIL_FOOTER}`,
           `;
         }
         let cards = projects.filter(p => p.status === s.id);
+        if (s.id === 'negotiating') cards = sortNegotiatingProjects(cards);
         if (s.id === 'doing') cards = sortDoingProjects(cards);
         const emptyMsg = s.id === 'done' ? '' : 'empty';
         if (s.id === 'done') {
@@ -8827,6 +8857,14 @@ ${MAIL_FOOTER}`,
     }
 
     function renderPhaseButtons(p) {
+      if (p.status === 'negotiating') {
+        return `<div class="phase-btns">${NEGOTIATING_PHASES.map(ph => `
+          <button class="phase-btn${p.phase === ph ? ' active' : ''}"
+                  onclick="event.stopPropagation();setNegotiatingPhase('${p.id}','${ph}')">${ph}</button>
+        `).join('')}
+          <button class="phase-btn advance" onclick="event.stopPropagation();moveToTodo('${p.id}')">未着手へ →</button>
+        </div>`;
+      }
       if (p.status === 'todo') {
         return `<div class="phase-btns">
           <button class="phase-btn advance" onclick="event.stopPropagation();moveToDoing('${p.id}')">進行中へ →</button>
@@ -8928,7 +8966,7 @@ ${MAIL_FOOTER}`,
       const deadline = (p.status === 'todo' || p.status === 'doing') ? renderDeadlineHtml(p) : '';
       const memoBlock = p.memo && p.memo.trim()
         ? `<div class="card-memo">${esc(p.memo.trim())}</div>` : '';
-      const phaseLabel = p.phase && p.status !== 'done' && p.status !== 'doing'
+      const phaseLabel = p.phase && p.status !== 'done' && p.status !== 'doing' && p.status !== 'negotiating'
         ? `<div class="phase-current">▸ ${isAdOpsType(p) && p.prepayPhase ? `先払い ${esc(p.prepayPhase)} · ` : ''}${esc(p.phase)}</div>`
         : (isAdOpsType(p) && p.status === 'billing'
           ? `<div class="phase-current">▸ ${esc(formatOpsMonthLabel(getOpsMonth(p)))} 締め — 継続または契約終了</div>`
@@ -9018,6 +9056,27 @@ ${MAIL_FOOTER}`,
       }
       return '';
     }
+
+    function moveToTodo(id) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p) return;
+      p.status = 'todo';
+      p.phase = '';
+      p.prepayPhase = '';
+      if (p.category === 'sns') p.snsStatus = 'draft';
+      saveState();
+      toast(`「${p.name}」→ 未着手`);
+    }
+    window.moveToTodo = moveToTodo;
+
+    function setNegotiatingPhase(id, phase) {
+      const p = state.projects.find(x => x.id === id);
+      if (!p || p.status !== 'negotiating') return;
+      p.phase = phase;
+      saveState();
+      toast(`「${p.name}」→ ${phase}`);
+    }
+    window.setNegotiatingPhase = setNegotiatingPhase;
 
     function moveToDoing(id) {
       const p = state.projects.find(x => x.id === id);
@@ -9995,7 +10054,7 @@ ${MAIL_FOOTER}`,
         document.getElementById('projectFunnelTarget').value = '';
         document.getElementById('projectFunnelKind').value = 'form';
         document.getElementById('projectWorkflow').value = 'auto';
-        document.getElementById('projectStatus').value = 'todo';
+        document.getElementById('projectStatus').value = 'negotiating';
         document.getElementById('projectShootMode').value = 'handover';
         document.getElementById('projectShootDate').value = '';
         document.getElementById('projectDraftDueDate').value = '';
@@ -10055,7 +10114,7 @@ ${MAIL_FOOTER}`,
     }
 
     function statusToSnsStatus(status) {
-      return { todo: 'draft', doing: 'scheduled', billing: 'scheduled', unpaid: 'scheduled', done: 'published' }[status] || 'draft';
+      return { negotiating: 'draft', todo: 'draft', doing: 'scheduled', billing: 'scheduled', unpaid: 'scheduled', done: 'published' }[status] || 'draft';
     }
 
     function saveProject() {
@@ -10194,7 +10253,8 @@ ${MAIL_FOOTER}`,
           if (!p.opsMonth) p.opsMonth = getOpsMonth(p);
         }
         if (prevStatus !== data.status) {
-          if (data.status === 'doing' && !p.phase) p.phase = getDefaultDoingPhase(p);
+          if (data.status === 'negotiating') p.phase = getDefaultNegotiatingPhase();
+          if (data.status === 'doing') p.phase = getDefaultDoingPhase(p);
           if (data.status === 'doing' && data.type === 'ad-ops' && !p.prepayPhase) p.prepayPhase = '作成未';
           if (data.status === 'billing' && !p.phase) p.phase = data.type === 'ad-ops' ? '' : '作成未';
           if (data.status === 'unpaid') p.phase = '送付済';
@@ -10208,7 +10268,8 @@ ${MAIL_FOOTER}`,
         toast(category === 'sns' ? '自社事業整備を更新しました'
           : (category === 'funnel' ? 'ファネル構築を更新しました' : '案件を更新しました'));
       } else {
-        const phase = data.status === 'doing' ? getDefaultDoingPhase({ ...data, category })
+        const phase = data.status === 'negotiating' ? getDefaultNegotiatingPhase()
+          : data.status === 'doing' ? getDefaultDoingPhase({ ...data, category })
           : data.status === 'billing' ? (data.type === 'ad-ops' ? '' : '作成未')
           : data.status === 'unpaid' ? '送付済' : '';
         const newProject = {
@@ -10336,7 +10397,8 @@ ${MAIL_FOOTER}`,
       const p = state.projects.find(x => x.id === draggedId);
       if (p && p.status !== status) {
         p.status = status;
-        if (status === 'doing' && !p.phase) p.phase = getDefaultDoingPhase(p);
+        if (status === 'negotiating') p.phase = getDefaultNegotiatingPhase();
+        if (status === 'doing') p.phase = getDefaultDoingPhase(p);
         if (status === 'doing' && isAdOpsType(p) && !p.prepayPhase) p.prepayPhase = '作成未';
         if (status === 'billing' && !p.phase) p.phase = isAdOpsType(p) ? '' : '作成未';
         if (status === 'unpaid') p.phase = '送付済';
@@ -10345,7 +10407,7 @@ ${MAIL_FOOTER}`,
           if (!isAdOpsType(p)) ensureDeliveredDate(p);
         }
         if (status === 'done') doneExpanded = true;
-        if (status === 'done' || status === 'todo') p.phase = '';
+        if (status === 'done' || status === 'todo') { p.phase = ''; p.prepayPhase = ''; }
         if (p.category === 'sns') p.snsStatus = statusToSnsStatus(status);
         saveState();
         const label = (STATUSES.find(s => s.id === status) || {}).label || status;
