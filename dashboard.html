@@ -3018,6 +3018,42 @@
       border-color: rgba(232,149,106,.35);
     }
     .review-card.direction h4 { color: var(--red-dim); }
+    .review-card.next-goals {
+      margin-top: 12px;
+      background: linear-gradient(165deg, #f7faf6 0%, #eaf3e8 100%);
+      border-color: rgba(42,138,94,.28);
+    }
+    .review-card.next-goals h4 { color: #1f6b48; }
+    .review-check-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,.72);
+      border: 1px solid rgba(42,138,94,.22);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .88rem;
+      font-weight: 700;
+      line-height: 1.4;
+      color: var(--text);
+      margin: 0;
+    }
+    .review-check-line input {
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+      accent-color: #2a8a5e;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .review-check-line.done { opacity: .7; }
+    .review-check-hint {
+      margin-top: 8px;
+      font-size: .72rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
     .dir-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
     .dir-chip {
       border: 1px solid rgba(232,149,106,.35);
@@ -3225,7 +3261,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v194</div>
+        <div class="logo-sub">Business Dashboard · v195</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -4925,6 +4961,8 @@ nark.visual.media@gmail.com
         directionStatus: '',
         directionNote: '',
         directionGap: '',
+        nextMonthWeeklyGoalsSet: false,
+        funnelReviewDone: false,
       };
     }
 
@@ -5635,6 +5673,7 @@ ${MAIL_FOOTER}`,
 
     function reviewHasContent(r) {
       if (!r || typeof r !== 'object') return false;
+      if (r.nextMonthWeeklyGoalsSet || r.funnelReviewDone) return true;
       return ['wentWell', 'wentWellWhy', 'wentWellNext', 'wentPoor', 'wentPoorWhy', 'wentPoorNext', 'directionStatus', 'directionNote', 'directionGap']
         .some(function(k) { return String(r[k] || '').trim(); });
     }
@@ -5673,6 +5712,14 @@ ${MAIL_FOOTER}`,
         '',
         note ? note + '\n' : '',
         reviewMdSection('向かいたい方向に向かうために、何が足りないのか／何を変える必要があるのか', r.directionGap),
+        '## 来月の週次目標を決める',
+        '',
+        r.nextMonthWeeklyGoalsSet ? '✓ 決めた' : '□ 未完了',
+        '',
+        '## ファネルを振り返る',
+        '',
+        r.funnelReviewDone ? '✓ 振り返った' : '□ 未完了',
+        '',
       ].join('\n');
     }
 
@@ -5731,6 +5778,10 @@ ${MAIL_FOOTER}`,
         reviewDocxParagraph(r.directionNote),
         reviewDocxParagraph('向かいたい方向に向かうために、何が足りないのか／何を変える必要があるのか', { bold: true, heading: true }),
         reviewDocxParagraph(r.directionGap),
+        reviewDocxParagraph('来月の週次目標を決める', { bold: true, heading: true }),
+        reviewDocxParagraph(r.nextMonthWeeklyGoalsSet ? '✓ 決めた' : '□ 未完了'),
+        reviewDocxParagraph('ファネルを振り返る', { bold: true, heading: true }),
+        reviewDocxParagraph(r.funnelReviewDone ? '✓ 振り返った' : '□ 未完了'),
       ].join('');
 
       const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -7490,6 +7541,26 @@ ${MAIL_FOOTER}`,
     }
     window.setReviewDirection = setReviewDirection;
 
+    function setReviewCheck(key, checked) {
+      const r = ensureCurrentReview();
+      r[key] = !!checked;
+      persistStateQuiet();
+      document.querySelectorAll('[data-review-check="' + key + '"]').forEach(el => {
+        el.classList.toggle('done', !!checked);
+      });
+    }
+    window.setReviewCheck = setReviewCheck;
+
+    function setReviewNextMonthWeeklyGoals(checked) {
+      setReviewCheck('nextMonthWeeklyGoalsSet', checked);
+    }
+    window.setReviewNextMonthWeeklyGoals = setReviewNextMonthWeeklyGoals;
+
+    function setReviewFunnelReview(checked) {
+      setReviewCheck('funnelReviewDone', checked);
+    }
+    window.setReviewFunnelReview = setReviewFunnelReview;
+
     function shiftReviewMonth(delta) {
       reviewMonthOffset += delta;
       renderCompass();
@@ -7721,6 +7792,20 @@ ${MAIL_FOOTER}`,
             <label>向かいたい方向に向かうために、何が足りないのか／何を変える必要があるのか</label>
             <textarea placeholder="記入" oninput="onReviewInput('directionGap', this)">${esc(r.directionGap)}</textarea>
           </div>
+        </div>
+        <div class="review-card next-goals">
+          <h4>来月に向けて</h4>
+          <label class="review-check-line${r.nextMonthWeeklyGoalsSet ? ' done' : ''}" data-review-check="nextMonthWeeklyGoalsSet">
+            <input type="checkbox" ${r.nextMonthWeeklyGoalsSet ? 'checked' : ''}
+                   onchange="setReviewNextMonthWeeklyGoals(this.checked)">
+            <span>来月の週次目標を決める</span>
+          </label>
+          <label class="review-check-line${r.funnelReviewDone ? ' done' : ''}" data-review-check="funnelReviewDone" style="margin-top:8px">
+            <input type="checkbox" ${r.funnelReviewDone ? 'checked' : ''}
+                   onchange="setReviewFunnelReview(this.checked)">
+            <span>ファネルを振り返る</span>
+          </label>
+          <div class="review-check-hint">月末の振り返りで、来月の週次目標とファネル振り返りまでやったらチェック</div>
         </div>
         <div class="review-text-out" id="reviewTextOut"${lastGeneratedReviewText && lastGeneratedReviewMonth === monthKey ? '' : ' hidden'}>
           <div class="review-text-out-head">
