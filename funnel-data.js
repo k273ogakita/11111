@@ -1,7 +1,7 @@
 /* nARK 営業ファネル正本。数字が増えたらここを直して GitHub に上げる。 */
 window.FUNNEL_DATA = {
   updated: "2026-10-23",
-  version: 4,
+  version: 5,
 
   productGroups: [
     { id: "patient", title: "患者説明動画" },
@@ -151,6 +151,25 @@ window.FUNNEL_DATA = {
       notes: "リンク先は予定どおりLP。問い合わせは2026-09-28時点で0。フォーム営業のため費用は0円（送信件数6000≠費用）。",
       kind: "outreach",
     },
+    {
+      id: "2026-10-23-form-patient-nark-eye",
+      date: "2026-10-23",
+      productId: "patient-nark-eye",
+      channelId: "form",
+      title: "眼科クリニック 1回目",
+      target: "眼科クリニック",
+      copy: "文面_眼科特化_患者説明動画",
+      reach: 257,
+      clicks: 6,
+      clickRate: 8.8,
+      inquiries: 0,
+      meetings: 0,
+      wins: 0,
+      revenue: 0,
+      cost: 0,
+      notes: "送信257・クリック6・クリック率推定8.8%。問い合わせ0。フォーム営業のため費用0円。",
+      kind: "outreach",
+    },
   ],
 
   experiments: [
@@ -169,6 +188,14 @@ window.FUNNEL_DATA = {
       change: "リンク先がHPになっていないか確認。",
       result: "予定のLPに飛ばせていた。問い合わせはまだ0。",
       verdict: "URLミスではない。次はオファー・LP・リストのどれを変えるか。",
+    },
+    {
+      date: "2026-10-23",
+      productId: "patient-nark-eye",
+      channelId: "form",
+      change: "眼科特化文面で初回送信。リストは眼科クリニック。",
+      result: "送信257・クリック6（推定8.8%）・問い合わせ0。費用0。",
+      verdict: "クリック率は良い。ボトルネックはクリックから問い合わせ。",
     },
   ],
 };
