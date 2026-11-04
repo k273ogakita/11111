@@ -234,6 +234,8 @@
     .badge-soon { background: rgba(232,149,106,.18); color: var(--red-dim); }
     .badge-org { background: var(--surface-2); color: var(--text); }
     .badge-trust { background: rgba(91,143,106,.14); color: var(--good); }
+    .badge-medical { background: rgba(70,120,180,.14); color: #3a6a9e; }
+    .badge-general { background: rgba(140,110,80,.14); color: #7a5c3a; }
     .person-trust-line {
       font-size: .72rem; color: var(--muted);
       display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -393,7 +395,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">リスト管理 · v5</div>
+        <div class="logo-sub">リスト管理 · v6</div>
       </div>
       <div class="header-right">
         <div class="header-links">
@@ -522,9 +524,17 @@
               </select>
             </div>
             <div class="field">
+              <label>メール文面区分</label>
+              <select id="fMailAudience">
+                <option value="">未設定</option>
+                <option value="medical">医療系</option>
+                <option value="general">一般</option>
+              </select>
+            </div>
+            <div class="field">
               <label>連絡リマインド</label>
               <select id="fReminderDays">
-                <option value="30">30日ごと</option>
+                <option value="30">30日ごと（月1目安）</option>
                 <option value="60">60日ごと</option>
                 <option value="90">90日ごと</option>
               </select>
@@ -583,10 +593,13 @@
       { id: 'all', label: 'すべて' },
       { id: 'list', label: 'リスト' },
       { id: 'prospect', label: '見込み客' },
+      { id: 'medical', label: '医療系' },
+      { id: 'general', label: '一般' },
       { id: 'due', label: '未連絡が長い' },
       { id: 'soon', label: '提案タイミング近い' },
       { id: 'excluded', label: '除外' },
     ];
+    const MAIL_AUDIENCE_LABEL = { medical: '医療系', general: '一般' };
     const LOG_TYPE_LABEL = {
       meet: '会った',
       talk: '話した',
@@ -754,12 +767,14 @@
       return state.people.filter(p => {
         if (currentFilter === 'list' && p.status !== 'list') return false;
         if (currentFilter === 'prospect' && p.status !== 'prospect') return false;
+        if (currentFilter === 'medical' && p.mailAudience !== 'medical') return false;
+        if (currentFilter === 'general' && p.mailAudience !== 'general') return false;
         if (currentFilter === 'excluded' && p.status !== 'excluded') return false;
         if (currentFilter === 'due' && !isDue(p, today)) return false;
         if (currentFilter === 'soon' && !isSoon(p, today)) return false;
-        if (currentFilter === 'all' && p.status === 'excluded') return false;
+        if ((currentFilter === 'all' || currentFilter === 'medical' || currentFilter === 'general') && p.status === 'excluded') return false;
         if (!q) return true;
-        const hay = [p.name, p.company, p.occupation, p.personType, p.org, p.metWhere, p.hobbies, p.family, p.concerns, p.challenges, p.potential, p.contact, p.proposalTiming, p.reaction, trustLabel(trustStageOf(p))]
+        const hay = [p.name, p.company, p.occupation, p.personType, p.org, p.metWhere, p.hobbies, p.family, p.concerns, p.challenges, p.potential, p.contact, p.proposalTiming, p.reaction, trustLabel(trustStageOf(p)), MAIL_AUDIENCE_LABEL[p.mailAudience] || '']
           .join(' ').toLowerCase();
         return hay.includes(q);
       }).sort((a, b) => {
@@ -787,6 +802,8 @@
       const active = state.people.filter(p => p.status !== 'excluded');
       const lists = active.filter(p => p.status === 'list').length;
       const prospects = active.filter(p => p.status === 'prospect').length;
+      const medical = active.filter(p => p.mailAudience === 'medical').length;
+      const general = active.filter(p => p.mailAudience === 'general').length;
       const due = active.filter(p => isDue(p, today)).length;
       const month = today.slice(0, 7);
       const soonMonth = active.filter(p => p.nextActionDate && p.nextActionDate.startsWith(month)).length;
@@ -794,6 +811,10 @@
         <div class="stat-chip"><span>リスト</span><strong>${lists}</strong></div>
         <div class="stat-divider"></div>
         <div class="stat-chip highlight"><span>見込み客</span><strong>${prospects}</strong></div>
+        <div class="stat-divider"></div>
+        <div class="stat-chip"><span>医療系</span><strong>${medical}</strong></div>
+        <div class="stat-divider"></div>
+        <div class="stat-chip"><span>一般</span><strong>${general}</strong></div>
         <div class="stat-divider"></div>
         <div class="stat-chip alert"><span>未連絡が長い</span><strong>${due}</strong></div>
         <div class="stat-divider"></div>
@@ -846,6 +867,8 @@
             </div>
             <div class="person-tags">
               ${statusBadge(p.status)}
+              ${p.mailAudience === 'medical' ? '<span class="badge badge-medical">医療系</span>' : ''}
+              ${p.mailAudience === 'general' ? '<span class="badge badge-general">一般</span>' : ''}
               ${p.org ? `<span class="badge badge-org">${esc(p.org)}</span>` : ''}
               ${due ? '<span class="badge badge-due">連絡そろそろ</span>' : ''}
               ${soon ? '<span class="badge badge-soon">提案タイミング</span>' : ''}
@@ -873,6 +896,7 @@
         document.getElementById(id).value = '';
       });
       document.getElementById('fStatus').value = 'list';
+      document.getElementById('fMailAudience').value = '';
       document.getElementById('fReminderDays').value = '30';
       document.getElementById('fKeepAsList').checked = true;
       document.getElementById('fHasMet').checked = false;
@@ -904,6 +928,7 @@
       document.getElementById('fChallenges').value = p.challenges || '';
       document.getElementById('fPotential').value = p.potential || '';
       document.getElementById('fStatus').value = p.status || 'list';
+      document.getElementById('fMailAudience').value = p.mailAudience || '';
       document.getElementById('fReminderDays').value = String(p.reminderDays || 30);
       document.getElementById('fKeepAsList').checked = p.keepAsList !== false;
       document.getElementById('fHasMet').checked = !!p.hasMet;
@@ -1019,6 +1044,7 @@
         potential: document.getElementById('fPotential').value.trim(),
         trustStage: trustStageOf({ trustStage: document.getElementById('fTrustStage').value }),
         status: document.getElementById('fStatus').value,
+        mailAudience: document.getElementById('fMailAudience').value || '',
         reminderDays: Number(document.getElementById('fReminderDays').value) || 30,
         keepAsList: document.getElementById('fKeepAsList').checked,
         hasMet: document.getElementById('fHasMet').checked,

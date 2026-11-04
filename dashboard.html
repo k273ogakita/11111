@@ -3261,11 +3261,11 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v199</div>
+        <div class="logo-sub">Business Dashboard · v200</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
-          <a class="btn" href="works/index.html">実績</a>
+          <a class="btn" href="実績/index.html">実績</a>
           <a class="btn" href="リファレンス/index.html">リファレンス</a>
         </div>
       </div>
@@ -3991,11 +3991,14 @@
       { id: 'done',        label: '完了',          kind: 'status', colClass: 'col-done' },
     ];
 
-    // 問い合わせ後: 挨拶メール → 電話・アポ → 繋がるまで再フォロー → ヒアリング以降
+    // 問い合わせ後: 挨拶メール → 電話・アポ → 再フォロー1〜3 → ヒアリング以降
+    // 3回で繋がらなければリストへ（月1の定期メール）。医療系／一般は list.html で分ける。
     const NEGOTIATING_PHASES = [
       '資料送付・挨拶メール',
       '電話・アポ日程設定',
-      '再フォロー中',
+      '再フォロー中1',
+      '再フォロー中2',
+      '再フォロー中3',
       '初回ヒアリング準備',
       '提案書・見積書の作成',
       'クライアントチェック中',
@@ -5581,6 +5584,7 @@ ${MAIL_FOOTER}`,
         if (p.phase === undefined) p.phase = '';
         if (p.phase === '編集') p.phase = '制作中'; // 編集は制作中に統合
         if (p.phase === 'チェック中') p.phase = 'クライアントチェック中';
+        if (p.phase === '再フォロー中') p.phase = '再フォロー中1';
         if (p.deadlineDate === undefined) p.deadlineDate = '';
         if (p.deadlinePlan === undefined) p.deadlinePlan = '';
         if (p.draftDueDate === undefined) p.draftDueDate = '';
