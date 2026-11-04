@@ -3261,7 +3261,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v198</div>
+        <div class="logo-sub">Business Dashboard · v199</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -3464,11 +3464,11 @@
         <input type="time" id="dayScheduleEnd" value="15:00" title="終了">
         <select id="dayScheduleKind" title="種類">
           <option value="work">机仕事</option>
-          <option value="sales">駆け込み・営業</option>
+          <option value="sales">飛び込み・営業</option>
           <option value="event">イベント・MT</option>
           <option value="remote">在宅・連絡</option>
         </select>
-        <input type="text" id="dayScheduleText" placeholder="内容（例: 駆け込み／コーチング）" autocomplete="off"
+        <input type="text" id="dayScheduleText" placeholder="内容（例: 飛び込み／コーチング）" autocomplete="off"
                onkeydown="if(event.key==='Enter'){event.preventDefault();addDayScheduleBlock()}">
         <button class="btn btn-primary" type="button" onclick="addDayScheduleBlock()">追加</button>
       </div>
@@ -3666,7 +3666,7 @@
               <option value="form">フォーム営業</option>
               <option value="fax">FAX営業</option>
               <option value="mail">郵送</option>
-              <option value="visit">駆け込み営業</option>
+              <option value="visit">飛び込み営業</option>
               <option value="ads">検索広告</option>
             </select>
           </div>
@@ -6774,7 +6774,7 @@ ${MAIL_FOOTER}`,
       // 正本: 事業運営/タイムスケジュール_2026-10-26〜11.md
       const plan = {
         '2026-10-26': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
           dayScheduleBlock('15:30', '17:00', 'サービス／LP（今週やること1行）', 'work'),
         ],
@@ -6793,15 +6793,15 @@ ${MAIL_FOOTER}`,
           dayScheduleBlock('13:00', '17:00', '映画祭撮影の最終確認（空きで園田を軽く）', 'work'),
         ],
         '2026-10-30': [
-          dayScheduleBlock('13:30', '14:30', '駆け込み（短め可）', 'sales'),
+          dayScheduleBlock('13:30', '14:30', '飛び込み（短め可）', 'sales'),
           dayScheduleBlock('14:30', '15:00', '連絡・ログ', 'remote'),
           dayScheduleBlock('15:00', '17:00', '映画祭撮影の荷物・タイムテーブル', 'event'),
         ],
         '2026-10-31': [
-          dayScheduleBlock('09:00', '17:00', '台湾映画祭 撮影（終日優先・駆け込み休み）', 'event'),
+          dayScheduleBlock('09:00', '17:00', '台湾映画祭 撮影（終日優先・飛び込み休み）', 'event'),
         ],
         '2026-11-02': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
           dayScheduleBlock('15:30', '17:00', '映画祭素材の仮整理・バックアップ', 'work'),
         ],
@@ -6812,22 +6812,22 @@ ${MAIL_FOOTER}`,
           dayScheduleBlock('13:00', '17:00', '事業づくり／11/11勉強会メモ', 'work'),
         ],
         '2026-11-06': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
           dayScheduleBlock('15:30', '17:00', '訪問ログ週次まとめ', 'work'),
         ],
         '2026-11-07': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '17:00', '動画ファネル or LP（1テーマ）', 'work'),
         ],
         '2026-11-09': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
           dayScheduleBlock('15:30', '17:00', '勉強会の不足チェック', 'work'),
         ],
         '2026-11-10': [
           dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
-          dayScheduleBlock('09:30', '12:00', '病院受診＋眼科フォーム・ブラッシュアップ／提携フォーム着手（駆け込みなし）', 'event'),
+          dayScheduleBlock('09:30', '12:00', '病院受診＋眼科フォーム・ブラッシュアップ／提携フォーム着手（飛び込みなし）', 'event'),
           dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
           dayScheduleBlock('13:00', '17:00', '勉強会準備（PC）', 'work'),
         ],
@@ -6840,16 +6840,16 @@ ${MAIL_FOOTER}`,
           dayScheduleBlock('17:00', '20:00', 'Instagram勉強会', 'event'),
         ],
         '2026-11-13': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
           dayScheduleBlock('15:30', '17:00', '勉強会振り返り1行', 'work'),
         ],
         '2026-11-14': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '17:00', '提携フォームを出す／業者に投げる（W\'s Linkかめちゃうる）', 'work'),
         ],
         '2026-11-16': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
           dayScheduleBlock('15:30', '17:00', '事業づくり（空きで園田を軽く）', 'work'),
         ],
@@ -6857,7 +6857,7 @@ ${MAIL_FOOTER}`,
           dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
           dayScheduleBlock('09:30', '12:00', 'LP／サービス構築', 'work'),
           dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '17:00', 'LP／サービス構築の続き', 'work'),
         ],
         '2026-11-18': [
@@ -6867,19 +6867,19 @@ ${MAIL_FOOTER}`,
           dayScheduleBlock('13:00', '17:00', '動画ファネル or 提携フォロー', 'work'),
         ],
         '2026-11-20': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
           dayScheduleBlock('15:30', '17:00', '事業づくり', 'work'),
         ],
         '2026-11-21': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '17:00', '動画ファネル1本', 'work'),
         ],
         '2026-11-24': [
           dayScheduleBlock('09:00', '09:30', '連絡', 'remote'),
           dayScheduleBlock('09:30', '12:00', '請求書まわり', 'work'),
           dayScheduleBlock('12:00', '13:00', '休憩', 'remote'),
-          dayScheduleBlock('13:30', '14:30', '駆け込み（短縮）', 'sales'),
+          dayScheduleBlock('13:30', '14:30', '飛び込み（短縮）', 'sales'),
           dayScheduleBlock('14:30', '17:00', '事業づくり', 'work'),
         ],
         '2026-11-25': [
@@ -6889,16 +6889,16 @@ ${MAIL_FOOTER}`,
           dayScheduleBlock('13:00', '17:00', 'ダッシュボード整理・12月キックオフメモ', 'work'),
         ],
         '2026-11-27': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
           dayScheduleBlock('15:30', '17:00', '11月訪問ふりかえり', 'work'),
         ],
         '2026-11-28': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '17:00', '12月計画（園田本格開始・提携の残り1社）', 'work'),
         ],
         '2026-11-30': [
-          dayScheduleBlock('13:30', '15:00', '駆け込み', 'sales'),
+          dayScheduleBlock('13:30', '15:00', '飛び込み', 'sales'),
           dayScheduleBlock('15:00', '15:30', '連絡・訪問ログ', 'remote'),
           dayScheduleBlock('15:30', '17:00', '繰り越しリスト作成', 'work'),
         ],
@@ -6920,7 +6920,7 @@ ${MAIL_FOOTER}`,
         { date: '2026-10-27', text: '10:00–11:00 コーチング' },
         { date: '2026-10-27', text: '13:30–15:30 めちゃうる MT' },
         { date: '2026-10-31', text: '台湾映画祭 撮影' },
-        { date: '2026-11-10', text: '病院受診（駆け込みなし・PC可）' },
+        { date: '2026-11-10', text: '病院受診（飛び込みなし・PC可）' },
         { date: '2026-11-11', text: '夕方〜 Instagram勉強会' },
         { date: '2026-11-14', text: '提携フォーム提出期限（W\'s Link／めちゃうる）' },
         { date: '2026-11-24', text: '請求書まわり' },

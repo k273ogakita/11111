@@ -88,7 +88,7 @@ window.FUNNEL_DATA = {
     { id: "form", name: "フォーム営業", unit: "送信" },
     { id: "fax", name: "FAX営業", unit: "送信" },
     { id: "mail", name: "郵送", unit: "通", groups: ["patient", "later"] },
-    { id: "visit", name: "駆け込み営業", unit: "訪問", groups: ["patient", "later"] },
+    { id: "visit", name: "飛び込み営業", unit: "訪問", groups: ["patient", "later"] },
     { id: "ads", name: "検索広告", unit: "表示" },
     { id: "referral", name: "知り合い紹介", unit: "声かけ" },
   ],
@@ -113,7 +113,7 @@ window.FUNNEL_DATA = {
       winFromMeeting: { ok: 20, good: 40, hint: "商談から成約。" },
     },
     visit: {
-      inquiryFromReach: { ok: 5, good: 15, hint: "駆け込み（飛び込み）訪問。面会できた割合の目安。" },
+      inquiryFromReach: { ok: 5, good: 15, hint: "飛び込み訪問。面会できた割合の目安。" },
       meetingFromInquiry: { ok: 40, good: 70, hint: "訪問できた先からの商談。" },
       winFromMeeting: { ok: 20, good: 40, hint: "商談から成約。" },
     },
