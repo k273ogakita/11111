@@ -846,6 +846,7 @@
       width: 10px; height: 10px; border-radius: 50%; display: inline-block;
     }
     .day-schedule-legend .lg-work { background: #2f9e8f; }
+    .day-schedule-legend .lg-work-alt { background: #3aa0b3; }
     .day-schedule-legend .lg-sales { background: #e07a3d; }
     .day-schedule-legend .lg-event { background: #7b4fcf; }
     .day-schedule-legend .lg-remote { background: #3b82c4; }
@@ -935,6 +936,9 @@
     .day-schedule-block.kind-work {
       background: linear-gradient(145deg, #34b3a3 0%, #2a8f82 100%);
     }
+    .day-schedule-block.kind-work-alt {
+      background: linear-gradient(145deg, #4bb8c9 0%, #2f8fa3 100%);
+    }
     .day-schedule-block.kind-sales {
       background: linear-gradient(145deg, #ef8b4a 0%, #d26628 100%);
     }
@@ -943,6 +947,12 @@
     }
     .day-schedule-block.kind-remote {
       background: linear-gradient(145deg, #4d96d6 0%, #2f6fad 100%);
+    }
+    .day-schedule-block-tools .btn.btn-done {
+      background: #fff;
+      color: #1f6b62;
+      border-color: #fff;
+      font-weight: 800;
     }
     .day-schedule-block-dot {
       position: absolute;
@@ -3354,7 +3364,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v205</div>
+        <div class="logo-sub">Business Dashboard · v206</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -3553,12 +3563,13 @@
       </div>
       <div class="day-schedule-legend">
         <span><i class="lg-work"></i>机仕事</span>
+        <span><i class="lg-work-alt"></i>机仕事（交互）</span>
         <span><i class="lg-sales"></i>飛び込み・営業</span>
         <span><i class="lg-event"></i>イベント・MT</span>
         <span><i class="lg-remote"></i>在宅・連絡</span>
       </div>
       <div class="day-schedule-board" id="dayScheduleList"></div>
-      <div class="day-schedule-hint">縦の時間軸（9:00〜20:00）。空きをクリックで追加、色ブロックをドラッグで移動。<strong>Enter×2</strong>で確定。下端をドラッグで長さ変更。</div>
+      <div class="day-schedule-hint">縦の時間軸（9:00〜20:00）。空きをクリックで追加。編集はブロックをタップ→操作して<strong>完了</strong>。ドラッグ移動は編集していないときだけ。机仕事は隣と色を少し変えて並べる。</div>
     </section>
 
     <section class="section">
@@ -6857,6 +6868,7 @@ ${MAIL_FOOTER}`,
     /* ── 1日のタイムスケジュール（縦タイムライン・色付きブロック） ── */
     let dayScheduleViewDate = '';
     let daySchedEditingId = null;
+    let daySchedNeedFocus = false;
     let daySchedEnterPending = null; // { id, count, at }
     let daySchedDrag = null; // { id, mode:'move'|'resize', duration, grabOffsetMin, moved }
     let daySchedSuppressClick = false;
@@ -7202,6 +7214,7 @@ ${MAIL_FOOTER}`,
         const top = dayScheduleYFromMin(dayScheduleTimeToMinutes(t));
         return `<div class="day-schedule-gridline" style="top:${top}px"></div>`;
       }).join('');
+      let workTone = 0;
       const blockHtml = blocks.map(b => {
         const startMin = dayScheduleTimeToMinutes(b.start);
         let endMin = dayScheduleTimeToMinutes(b.end);
@@ -7210,19 +7223,27 @@ ${MAIL_FOOTER}`,
         const top = dayScheduleYFromMin(startMin);
         const h = Math.max(34, (endMin - startMin) * DAY_SCHEDULE_PX_PER_MIN - 4);
         const editing = daySchedEditingId === b.id;
+        const isWork = !b.kind || b.kind === 'work';
+        const workAlt = isWork ? ((workTone++ % 2) === 1) : false;
+        const kindClass = isWork
+          ? (workAlt ? 'kind-work-alt' : 'kind-work')
+          : dayScheduleKindClass(b.kind);
         const kindBtns = DAY_SCHEDULE_KIND_OPTS.map(o =>
-          `<button type="button" class="btn${b.kind === o.value ? ' on' : ''}" onclick="event.stopPropagation();setDayScheduleBlockKind('${b.id}','${o.value}')">${o.label}</button>`
+          `<button type="button" class="btn${b.kind === o.value ? ' on' : ''}"
+            onmousedown="event.preventDefault()"
+            onclick="event.stopPropagation();setDayScheduleBlockKind('${b.id}','${o.value}')">${o.label}</button>`
         ).join('');
         const body = editing
           ? `<input class="day-schedule-block-input" type="text"
                value="${escapeHtml(b.text || '').replace(/"/g, '&quot;')}"
                data-saved="${escapeHtml(b.text || '').replace(/"/g, '&quot;')}"
-               placeholder="内容（Enter×2で確定）"
+               placeholder="内容を入力 → 完了"
                onclick="event.stopPropagation()"
                onkeydown="onDayScheduleBlockKeydown(event,'${b.id}')"
                oninput="onDayScheduleBlockDraft(event,'${b.id}')"
                onblur="onDayScheduleBlockBlur(event,'${b.id}')">
-             <div class="day-schedule-block-tools" onclick="event.stopPropagation()">
+             <div class="day-schedule-block-tools" onclick="event.stopPropagation()" onmousedown="event.preventDefault()">
+               <button type="button" class="btn btn-done" onclick="finishDayScheduleEdit('${b.id}')">完了</button>
                ${kindBtns}
                <button type="button" class="btn" onclick="nudgeDayScheduleBlockEnd('${b.id}',30)">+30分</button>
                <button type="button" class="btn" onclick="nudgeDayScheduleBlockEnd('${b.id}',-30)">-30分</button>
@@ -7230,7 +7251,7 @@ ${MAIL_FOOTER}`,
              </div>`
           : `<div class="day-schedule-block-text">${escapeHtml(b.text || '（未入力）')}</div>`;
         return `
-          <div class="day-schedule-block ${dayScheduleKindClass(b.kind)}${editing ? ' editing' : ''}"
+          <div class="day-schedule-block ${kindClass}${editing ? ' editing' : ''}"
                data-id="${b.id}"
                style="top:${top}px;height:${h}px"
                onmousedown="onDayScheduleBlockMouseDown(event,'${b.id}')"
@@ -7248,9 +7269,10 @@ ${MAIL_FOOTER}`,
           ${blockHtml}
         </div>
       `;
-      if (daySchedEditingId) {
+      if (daySchedEditingId && daySchedNeedFocus) {
+        daySchedNeedFocus = false;
         const input = board.querySelector(`.day-schedule-block[data-id="${daySchedEditingId}"] .day-schedule-block-input`);
-        if (input) setTimeout(() => { input.focus(); input.select(); }, 30);
+        if (input) setTimeout(() => { input.focus(); }, 30);
       }
     }
 
@@ -7297,6 +7319,10 @@ ${MAIL_FOOTER}`,
 
     function onDayScheduleTrackClick(e) {
       if (e.target.closest('.day-schedule-block')) return;
+      if (daySchedEditingId) {
+        toast('先に「完了」を押してください');
+        return;
+      }
       const track = document.getElementById('dayScheduleTrack');
       if (!track) return;
       const startMin = dayScheduleMinFromClientY(e.clientY, track);
@@ -7312,25 +7338,50 @@ ${MAIL_FOOTER}`,
       };
       getDayScheduleBlocks(getDayScheduleDate()).push(block);
       daySchedEditingId = block.id;
+      daySchedNeedFocus = true;
       persistDayScheduleQuiet();
       renderDaySchedule();
-      toast('新しい枠を追加 — Enter×2で確定');
+      toast('新しい枠を追加 — 内容を入れて「完了」');
     }
     window.onDayScheduleTrackClick = onDayScheduleTrackClick;
 
     function editDayScheduleBlock(id) {
       if (daySchedDrag || daySchedSuppressClick) return;
+      if (daySchedEditingId === id) return; // すでに編集中なら追従し直さない
+      if (daySchedEditingId && daySchedEditingId !== id) {
+        toast('先に「完了」を押してください');
+        return;
+      }
       daySchedEditingId = id;
+      daySchedNeedFocus = true;
       daySchedEnterPending = null;
       renderDaySchedule();
     }
     window.editDayScheduleBlock = editDayScheduleBlock;
+
+    function finishDayScheduleEdit(id) {
+      const b = findDayScheduleBlock(id);
+      if (!b) return;
+      const input = document.querySelector(`.day-schedule-block[data-id="${id}"] .day-schedule-block-input`);
+      const next = input ? String(input.value || '').trim() : String(b.text || '').trim();
+      b.text = next;
+      syncDayScheduleBlockEventToTasks(getDayScheduleDate(), b);
+      daySchedEnterPending = null;
+      daySchedEditingId = null;
+      daySchedNeedFocus = false;
+      persistDayScheduleQuiet();
+      renderDaySchedule();
+      toast(next ? '完了' : '空のまま完了');
+    }
+    window.finishDayScheduleEdit = finishDayScheduleEdit;
 
     function setDayScheduleBlockKind(id, kind) {
       const b = findDayScheduleBlock(id);
       if (!b) return;
       b.kind = kind || 'work';
       syncDayScheduleBlockEventToTasks(getDayScheduleDate(), b);
+      // 編集中の再フォーカスはしない（ボタンを押すたつついてくるのを防ぐ）
+      daySchedNeedFocus = false;
       persistDayScheduleQuiet();
       renderDaySchedule();
     }
@@ -7345,6 +7396,7 @@ ${MAIL_FOOTER}`,
       endMin = Math.max(startMin + DAY_SCHEDULE_SLOT_STEP, endMin);
       endMin = Math.min(DAY_SCHEDULE_SLOT_END_MIN + 60, endMin);
       b.end = dayScheduleMinutesToTime(endMin);
+      daySchedNeedFocus = false;
       persistDayScheduleQuiet();
       renderDaySchedule();
     }
@@ -7366,24 +7418,6 @@ ${MAIL_FOOTER}`,
     }
     window.deleteDayScheduleBlock = deleteDayScheduleBlock;
 
-    function commitDayScheduleBlockText(id, value, inputEl) {
-      const b = findDayScheduleBlock(id);
-      if (!b) return;
-      const next = String(value || '').trim();
-      b.text = next;
-      syncDayScheduleBlockEventToTasks(getDayScheduleDate(), b);
-      persistDayScheduleQuiet();
-      daySchedEnterPending = null;
-      if (inputEl) {
-        inputEl.dataset.saved = next;
-        inputEl.value = next;
-        inputEl.classList.remove('is-draft');
-      }
-      daySchedEditingId = null;
-      renderDaySchedule();
-      toast(next ? '確定しました' : '空のまま確定');
-    }
-
     function onDayScheduleBlockDraft(e, id) {
       const input = e.target;
       if (!input) return;
@@ -7397,45 +7431,43 @@ ${MAIL_FOOTER}`,
     function onDayScheduleBlockKeydown(e, id) {
       if (e.key === 'Escape') {
         e.preventDefault();
-        const input = e.target;
-        input.value = input.dataset.saved || '';
-        input.classList.remove('is-draft');
         daySchedEnterPending = null;
         daySchedEditingId = null;
+        daySchedNeedFocus = false;
         renderDaySchedule();
-        toast('入力を取り消しました');
+        toast('編集をキャンセル');
         return;
       }
       if (e.key !== 'Enter') return;
       e.preventDefault();
-      const input = e.target;
+      // Enter×2 でも完了と同じ
       const now = Date.now();
       const pending = daySchedEnterPending;
       const same = pending && pending.id === id && (now - pending.at) < 2500;
       if (same && pending.count >= 1) {
-        commitDayScheduleBlockText(id, input.value, input);
+        finishDayScheduleEdit(id);
         return;
       }
       daySchedEnterPending = { id, count: 1, at: now };
-      toast('もう一度 Enter で確定');
+      toast('もう一度 Enter、または「完了」');
     }
     window.onDayScheduleBlockKeydown = onDayScheduleBlockKeydown;
 
     function onDayScheduleBlockBlur(e, id) {
-      const input = e.target;
-      if (!input) return;
-      const saved = input.dataset.saved || '';
-      if (input.value !== saved) {
-        input.value = saved;
-        input.classList.remove('is-draft');
-      }
+      // ツールボタンへ移ったときは戻さない（完了・種類変更のため）
+      const block = e.target && e.target.closest('.day-schedule-block');
+      const rt = e.relatedTarget;
+      if (rt && block && block.contains(rt)) return;
       if (daySchedEnterPending && daySchedEnterPending.id === id) daySchedEnterPending = null;
+      // 下書きは消さず残す（完了で確定。枠外クリックでは編集モードも閉じない）
     }
     window.onDayScheduleBlockBlur = onDayScheduleBlockBlur;
 
     function onDayScheduleBlockMouseDown(e, id) {
       if (e.button !== 0) return;
       if (e.target.closest('input,button,select,textarea')) return;
+      // 編集中はドラッグしない（触るとついてくるのを防ぐ）
+      if (daySchedEditingId === id) return;
       const b = findDayScheduleBlock(id);
       const track = document.getElementById('dayScheduleTrack');
       if (!b || !track) return;
