@@ -903,6 +903,10 @@
       outline: none;
     }
     .day-schedule-input::placeholder { color: var(--muted); opacity: .7; }
+    .day-schedule-input.is-draft {
+      border-color: rgba(197,107,66,.45);
+      background: rgba(232,149,106,.08);
+    }
     .day-schedule-cont-label {
       font-size: .84rem;
       color: var(--muted);
@@ -3311,7 +3315,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v202</div>
+        <div class="logo-sub">Business Dashboard · v203</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -3509,7 +3513,7 @@
         <span class="task-add-hint" style="margin:0" id="dayScheduleDateLabel"></span>
       </div>
       <div class="day-schedule-list" id="dayScheduleList"></div>
-      <div class="day-schedule-hint">左は固定の30分枠（9:00〜17:00）。右の欄をクリックして直接入力。長い作業は先頭に書いて、続きの枠は「↓」で同じ作業にできます。時刻をドラッグして入れ替えもできます。</div>
+      <div class="day-schedule-hint">左は固定の30分枠（9:00〜17:00）。右の欄をクリックして入力し、<strong>Enterを2回</strong>で確定（すぐには登録されない）。長い作業は先頭に書いて、続きの枠は「↓」。時刻をドラッグで入れ替え。</div>
     </section>
 
     <section class="section">
@@ -6808,6 +6812,7 @@ ${MAIL_FOOTER}`,
     /* ── 1日のタイムスケジュール（9:00〜17:00・30分枠） ── */
     let dayScheduleViewDate = '';
     let daySchedDragFrom = null;
+    let daySchedEnterPending = null; // { time, count, at }
     const DAY_SCHEDULE_SLOT_START_MIN = 9 * 60;
     const DAY_SCHEDULE_SLOT_END_MIN = 17 * 60;
     const DAY_SCHEDULE_SLOT_STEP = 30;
@@ -7131,9 +7136,11 @@ ${MAIL_FOOTER}`,
         const body = slot.cont
           ? `<div class="day-schedule-cont-label"><span class="cont-arrow">↓</span><span class="cont-from">${head ? escapeHtml(head) : '同じ作業'}</span></div>`
           : `<input class="day-schedule-input" type="text" value="${escapeHtml(slot.text || '').replace(/"/g, '&quot;')}"
-               placeholder="クリックして入力"
-               onchange="onDayScheduleTextChange('${time}', this.value)"
-               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">`;
+               data-slot="${time}" data-saved="${escapeHtml(slot.text || '').replace(/"/g, '&quot;')}"
+               placeholder="入力後、Enter×2で確定"
+               onkeydown="onDayScheduleInputKeydown(event,'${time}')"
+               oninput="onDayScheduleInputDraft(event,'${time}')"
+               onblur="onDayScheduleInputBlur(event,'${time}')">`;
         return `
           <div class="day-schedule-row ${dayScheduleKindClass(kind)}${slot.cont ? ' is-cont' : ''}"
                data-slot="${time}"
@@ -7205,17 +7212,75 @@ ${MAIL_FOOTER}`,
       }
     }
 
-    function onDayScheduleTextChange(time, value) {
+    function commitDayScheduleText(time, value, inputEl) {
       const dateStr = getDayScheduleDate();
       const map = getDayScheduleSlotMap(dateStr);
       const slot = map[time] || emptyDayScheduleSlot();
-      slot.text = String(value || '');
+      const next = String(value || '').trim();
+      slot.text = next;
       slot.cont = false;
       map[time] = slot;
       syncDayScheduleSlotEventToTasks(dateStr, time, slot);
       persistDayScheduleQuiet();
+      daySchedEnterPending = null;
+      if (inputEl) {
+        inputEl.dataset.saved = next;
+        inputEl.value = next;
+        inputEl.classList.remove('is-draft');
+      }
+      toast(next ? `${time} を確定` : `${time} を空で確定`);
     }
-    window.onDayScheduleTextChange = onDayScheduleTextChange;
+
+    function onDayScheduleInputDraft(e, time) {
+      const input = e.target;
+      if (!input) return;
+      const saved = input.dataset.saved || '';
+      if (input.value !== saved) input.classList.add('is-draft');
+      else input.classList.remove('is-draft');
+      // 編集中に Enter 待ちをリセット（打ち直ししたら1回目から）
+      if (daySchedEnterPending && daySchedEnterPending.time === time) daySchedEnterPending = null;
+    }
+    window.onDayScheduleInputDraft = onDayScheduleInputDraft;
+
+    function onDayScheduleInputKeydown(e, time) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        const input = e.target;
+        input.value = input.dataset.saved || '';
+        input.classList.remove('is-draft');
+        daySchedEnterPending = null;
+        input.blur();
+        toast('入力を取り消しました');
+        return;
+      }
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const input = e.target;
+      const now = Date.now();
+      const pending = daySchedEnterPending;
+      const sameSlot = pending && pending.time === time && (now - pending.at) < 2500;
+      if (sameSlot && pending.count >= 1) {
+        commitDayScheduleText(time, input.value, input);
+        input.blur();
+        return;
+      }
+      daySchedEnterPending = { time, count: 1, at: now };
+      toast('もう一度 Enter で確定');
+    }
+    window.onDayScheduleInputKeydown = onDayScheduleInputKeydown;
+
+    function onDayScheduleInputBlur(e, time) {
+      const input = e.target;
+      if (!input) return;
+      // 確定前に枠を離したら、保存済みの内容に戻す（即登録しない）
+      const saved = input.dataset.saved || '';
+      if (input.value !== saved) {
+        input.value = saved;
+        input.classList.remove('is-draft');
+      }
+      if (daySchedEnterPending && daySchedEnterPending.time === time) daySchedEnterPending = null;
+    }
+    window.onDayScheduleInputBlur = onDayScheduleInputBlur;
 
     function onDayScheduleKindChange(time, kind) {
       const dateStr = getDayScheduleDate();
