@@ -955,10 +955,6 @@
       box-shadow: 0 0 0 2px rgba(0,0,0,.08);
       pointer-events: none;
     }
-    .day-schedule-block-meta {
-      display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      font-size: .7rem; font-weight: 700; letter-spacing: .02em; opacity: .92;
-    }
     .day-schedule-block-text {
       font-size: .9rem; font-weight: 700; line-height: 1.3;
       word-break: break-word;
@@ -3358,7 +3354,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v204</div>
+        <div class="logo-sub">Business Dashboard · v205</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -7240,10 +7236,6 @@ ${MAIL_FOOTER}`,
                onmousedown="onDayScheduleBlockMouseDown(event,'${b.id}')"
                onclick="event.stopPropagation();editDayScheduleBlock('${b.id}')">
             <div class="day-schedule-block-dot"></div>
-            <div class="day-schedule-block-meta">
-              <span>${escapeHtml(b.start)}–${escapeHtml(b.end)}</span>
-              <span>${editing ? '編集中' : ''}</span>
-            </div>
             ${body}
           </div>
         `;
@@ -7500,8 +7492,6 @@ ${MAIL_FOOTER}`,
         const en = dayScheduleTimeToMinutes(b.end);
         el.style.top = dayScheduleYFromMin(s) + 'px';
         el.style.height = Math.max(34, (en - s) * DAY_SCHEDULE_PX_PER_MIN - 4) + 'px';
-        const meta = el.querySelector('.day-schedule-block-meta span');
-        if (meta) meta.textContent = `${b.start}–${b.end}`;
       }
     }
 
