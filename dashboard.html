@@ -882,7 +882,7 @@
         linear-gradient(180deg, rgba(0,0,0,.02), transparent 40px),
         var(--surface);
       border: 1px solid var(--border);
-      overflow: hidden;
+      overflow: visible;
       cursor: crosshair;
     }
     .day-schedule-track::before {
@@ -925,13 +925,17 @@
       min-height: 34px;
       overflow: hidden;
       transition: box-shadow .15s, transform .12s;
+      box-sizing: border-box;
     }
     .day-schedule-block:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(30,40,60,.18); }
     .day-schedule-block.dragging { opacity: .55; cursor: grabbing; }
     .day-schedule-block.editing {
       outline: 2px solid #fff;
       box-shadow: 0 0 0 3px rgba(0,0,0,.18), 0 10px 22px rgba(30,40,60,.2);
-      z-index: 5;
+      z-index: 20;
+      overflow: visible;
+      height: auto !important;
+      min-height: 110px;
     }
     .day-schedule-block.kind-work {
       background: linear-gradient(145deg, #34b3a3 0%, #2a8f82 100%);
@@ -987,13 +991,19 @@
       border-color: #fff;
     }
     .day-schedule-block-tools {
-      display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 4px;
+      display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+      margin-top: 6px;
+      padding: 6px;
+      border-radius: 10px;
+      background: rgba(0,0,0,.18);
+      position: relative;
+      z-index: 21;
     }
     .day-schedule-block-tools .btn {
-      padding: 3px 7px; font-size: .68rem; min-width: 0;
-      background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.28);
+      padding: 5px 8px; font-size: .72rem; min-width: 0;
+      background: rgba(255,255,255,.22); color: #fff; border-color: rgba(255,255,255,.35);
     }
-    .day-schedule-block-tools .btn:hover { background: rgba(255,255,255,.3); }
+    .day-schedule-block-tools .btn:hover { background: rgba(255,255,255,.35); }
     .day-schedule-block-tools .btn.on {
       background: #fff; color: #333;
     }
@@ -3364,7 +3374,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v206</div>
+        <div class="logo-sub">Business Dashboard · v207</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -7250,10 +7260,14 @@ ${MAIL_FOOTER}`,
                <button type="button" class="btn" onclick="deleteDayScheduleBlock('${b.id}')">削除</button>
              </div>`
           : `<div class="day-schedule-block-text">${escapeHtml(b.text || '（未入力）')}</div>`;
+        // 編集中は高さ固定を外してボタンが隠れないようにする
+        const sizeStyle = editing
+          ? `top:${top}px;min-height:${Math.max(h, 110)}px;height:auto`
+          : `top:${top}px;height:${h}px`;
         return `
           <div class="day-schedule-block ${kindClass}${editing ? ' editing' : ''}"
                data-id="${b.id}"
-               style="top:${top}px;height:${h}px"
+               style="${sizeStyle}"
                onmousedown="onDayScheduleBlockMouseDown(event,'${b.id}')"
                onclick="event.stopPropagation();editDayScheduleBlock('${b.id}')">
             <div class="day-schedule-block-dot"></div>
