@@ -835,118 +835,161 @@
       background: var(--surface);
       color: var(--text);
     }
-    .day-schedule-list {
+    .day-schedule-legend {
+      display: flex; flex-wrap: wrap; gap: 8px 12px;
+      margin: 0 0 10px; font-size: .75rem; color: var(--muted);
+    }
+    .day-schedule-legend span {
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .day-schedule-legend i {
+      width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+    }
+    .day-schedule-legend .lg-work { background: #2f9e8f; }
+    .day-schedule-legend .lg-sales { background: #e07a3d; }
+    .day-schedule-legend .lg-event { background: #7b4fcf; }
+    .day-schedule-legend .lg-remote { background: #3b82c4; }
+    .day-schedule-board {
+      position: relative;
+      display: grid;
+      grid-template-columns: 58px 1fr;
+      gap: 0;
+      min-height: 200px;
+      margin-bottom: 8px;
+      user-select: none;
+    }
+    .day-schedule-axis {
+      position: relative;
+      z-index: 2;
+    }
+    .day-schedule-tick {
+      position: absolute;
+      left: 0; right: 0;
+      transform: translateY(-50%);
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .02em;
+      text-align: right;
+      padding-right: 10px;
+      pointer-events: none;
+    }
+    .day-schedule-track {
+      position: relative;
+      border-radius: 14px;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.02), transparent 40px),
+        var(--surface);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    .day-schedule-track::before {
+      content: '';
+      position: absolute;
+      top: 12px; bottom: 12px;
+      left: 18px;
+      width: 10px;
+      border-radius: 999px;
+      background: #d8dde6;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.7);
+      background-image: repeating-linear-gradient(
+        180deg,
+        transparent 0 7px,
+        rgba(255,255,255,.65) 7px 10px
+      );
+      pointer-events: none;
+      z-index: 0;
+    }
+    .day-schedule-gridline {
+      position: absolute;
+      left: 0; right: 0;
+      border-top: 1px dashed rgba(0,0,0,.06);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .day-schedule-block {
+      position: absolute;
+      left: 36px;
+      right: 12px;
+      z-index: 3;
+      border-radius: 14px;
+      padding: 8px 10px 8px 12px;
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(30,40,60,.14);
+      cursor: grab;
       display: flex;
       flex-direction: column;
       gap: 4px;
-      margin-bottom: 8px;
-      min-height: 8px;
+      min-height: 34px;
+      overflow: hidden;
+      transition: box-shadow .15s, transform .12s;
     }
-    .day-schedule-row {
-      display: grid;
-      grid-template-columns: 64px 1fr 108px auto;
-      gap: 8px;
-      align-items: center;
-      padding: 6px 8px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--surface);
-      transition: box-shadow .12s, border-color .12s, background .12s;
+    .day-schedule-block:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(30,40,60,.18); }
+    .day-schedule-block.dragging { opacity: .55; cursor: grabbing; }
+    .day-schedule-block.editing {
+      outline: 2px solid #fff;
+      box-shadow: 0 0 0 3px rgba(0,0,0,.18), 0 10px 22px rgba(30,40,60,.2);
+      z-index: 5;
     }
-    .day-schedule-row.kind-event {
-      background: rgba(107,63,160,.06);
-      border-color: rgba(107,63,160,.22);
+    .day-schedule-block.kind-work {
+      background: linear-gradient(145deg, #34b3a3 0%, #2a8f82 100%);
     }
-    .day-schedule-row.kind-sales {
-      background: rgba(232,149,106,.08);
-      border-color: rgba(232,149,106,.28);
+    .day-schedule-block.kind-sales {
+      background: linear-gradient(145deg, #ef8b4a 0%, #d26628 100%);
     }
-    .day-schedule-row.kind-remote {
-      background: rgba(50,120,200,.05);
-      border-color: rgba(50,120,200,.2);
+    .day-schedule-block.kind-event {
+      background: linear-gradient(145deg, #9163e0 0%, #6b3fc0 100%);
     }
-    .day-schedule-row.is-cont {
-      background: rgba(0,0,0,.015);
+    .day-schedule-block.kind-remote {
+      background: linear-gradient(145deg, #4d96d6 0%, #2f6fad 100%);
     }
-    .day-schedule-row.drag-over {
-      border-color: var(--red);
-      box-shadow: 0 0 0 2px var(--red-glow);
+    .day-schedule-block-dot {
+      position: absolute;
+      left: -27px;
+      top: 10px;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: inherit;
+      border: 3px solid #fff;
+      box-shadow: 0 0 0 2px rgba(0,0,0,.08);
+      pointer-events: none;
     }
-    .day-schedule-row.dragging { opacity: .45; }
-    .day-schedule-time {
-      font-size: .82rem;
-      font-weight: 700;
-      color: var(--text);
-      letter-spacing: .02em;
-      white-space: nowrap;
-      cursor: grab;
-      user-select: none;
-      padding: 4px 0;
+    .day-schedule-block-meta {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: .7rem; font-weight: 700; letter-spacing: .02em; opacity: .92;
     }
-    .day-schedule-time:active { cursor: grabbing; }
-    .day-schedule-body { min-width: 0; }
-    .day-schedule-input {
+    .day-schedule-block-text {
+      font-size: .9rem; font-weight: 700; line-height: 1.3;
+      word-break: break-word;
+    }
+    .day-schedule-block-input {
       width: 100%;
       font: inherit;
-      font-size: .88rem;
+      font-size: .9rem;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 8px;
       padding: 6px 8px;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      background: transparent;
-      color: var(--text);
-      min-width: 0;
-    }
-    .day-schedule-input:hover,
-    .day-schedule-input:focus {
-      border-color: var(--border);
-      background: var(--surface);
       outline: none;
     }
-    .day-schedule-input::placeholder { color: var(--muted); opacity: .7; }
-    .day-schedule-input.is-draft {
-      border-color: rgba(197,107,66,.45);
-      background: rgba(232,149,106,.08);
+    .day-schedule-block-input::placeholder { color: rgba(255,255,255,.7); }
+    .day-schedule-block-input.is-draft {
+      background: rgba(255,255,255,.28);
+      border-color: #fff;
     }
-    .day-schedule-cont-label {
-      font-size: .84rem;
-      color: var(--muted);
-      padding: 6px 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-height: 34px;
+    .day-schedule-block-tools {
+      display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 4px;
     }
-    .day-schedule-cont-label .cont-arrow { font-weight: 700; color: var(--text); }
-    .day-schedule-cont-label .cont-from {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      opacity: .75;
+    .day-schedule-block-tools .btn {
+      padding: 3px 7px; font-size: .68rem; min-width: 0;
+      background: rgba(255,255,255,.18); color: #fff; border-color: rgba(255,255,255,.28);
     }
-    .day-schedule-kind {
-      font: inherit;
-      font-size: .78rem;
-      padding: 6px 6px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--surface);
-      color: var(--text);
-      min-width: 0;
-    }
-    .day-schedule-actions {
-      display: flex;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-    .day-schedule-actions .btn {
-      padding: 5px 8px;
-      font-size: .75rem;
-      min-width: 0;
-    }
-    .day-schedule-actions .btn.active-cont {
-      background: var(--red-glow);
-      color: var(--red-dim);
-      border-color: rgba(197,107,66,.35);
+    .day-schedule-block-tools .btn:hover { background: rgba(255,255,255,.3); }
+    .day-schedule-block-tools .btn.on {
+      background: #fff; color: #333;
     }
     .day-schedule-hint {
       font-size: .78rem;
@@ -955,9 +998,9 @@
       margin-top: 2px;
     }
     @media (max-width: 720px) {
-      .day-schedule-row { grid-template-columns: 56px 1fr; }
-      .day-schedule-kind,
-      .day-schedule-actions { grid-column: 2; }
+      .day-schedule-board { grid-template-columns: 46px 1fr; }
+      .day-schedule-block { left: 28px; right: 8px; }
+      .day-schedule-block-dot { left: -22px; width: 14px; height: 14px; }
     }
     .task-list.task-drop-over { outline: 2px dashed var(--red); outline-offset: -4px; background: var(--red-glow); }
     .task-list { min-height: 48px; }
@@ -3315,7 +3358,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v203</div>
+        <div class="logo-sub">Business Dashboard · v204</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -3512,8 +3555,14 @@
         </div>
         <span class="task-add-hint" style="margin:0" id="dayScheduleDateLabel"></span>
       </div>
-      <div class="day-schedule-list" id="dayScheduleList"></div>
-      <div class="day-schedule-hint">左は固定の30分枠（9:00〜17:00）。右の欄をクリックして入力し、<strong>Enterを2回</strong>で確定（すぐには登録されない）。長い作業は先頭に書いて、続きの枠は「↓」。時刻をドラッグで入れ替え。</div>
+      <div class="day-schedule-legend">
+        <span><i class="lg-work"></i>机仕事</span>
+        <span><i class="lg-sales"></i>飛び込み・営業</span>
+        <span><i class="lg-event"></i>イベント・MT</span>
+        <span><i class="lg-remote"></i>在宅・連絡</span>
+      </div>
+      <div class="day-schedule-board" id="dayScheduleList"></div>
+      <div class="day-schedule-hint">縦の時間軸（9:00〜20:00）。空きをクリックで追加、色ブロックをドラッグで移動。<strong>Enter×2</strong>で確定。下端をドラッグで長さ変更。</div>
     </section>
 
     <section class="section">
@@ -6809,23 +6858,27 @@ ${MAIL_FOOTER}`,
       renderDaySchedule();
     }
 
-    /* ── 1日のタイムスケジュール（9:00〜17:00・30分枠） ── */
+    /* ── 1日のタイムスケジュール（縦タイムライン・色付きブロック） ── */
     let dayScheduleViewDate = '';
-    let daySchedDragFrom = null;
-    let daySchedEnterPending = null; // { time, count, at }
+    let daySchedEditingId = null;
+    let daySchedEnterPending = null; // { id, count, at }
+    let daySchedDrag = null; // { id, mode:'move'|'resize', duration, grabOffsetMin, moved }
+    let daySchedSuppressClick = false;
     const DAY_SCHEDULE_SLOT_START_MIN = 9 * 60;
-    const DAY_SCHEDULE_SLOT_END_MIN = 17 * 60;
+    const DAY_SCHEDULE_SLOT_END_MIN = 20 * 60; // 夕方の勉強会なども載せる
     const DAY_SCHEDULE_SLOT_STEP = 30;
+    const DAY_SCHEDULE_PX_PER_MIN = 1.35;
     const DAY_SCHEDULE_KIND_OPTS = [
       { value: 'work', label: '机仕事' },
-      { value: 'sales', label: '飛び込み・営業' },
-      { value: 'event', label: 'イベント・MT' },
-      { value: 'remote', label: '在宅・連絡' },
+      { value: 'sales', label: '飛び込み' },
+      { value: 'event', label: 'イベント' },
+      { value: 'remote', label: '連絡' },
     ];
 
     function dayScheduleMinutesToTime(mins) {
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
+      const clamped = Math.max(0, Math.min(24 * 60, mins));
+      const h = Math.floor(clamped / 60);
+      const m = clamped % 60;
       return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
     }
 
@@ -6837,6 +6890,11 @@ ${MAIL_FOOTER}`,
       return h * 60 + m;
     }
 
+    function dayScheduleSnapMin(mins) {
+      const stepped = Math.round(mins / DAY_SCHEDULE_SLOT_STEP) * DAY_SCHEDULE_SLOT_STEP;
+      return Math.max(DAY_SCHEDULE_SLOT_START_MIN, Math.min(DAY_SCHEDULE_SLOT_END_MIN, stepped));
+    }
+
     function dayScheduleSlotTimes() {
       const times = [];
       for (let m = DAY_SCHEDULE_SLOT_START_MIN; m <= DAY_SCHEDULE_SLOT_END_MIN; m += DAY_SCHEDULE_SLOT_STEP) {
@@ -6845,8 +6903,8 @@ ${MAIL_FOOTER}`,
       return times;
     }
 
-    function emptyDayScheduleSlot() {
-      return { text: '', kind: 'work', cont: false };
+    function dayScheduleTrackHeight() {
+      return (DAY_SCHEDULE_SLOT_END_MIN - DAY_SCHEDULE_SLOT_START_MIN) * DAY_SCHEDULE_PX_PER_MIN;
     }
 
     function dayScheduleBlock(start, end, text, kind) {
@@ -7036,139 +7094,176 @@ ${MAIL_FOOTER}`,
       if (kind === 'event') return 'kind-event';
       if (kind === 'sales') return 'kind-sales';
       if (kind === 'remote') return 'kind-remote';
-      return '';
+      return 'kind-work';
     }
 
-    function migrateDayScheduleBlocksToSlots(blocks) {
-      const map = {};
-      dayScheduleSlotTimes().forEach(t => { map[t] = emptyDayScheduleSlot(); });
-      if (!Array.isArray(blocks)) return map;
-      blocks.forEach(b => {
-        const startMin = dayScheduleTimeToMinutes(b.start);
-        let endMin = dayScheduleTimeToMinutes(b.end);
-        if (startMin == null) return;
-        if (endMin == null || endMin <= startMin) endMin = startMin + DAY_SCHEDULE_SLOT_STEP;
-        const slotMins = [];
-        for (let m = startMin; m < endMin; m += DAY_SCHEDULE_SLOT_STEP) {
-          if (m < DAY_SCHEDULE_SLOT_START_MIN || m > DAY_SCHEDULE_SLOT_END_MIN) continue;
-          if ((m - DAY_SCHEDULE_SLOT_START_MIN) % DAY_SCHEDULE_SLOT_STEP !== 0) continue;
-          slotMins.push(m);
+    function migrateDayScheduleSlotMapToBlocks(map) {
+      const times = dayScheduleSlotTimes();
+      const blocks = [];
+      let i = 0;
+      while (i < times.length) {
+        const t = times[i];
+        const slot = map && map[t];
+        if (!slot || slot.cont || !(String(slot.text || '').trim())) {
+          i += 1;
+          continue;
         }
-        // 終了が枠外（例: 17:00–20:00）でも、開始が枠内なら先頭に載せる
-        if (!slotMins.length && startMin >= DAY_SCHEDULE_SLOT_START_MIN && startMin <= DAY_SCHEDULE_SLOT_END_MIN) {
-          const aligned = startMin - ((startMin - DAY_SCHEDULE_SLOT_START_MIN) % DAY_SCHEDULE_SLOT_STEP);
-          if (aligned >= DAY_SCHEDULE_SLOT_START_MIN && aligned <= DAY_SCHEDULE_SLOT_END_MIN) slotMins.push(aligned);
-        }
-        slotMins.forEach((m, i) => {
-          const t = dayScheduleMinutesToTime(m);
-          if (i === 0) {
-            map[t] = { text: b.text || '', kind: b.kind || 'work', cont: false };
-          } else {
-            map[t] = { text: '', kind: b.kind || 'work', cont: true };
-          }
+        let j = i + 1;
+        while (j < times.length && map[times[j]] && map[times[j]].cont) j += 1;
+        const last = times[j - 1];
+        const endMin = (dayScheduleTimeToMinutes(last) || 0) + DAY_SCHEDULE_SLOT_STEP;
+        blocks.push({
+          id: uid(),
+          start: t,
+          end: dayScheduleMinutesToTime(Math.min(endMin, DAY_SCHEDULE_SLOT_END_MIN + DAY_SCHEDULE_SLOT_STEP)),
+          text: String(slot.text || '').trim(),
+          kind: slot.kind || 'work',
         });
-      });
-      return map;
+        i = j;
+      }
+      return blocks;
     }
 
-    function getDayScheduleSlotMap(dateStr) {
+    function normalizeDayScheduleBlock(b) {
+      let startMin = dayScheduleTimeToMinutes(b.start);
+      let endMin = dayScheduleTimeToMinutes(b.end);
+      if (startMin == null) startMin = DAY_SCHEDULE_SLOT_START_MIN;
+      if (endMin == null || endMin <= startMin) endMin = startMin + DAY_SCHEDULE_SLOT_STEP;
+      // 表示範囲にクリップ（開始が枠外なら捨てる）
+      if (startMin >= DAY_SCHEDULE_SLOT_END_MIN + DAY_SCHEDULE_SLOT_STEP) return null;
+      if (startMin < DAY_SCHEDULE_SLOT_START_MIN) startMin = DAY_SCHEDULE_SLOT_START_MIN;
+      if (endMin > DAY_SCHEDULE_SLOT_END_MIN) {
+        endMin = DAY_SCHEDULE_SLOT_END_MIN;
+      }
+      return {
+        id: b.id || uid(),
+        start: dayScheduleMinutesToTime(startMin),
+        end: dayScheduleMinutesToTime(endMin),
+        text: b.text || '',
+        kind: b.kind || 'work',
+      };
+    }
+
+    function getDayScheduleBlocks(dateStr) {
       if (!state.daySchedules || typeof state.daySchedules !== 'object') state.daySchedules = {};
       const raw = state.daySchedules[dateStr];
       if (Array.isArray(raw)) {
-        state.daySchedules[dateStr] = migrateDayScheduleBlocksToSlots(raw);
-      } else if (!raw || typeof raw !== 'object') {
-        state.daySchedules[dateStr] = migrateDayScheduleBlocksToSlots([]);
+        state.daySchedules[dateStr] = raw.map(normalizeDayScheduleBlock).filter(Boolean);
+      } else if (raw && typeof raw === 'object') {
+        // 旧・30分スロット形式 → 色付きブロックへ
+        state.daySchedules[dateStr] = migrateDayScheduleSlotMapToBlocks(raw);
       } else {
-        // 欠けている枠を補完
-        dayScheduleSlotTimes().forEach(t => {
-          if (!state.daySchedules[dateStr][t]) state.daySchedules[dateStr][t] = emptyDayScheduleSlot();
-        });
+        state.daySchedules[dateStr] = [];
       }
       return state.daySchedules[dateStr];
-    }
-
-    function dayScheduleHeadText(map, time) {
-      const times = dayScheduleSlotTimes();
-      let idx = times.indexOf(time);
-      if (idx < 0) return '';
-      while (idx >= 0) {
-        const slot = map[times[idx]] || emptyDayScheduleSlot();
-        if (!slot.cont) return (slot.text || '').trim();
-        idx -= 1;
-      }
-      return '';
-    }
-
-    function dayScheduleEffectiveKind(map, time) {
-      const times = dayScheduleSlotTimes();
-      let idx = times.indexOf(time);
-      if (idx < 0) return 'work';
-      while (idx >= 0) {
-        const slot = map[times[idx]] || emptyDayScheduleSlot();
-        if (!slot.cont) return slot.kind || 'work';
-        idx -= 1;
-      }
-      return 'work';
     }
 
     function persistDayScheduleQuiet() {
       persistStateQuiet();
     }
 
+    function syncDayScheduleBlockEventToTasks(dateStr, block) {
+      if (!block || block.kind !== 'event') return;
+      const text = (block.text || '').trim();
+      if (!text) return;
+      const label = `${block.start}${block.end ? '–' + block.end : ''} ${text}`;
+      const exists = state.tasks.some(t => t.date === dateStr && t.type === 'event' && t.text === label);
+      if (!exists) {
+        state.tasks.unshift({ id: uid(), text: label, date: dateStr, done: false, type: 'event' });
+      }
+    }
+
+    function dayScheduleYFromMin(mins) {
+      return (mins - DAY_SCHEDULE_SLOT_START_MIN) * DAY_SCHEDULE_PX_PER_MIN;
+    }
+
+    function dayScheduleMinFromClientY(clientY, trackEl) {
+      const rect = trackEl.getBoundingClientRect();
+      const y = clientY - rect.top;
+      return dayScheduleSnapMin(DAY_SCHEDULE_SLOT_START_MIN + y / DAY_SCHEDULE_PX_PER_MIN);
+    }
+
     function renderDaySchedule() {
       const dateInput = document.getElementById('dayScheduleDate');
-      const list = document.getElementById('dayScheduleList');
+      const board = document.getElementById('dayScheduleList');
       const label = document.getElementById('dayScheduleDateLabel');
-      if (!dateInput || !list) return;
+      if (!dateInput || !board) return;
       if (!dayScheduleViewDate) dayScheduleViewDate = todayStr();
       if (!dateInput.value) dateInput.value = dayScheduleViewDate;
       else dayScheduleViewDate = dateInput.value;
       const dateStr = dateInput.value;
       if (label) label.textContent = formatDayScheduleLabel(dateStr);
-      const map = getDayScheduleSlotMap(dateStr);
-      const kindOptions = DAY_SCHEDULE_KIND_OPTS.map(o =>
-        `<option value="${o.value}">${o.label}</option>`
-      ).join('');
-      list.innerHTML = dayScheduleSlotTimes().map(time => {
-        const slot = map[time] || emptyDayScheduleSlot();
-        const kind = slot.cont ? dayScheduleEffectiveKind(map, time) : (slot.kind || 'work');
-        const head = slot.cont ? dayScheduleHeadText(map, time) : '';
-        const body = slot.cont
-          ? `<div class="day-schedule-cont-label"><span class="cont-arrow">↓</span><span class="cont-from">${head ? escapeHtml(head) : '同じ作業'}</span></div>`
-          : `<input class="day-schedule-input" type="text" value="${escapeHtml(slot.text || '').replace(/"/g, '&quot;')}"
-               data-slot="${time}" data-saved="${escapeHtml(slot.text || '').replace(/"/g, '&quot;')}"
-               placeholder="入力後、Enter×2で確定"
-               onkeydown="onDayScheduleInputKeydown(event,'${time}')"
-               oninput="onDayScheduleInputDraft(event,'${time}')"
-               onblur="onDayScheduleInputBlur(event,'${time}')">`;
+      const height = dayScheduleTrackHeight();
+      const blocks = getDayScheduleBlocks(dateStr).slice().sort((a, b) =>
+        String(a.start).localeCompare(String(b.start))
+      );
+      const ticks = dayScheduleSlotTimes().filter((_, i) => i % 2 === 0) // 1時間ごと
+        .map(t => {
+          const top = dayScheduleYFromMin(dayScheduleTimeToMinutes(t));
+          return `<div class="day-schedule-tick" style="top:${top}px">${t}</div>`;
+        }).join('');
+      const grid = dayScheduleSlotTimes().map(t => {
+        const top = dayScheduleYFromMin(dayScheduleTimeToMinutes(t));
+        return `<div class="day-schedule-gridline" style="top:${top}px"></div>`;
+      }).join('');
+      const blockHtml = blocks.map(b => {
+        const startMin = dayScheduleTimeToMinutes(b.start);
+        let endMin = dayScheduleTimeToMinutes(b.end);
+        if (startMin == null) return '';
+        if (endMin == null || endMin <= startMin) endMin = startMin + DAY_SCHEDULE_SLOT_STEP;
+        const top = dayScheduleYFromMin(startMin);
+        const h = Math.max(34, (endMin - startMin) * DAY_SCHEDULE_PX_PER_MIN - 4);
+        const editing = daySchedEditingId === b.id;
+        const kindBtns = DAY_SCHEDULE_KIND_OPTS.map(o =>
+          `<button type="button" class="btn${b.kind === o.value ? ' on' : ''}" onclick="event.stopPropagation();setDayScheduleBlockKind('${b.id}','${o.value}')">${o.label}</button>`
+        ).join('');
+        const body = editing
+          ? `<input class="day-schedule-block-input" type="text"
+               value="${escapeHtml(b.text || '').replace(/"/g, '&quot;')}"
+               data-saved="${escapeHtml(b.text || '').replace(/"/g, '&quot;')}"
+               placeholder="内容（Enter×2で確定）"
+               onclick="event.stopPropagation()"
+               onkeydown="onDayScheduleBlockKeydown(event,'${b.id}')"
+               oninput="onDayScheduleBlockDraft(event,'${b.id}')"
+               onblur="onDayScheduleBlockBlur(event,'${b.id}')">
+             <div class="day-schedule-block-tools" onclick="event.stopPropagation()">
+               ${kindBtns}
+               <button type="button" class="btn" onclick="nudgeDayScheduleBlockEnd('${b.id}',30)">+30分</button>
+               <button type="button" class="btn" onclick="nudgeDayScheduleBlockEnd('${b.id}',-30)">-30分</button>
+               <button type="button" class="btn" onclick="deleteDayScheduleBlock('${b.id}')">削除</button>
+             </div>`
+          : `<div class="day-schedule-block-text">${escapeHtml(b.text || '（未入力）')}</div>`;
         return `
-          <div class="day-schedule-row ${dayScheduleKindClass(kind)}${slot.cont ? ' is-cont' : ''}"
-               data-slot="${time}"
-               ondragover="onDayScheduleDragOver(event)"
-               ondragleave="onDayScheduleDragLeave(event)"
-               ondrop="onDayScheduleDrop(event,'${time}')">
-            <div class="day-schedule-time" draggable="true"
-                 ondragstart="onDayScheduleDragStart(event,'${time}')"
-                 ondragend="onDayScheduleDragEnd(event)"
-                 title="ドラッグで入れ替え">${time}</div>
-            <div class="day-schedule-body">${body}</div>
-            <select class="day-schedule-kind" ${slot.cont ? 'disabled' : ''}
-                    onchange="onDayScheduleKindChange('${time}', this.value)">
-              ${kindOptions.replace(`value="${kind}"`, `value="${kind}" selected`)}
-            </select>
-            <div class="day-schedule-actions">
-              <button class="btn btn-ghost${slot.cont ? ' active-cont' : ''}" type="button"
-                      title="同じ作業の続き"
-                      onclick="toggleDayScheduleContinue('${time}')">↓</button>
-              <button class="btn btn-ghost" type="button" title="この枠を空に"
-                      onclick="clearDayScheduleSlot('${time}')">×</button>
+          <div class="day-schedule-block ${dayScheduleKindClass(b.kind)}${editing ? ' editing' : ''}"
+               data-id="${b.id}"
+               style="top:${top}px;height:${h}px"
+               onmousedown="onDayScheduleBlockMouseDown(event,'${b.id}')"
+               onclick="event.stopPropagation();editDayScheduleBlock('${b.id}')">
+            <div class="day-schedule-block-dot"></div>
+            <div class="day-schedule-block-meta">
+              <span>${escapeHtml(b.start)}–${escapeHtml(b.end)}</span>
+              <span>${editing ? '編集中' : ''}</span>
             </div>
+            ${body}
           </div>
         `;
       }).join('');
+      board.innerHTML = `
+        <div class="day-schedule-axis" style="height:${height}px">${ticks}</div>
+        <div class="day-schedule-track" id="dayScheduleTrack" style="height:${height}px"
+             onclick="onDayScheduleTrackClick(event)">
+          ${grid}
+          ${blockHtml}
+        </div>
+      `;
+      if (daySchedEditingId) {
+        const input = board.querySelector(`.day-schedule-block[data-id="${daySchedEditingId}"] .day-schedule-block-input`);
+        if (input) setTimeout(() => { input.focus(); input.select(); }, 30);
+      }
     }
 
     function onDayScheduleDateChange() {
+      daySchedEditingId = null;
       const el = document.getElementById('dayScheduleDate');
       dayScheduleViewDate = el ? el.value : todayStr();
       renderDaySchedule();
@@ -7176,6 +7271,7 @@ ${MAIL_FOOTER}`,
     window.onDayScheduleDateChange = onDayScheduleDateChange;
 
     function dayScheduleGoToday() {
+      daySchedEditingId = null;
       dayScheduleViewDate = todayStr();
       const el = document.getElementById('dayScheduleDate');
       if (el) el.value = dayScheduleViewDate;
@@ -7193,6 +7289,7 @@ ${MAIL_FOOTER}`,
     }
 
     function dayScheduleShiftDay(delta) {
+      daySchedEditingId = null;
       const el = document.getElementById('dayScheduleDate');
       const current = (el && el.value) || dayScheduleViewDate || todayStr();
       dayScheduleViewDate = shiftDateStr(current, delta);
@@ -7201,26 +7298,88 @@ ${MAIL_FOOTER}`,
     }
     window.dayScheduleShiftDay = dayScheduleShiftDay;
 
-    function syncDayScheduleSlotEventToTasks(dateStr, time, slot) {
-      if (!slot || slot.cont || slot.kind !== 'event') return;
-      const text = (slot.text || '').trim();
-      if (!text) return;
-      const label = `${time} ${text}`;
-      const exists = state.tasks.some(t => t.date === dateStr && t.type === 'event' && t.text === label);
-      if (!exists) {
-        state.tasks.unshift({ id: uid(), text: label, date: dateStr, done: false, type: 'event' });
-      }
+    function findDayScheduleBlock(id) {
+      const blocks = getDayScheduleBlocks(getDayScheduleDate());
+      return blocks.find(b => b.id === id) || null;
     }
 
-    function commitDayScheduleText(time, value, inputEl) {
+    function onDayScheduleTrackClick(e) {
+      if (e.target.closest('.day-schedule-block')) return;
+      const track = document.getElementById('dayScheduleTrack');
+      if (!track) return;
+      const startMin = dayScheduleMinFromClientY(e.clientY, track);
+      let endMin = startMin + 60;
+      if (endMin > DAY_SCHEDULE_SLOT_END_MIN) endMin = Math.min(DAY_SCHEDULE_SLOT_END_MIN + DAY_SCHEDULE_SLOT_STEP, startMin + DAY_SCHEDULE_SLOT_STEP);
+      if (endMin <= startMin) endMin = startMin + DAY_SCHEDULE_SLOT_STEP;
+      const block = {
+        id: uid(),
+        start: dayScheduleMinutesToTime(startMin),
+        end: dayScheduleMinutesToTime(endMin),
+        text: '',
+        kind: 'work',
+      };
+      getDayScheduleBlocks(getDayScheduleDate()).push(block);
+      daySchedEditingId = block.id;
+      persistDayScheduleQuiet();
+      renderDaySchedule();
+      toast('新しい枠を追加 — Enter×2で確定');
+    }
+    window.onDayScheduleTrackClick = onDayScheduleTrackClick;
+
+    function editDayScheduleBlock(id) {
+      if (daySchedDrag || daySchedSuppressClick) return;
+      daySchedEditingId = id;
+      daySchedEnterPending = null;
+      renderDaySchedule();
+    }
+    window.editDayScheduleBlock = editDayScheduleBlock;
+
+    function setDayScheduleBlockKind(id, kind) {
+      const b = findDayScheduleBlock(id);
+      if (!b) return;
+      b.kind = kind || 'work';
+      syncDayScheduleBlockEventToTasks(getDayScheduleDate(), b);
+      persistDayScheduleQuiet();
+      renderDaySchedule();
+    }
+    window.setDayScheduleBlockKind = setDayScheduleBlockKind;
+
+    function nudgeDayScheduleBlockEnd(id, deltaMin) {
+      const b = findDayScheduleBlock(id);
+      if (!b) return;
+      const startMin = dayScheduleTimeToMinutes(b.start);
+      let endMin = dayScheduleTimeToMinutes(b.end) + deltaMin;
+      if (startMin == null) return;
+      endMin = Math.max(startMin + DAY_SCHEDULE_SLOT_STEP, endMin);
+      endMin = Math.min(DAY_SCHEDULE_SLOT_END_MIN + 60, endMin);
+      b.end = dayScheduleMinutesToTime(endMin);
+      persistDayScheduleQuiet();
+      renderDaySchedule();
+    }
+    window.nudgeDayScheduleBlockEnd = nudgeDayScheduleBlockEnd;
+
+    function deleteDayScheduleBlock(id) {
       const dateStr = getDayScheduleDate();
-      const map = getDayScheduleSlotMap(dateStr);
-      const slot = map[time] || emptyDayScheduleSlot();
+      const blocks = getDayScheduleBlocks(dateStr);
+      const before = blocks.find(b => b.id === id);
+      state.daySchedules[dateStr] = blocks.filter(b => b.id !== id);
+      if (daySchedEditingId === id) daySchedEditingId = null;
+      if (before && before.kind === 'event') {
+        const text = `${before.start}${before.end ? '–' + before.end : ''} ${before.text}`;
+        state.tasks = state.tasks.filter(t => !(t.date === dateStr && t.type === 'event' && t.text === text && !t.done));
+      }
+      persistDayScheduleQuiet();
+      renderDaySchedule();
+      toast('削除しました');
+    }
+    window.deleteDayScheduleBlock = deleteDayScheduleBlock;
+
+    function commitDayScheduleBlockText(id, value, inputEl) {
+      const b = findDayScheduleBlock(id);
+      if (!b) return;
       const next = String(value || '').trim();
-      slot.text = next;
-      slot.cont = false;
-      map[time] = slot;
-      syncDayScheduleSlotEventToTasks(dateStr, time, slot);
+      b.text = next;
+      syncDayScheduleBlockEventToTasks(getDayScheduleDate(), b);
       persistDayScheduleQuiet();
       daySchedEnterPending = null;
       if (inputEl) {
@@ -7228,28 +7387,30 @@ ${MAIL_FOOTER}`,
         inputEl.value = next;
         inputEl.classList.remove('is-draft');
       }
-      toast(next ? `${time} を確定` : `${time} を空で確定`);
+      daySchedEditingId = null;
+      renderDaySchedule();
+      toast(next ? '確定しました' : '空のまま確定');
     }
 
-    function onDayScheduleInputDraft(e, time) {
+    function onDayScheduleBlockDraft(e, id) {
       const input = e.target;
       if (!input) return;
       const saved = input.dataset.saved || '';
       if (input.value !== saved) input.classList.add('is-draft');
       else input.classList.remove('is-draft');
-      // 編集中に Enter 待ちをリセット（打ち直ししたら1回目から）
-      if (daySchedEnterPending && daySchedEnterPending.time === time) daySchedEnterPending = null;
+      if (daySchedEnterPending && daySchedEnterPending.id === id) daySchedEnterPending = null;
     }
-    window.onDayScheduleInputDraft = onDayScheduleInputDraft;
+    window.onDayScheduleBlockDraft = onDayScheduleBlockDraft;
 
-    function onDayScheduleInputKeydown(e, time) {
+    function onDayScheduleBlockKeydown(e, id) {
       if (e.key === 'Escape') {
         e.preventDefault();
         const input = e.target;
         input.value = input.dataset.saved || '';
         input.classList.remove('is-draft');
         daySchedEnterPending = null;
-        input.blur();
+        daySchedEditingId = null;
+        renderDaySchedule();
         toast('入力を取り消しました');
         return;
       }
@@ -7258,124 +7419,108 @@ ${MAIL_FOOTER}`,
       const input = e.target;
       const now = Date.now();
       const pending = daySchedEnterPending;
-      const sameSlot = pending && pending.time === time && (now - pending.at) < 2500;
-      if (sameSlot && pending.count >= 1) {
-        commitDayScheduleText(time, input.value, input);
-        input.blur();
+      const same = pending && pending.id === id && (now - pending.at) < 2500;
+      if (same && pending.count >= 1) {
+        commitDayScheduleBlockText(id, input.value, input);
         return;
       }
-      daySchedEnterPending = { time, count: 1, at: now };
+      daySchedEnterPending = { id, count: 1, at: now };
       toast('もう一度 Enter で確定');
     }
-    window.onDayScheduleInputKeydown = onDayScheduleInputKeydown;
+    window.onDayScheduleBlockKeydown = onDayScheduleBlockKeydown;
 
-    function onDayScheduleInputBlur(e, time) {
+    function onDayScheduleBlockBlur(e, id) {
       const input = e.target;
       if (!input) return;
-      // 確定前に枠を離したら、保存済みの内容に戻す（即登録しない）
       const saved = input.dataset.saved || '';
       if (input.value !== saved) {
         input.value = saved;
         input.classList.remove('is-draft');
       }
-      if (daySchedEnterPending && daySchedEnterPending.time === time) daySchedEnterPending = null;
+      if (daySchedEnterPending && daySchedEnterPending.id === id) daySchedEnterPending = null;
     }
-    window.onDayScheduleInputBlur = onDayScheduleInputBlur;
+    window.onDayScheduleBlockBlur = onDayScheduleBlockBlur;
 
-    function onDayScheduleKindChange(time, kind) {
-      const dateStr = getDayScheduleDate();
-      const map = getDayScheduleSlotMap(dateStr);
-      const slot = map[time] || emptyDayScheduleSlot();
-      slot.kind = kind || 'work';
-      map[time] = slot;
-      syncDayScheduleSlotEventToTasks(dateStr, time, slot);
-      persistDayScheduleQuiet();
-      renderDaySchedule();
+    function onDayScheduleBlockMouseDown(e, id) {
+      if (e.button !== 0) return;
+      if (e.target.closest('input,button,select,textarea')) return;
+      const b = findDayScheduleBlock(id);
+      const track = document.getElementById('dayScheduleTrack');
+      if (!b || !track) return;
+      const startMin = dayScheduleTimeToMinutes(b.start);
+      const endMin = dayScheduleTimeToMinutes(b.end);
+      if (startMin == null || endMin == null) return;
+      const blockEl = e.currentTarget;
+      const rect = blockEl.getBoundingClientRect();
+      const nearBottom = (e.clientY > rect.bottom - 10);
+      e.preventDefault();
+      e.stopPropagation();
+      daySchedDrag = {
+        id,
+        mode: nearBottom ? 'resize' : 'move',
+        duration: endMin - startMin,
+        grabOffsetMin: dayScheduleMinFromClientY(e.clientY, track) - startMin,
+        moved: false,
+        originY: e.clientY,
+      };
+      blockEl.classList.add('dragging');
+      window.addEventListener('mousemove', onDayScheduleBlockMouseMove);
+      window.addEventListener('mouseup', onDayScheduleBlockMouseUp);
     }
-    window.onDayScheduleKindChange = onDayScheduleKindChange;
+    window.onDayScheduleBlockMouseDown = onDayScheduleBlockMouseDown;
 
-    function toggleDayScheduleContinue(time) {
-      const dateStr = getDayScheduleDate();
-      const map = getDayScheduleSlotMap(dateStr);
-      const times = dayScheduleSlotTimes();
-      const idx = times.indexOf(time);
-      if (idx <= 0) {
-        toast('一番上の枠は「続き」にできません');
-        return;
-      }
-      const slot = map[time] || emptyDayScheduleSlot();
-      if (slot.cont) {
-        slot.cont = false;
-        if (!slot.text) slot.text = dayScheduleHeadText(map, times[idx - 1]) || '';
-        if (!slot.kind) slot.kind = dayScheduleEffectiveKind(map, times[idx - 1]);
+    function onDayScheduleBlockMouseMove(e) {
+      if (!daySchedDrag) return;
+      if (Math.abs(e.clientY - (daySchedDrag.originY || 0)) > 4) daySchedDrag.moved = true;
+      const track = document.getElementById('dayScheduleTrack');
+      const b = findDayScheduleBlock(daySchedDrag.id);
+      if (!track || !b) return;
+      const pointerMin = dayScheduleMinFromClientY(e.clientY, track);
+      if (daySchedDrag.mode === 'resize') {
+        let endMin = Math.max((dayScheduleTimeToMinutes(b.start) || 0) + DAY_SCHEDULE_SLOT_STEP, pointerMin);
+        endMin = Math.min(DAY_SCHEDULE_SLOT_END_MIN + 60, endMin);
+        b.end = dayScheduleMinutesToTime(endMin);
       } else {
-        slot.cont = true;
-        slot.text = '';
-        slot.kind = dayScheduleEffectiveKind(map, times[idx - 1]);
+        let startMin = pointerMin - (daySchedDrag.grabOffsetMin || 0);
+        startMin = dayScheduleSnapMin(startMin);
+        let endMin = startMin + daySchedDrag.duration;
+        if (endMin > DAY_SCHEDULE_SLOT_END_MIN + 60) {
+          endMin = DAY_SCHEDULE_SLOT_END_MIN + 60;
+          startMin = Math.max(DAY_SCHEDULE_SLOT_START_MIN, endMin - daySchedDrag.duration);
+          startMin = dayScheduleSnapMin(startMin);
+          endMin = startMin + daySchedDrag.duration;
+        }
+        b.start = dayScheduleMinutesToTime(startMin);
+        b.end = dayScheduleMinutesToTime(endMin);
       }
-      map[time] = slot;
-      persistDayScheduleQuiet();
-      renderDaySchedule();
+      // ドラッグ中は再描画せず位置だけ更新
+      const el = document.querySelector(`.day-schedule-block[data-id="${b.id}"]`);
+      if (el) {
+        const s = dayScheduleTimeToMinutes(b.start);
+        const en = dayScheduleTimeToMinutes(b.end);
+        el.style.top = dayScheduleYFromMin(s) + 'px';
+        el.style.height = Math.max(34, (en - s) * DAY_SCHEDULE_PX_PER_MIN - 4) + 'px';
+        const meta = el.querySelector('.day-schedule-block-meta span');
+        if (meta) meta.textContent = `${b.start}–${b.end}`;
+      }
     }
-    window.toggleDayScheduleContinue = toggleDayScheduleContinue;
 
-    function clearDayScheduleSlot(time) {
-      const dateStr = getDayScheduleDate();
-      const map = getDayScheduleSlotMap(dateStr);
-      map[time] = emptyDayScheduleSlot();
-      persistDayScheduleQuiet();
-      renderDaySchedule();
+    function onDayScheduleBlockMouseUp() {
+      window.removeEventListener('mousemove', onDayScheduleBlockMouseMove);
+      window.removeEventListener('mouseup', onDayScheduleBlockMouseUp);
+      if (!daySchedDrag) return;
+      const moved = !!daySchedDrag.moved;
+      daySchedDrag = null;
+      if (moved) {
+        daySchedSuppressClick = true;
+        setTimeout(() => { daySchedSuppressClick = false; }, 80);
+        persistDayScheduleQuiet();
+        renderDaySchedule();
+      } else {
+        document.querySelectorAll('.day-schedule-block.dragging')
+          .forEach(el => el.classList.remove('dragging'));
+      }
     }
-    window.clearDayScheduleSlot = clearDayScheduleSlot;
-
-    function onDayScheduleDragStart(e, time) {
-      daySchedDragFrom = time;
-      const row = e.target.closest('.day-schedule-row');
-      if (row) row.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', time);
-    }
-    window.onDayScheduleDragStart = onDayScheduleDragStart;
-
-    function onDayScheduleDragEnd(e) {
-      daySchedDragFrom = null;
-      document.querySelectorAll('.day-schedule-row.dragging, .day-schedule-row.drag-over')
-        .forEach(el => el.classList.remove('dragging', 'drag-over'));
-    }
-    window.onDayScheduleDragEnd = onDayScheduleDragEnd;
-
-    function onDayScheduleDragOver(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      const row = e.currentTarget;
-      if (row) row.classList.add('drag-over');
-    }
-    window.onDayScheduleDragOver = onDayScheduleDragOver;
-
-    function onDayScheduleDragLeave(e) {
-      const row = e.currentTarget;
-      if (row) row.classList.remove('drag-over');
-    }
-    window.onDayScheduleDragLeave = onDayScheduleDragLeave;
-
-    function onDayScheduleDrop(e, toTime) {
-      e.preventDefault();
-      const fromTime = daySchedDragFrom || e.dataTransfer.getData('text/plain');
-      daySchedDragFrom = null;
-      document.querySelectorAll('.day-schedule-row.dragging, .day-schedule-row.drag-over')
-        .forEach(el => el.classList.remove('dragging', 'drag-over'));
-      if (!fromTime || fromTime === toTime) return;
-      const dateStr = getDayScheduleDate();
-      const map = getDayScheduleSlotMap(dateStr);
-      const a = Object.assign(emptyDayScheduleSlot(), map[fromTime] || emptyDayScheduleSlot());
-      const b = Object.assign(emptyDayScheduleSlot(), map[toTime] || emptyDayScheduleSlot());
-      map[fromTime] = b;
-      map[toTime] = a;
-      persistDayScheduleQuiet();
-      renderDaySchedule();
-      toast(`${fromTime} ⇄ ${toTime}`);
-    }
-    window.onDayScheduleDrop = onDayScheduleDrop;
 
     function financePrev() {
       financeMonth--;
