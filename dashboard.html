@@ -1816,6 +1816,8 @@
     .checklist-tag.依頼 { background: rgba(107,63,160,.1); color: #6b3fa0; border: 1px solid rgba(107,63,160,.28); }
     .checklist-tag.準備 { background: rgba(180,140,60,.1); color: #9a7a30; border: 1px solid rgba(180,140,60,.28); }
     .checklist-tag.撮影 { background: rgba(200,80,80,.1); color: #b04848; border: 1px solid rgba(200,80,80,.28); }
+    .checklist-tag.商談 { background: rgba(180,140,60,.1); color: #9a7a30; border: 1px solid rgba(180,140,60,.28); }
+    .checklist-tag.ヒアリング { background: rgba(180,140,60,.1); color: #9a7a30; border: 1px solid rgba(180,140,60,.28); }
     .checklist-check {
       width: 18px; height: 18px;
       accent-color: var(--red);
@@ -3374,7 +3376,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v207</div>
+        <div class="logo-sub">Business Dashboard · v209</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -3741,14 +3743,15 @@
         </select>
       </div>
       <div class="form-group" id="workflowGroup">
-        <label>制作フロー</label>
+        <label>フロー</label>
         <select id="projectWorkflow">
-          <option value="auto">種別から自動（説明→アニメ / ブランド・記録・採用→実写 / 撮影→撮影フロー）</option>
+          <option value="auto">種別から自動（商談→制作。商談完了後は制作フロー）</option>
+          <option value="salesMeeting">商談フロー</option>
           <option value="explainer">アニメーション動画制作フロー</option>
           <option value="brandingRecord">ブランディング／記録／採用動画制作フロー</option>
           <option value="shoot">撮影案件フロー</option>
         </select>
-        <div class="form-hint">進行中カードをクリックするとチェックリストが開きます。種別と違うフローで進める場合はここで変更</div>
+        <div class="form-hint">商談中・進行中カードをクリックするとチェックリストが開きます。商談フロー／制作フローはここで切替可</div>
       </div>
       <div id="funnelGroup">
         <div class="form-row-2">
@@ -4055,9 +4058,10 @@
       <h3 id="checklistTitle"></h3>
       <div class="checklist-subtitle" id="checklistSubtitle"></div>
       <div class="checklist-workflow-row" id="checklistWorkflowRow">
-        <label for="checklistWorkflowSelect">制作フロー</label>
+        <label for="checklistWorkflowSelect">フロー</label>
         <select id="checklistWorkflowSelect" onchange="changeChecklistWorkflow(this.value)">
-          <option value="auto">種別から自動</option>
+          <option value="auto">種別から自動（商談→制作）</option>
+          <option value="salesMeeting">商談フロー</option>
           <option value="explainer">アニメーション動画制作フロー</option>
           <option value="brandingRecord">ブランディング／記録／採用動画制作フロー</option>
           <option value="shoot">撮影案件フロー</option>
@@ -9486,7 +9490,7 @@ ${MAIL_FOOTER}`,
             <button class="btn btn-ghost" onclick="event.stopPropagation();duplicateProject('${p.id}')">複製</button>
           </div>`;
       const hasWf = !isSns && getWorkflow(p) && (
-        p.status === 'doing' || (isFunnel && p.status === 'todo')
+        p.status === 'doing' || p.status === 'negotiating' || (isFunnel && p.status === 'todo')
       );
       return `
         <div class="card${isSns ? ' sns-card' : ''}" draggable="true" data-id="${p.id}"
@@ -11484,6 +11488,26 @@ ${MAIL_FOOTER}`,
 
     /* ── Workflow Checklists ── */
     const WORKFLOWS = {
+      salesMeeting: {
+        title: '商談フロー',
+        groups: [
+          {
+            label: '第一回ミーティング準備',
+            steps: [
+              { id: 50, text: '目的・ゴール整理（相手要望／動画の役割／今日の場のゴール）', tag: '商談' },
+              { id: 51, text: 'ヒアリングシート作成（HTML・相手共有用／項目はその都度）', tag: '商談' },
+              { id: 52, text: '当日台本作成（挨拶・ご縁・自己紹介・今日のゴール先出し）', tag: '商談' },
+              { id: 53, text: 'プラスアルファ提案を必ず入れる（活用／見せる人のセリフ等）', tag: '商談' },
+              { id: 54, text: '活用の根拠を用意（納得材料）', tag: '商談' },
+              { id: 55, text: '構成骨格はヒアリングで確認（その場で詰める前提で可）', tag: '商談' },
+              { id: 56, text: 'プラン比較1枚など金額提示がある場合は後出し用に用意', tag: '商談' },
+              { id: 57, text: '台本に気持ち確認・検討時の深掘り・その場で詰める流れを入れる', tag: '商談' },
+              { id: 58, text: '台本に次回MTG日時をその場で決める流れを入れる', tag: '商談' },
+              { id: 59, text: '打合せ後：記入済みヒアリングをHTML保存して共有', tag: '商談' },
+            ],
+          },
+        ],
+      },
       explainer: {
         title: 'アニメーション動画制作フロー',
         groups: [
@@ -11670,7 +11694,10 @@ ${MAIL_FOOTER}`,
     function getWorkflowKey(p) {
       if (isFunnelBuildProject(p)) return 'funnelBuild';
       if (p.workflowKey && p.workflowKey !== 'auto' && WORKFLOWS[p.workflowKey]) return p.workflowKey;
-      return defaultWorkflowKey(p);
+      // auto: 商談中は商談フロー、制作に入ったら種別の制作フロー
+      const prod = defaultWorkflowKey(p);
+      if (prod && prod !== 'funnelBuild' && p.status === 'negotiating') return 'salesMeeting';
+      return prod;
     }
 
     function getWorkflow(p) {
@@ -11739,6 +11766,7 @@ ${MAIL_FOOTER}`,
       if (!label) return '';
       return String(label)
         .replace(/・/g, '')
+        .replace(/第一回ミーティング準備/g, '第1回準備')
         .replace(/クライアント確認/g, '確認')
         .replace(/デザイン・素材準備/g, 'デザイン')
         .replace(/トンマナ・デザイン/g, 'トンマナ')
@@ -11751,7 +11779,7 @@ ${MAIL_FOOTER}`,
     }
 
     function renderCardFlowProgress(p) {
-      const show = p.status === 'doing' || (isFunnelBuildProject(p) && p.status === 'todo');
+      const show = p.status === 'doing' || p.status === 'negotiating' || (isFunnelBuildProject(p) && p.status === 'todo');
       if (!show) return '';
       const prog = getWorkflowProgress(p);
       if (!prog || !prog.total || !prog.groups.length) return '';
@@ -11778,6 +11806,39 @@ ${MAIL_FOOTER}`,
         }
       }
       if (!p.checklistSkips || typeof p.checklistSkips !== 'object') p.checklistSkips = {};
+      // 旧: ヒアリング項目が制作フロー(explainer等)に混在 → 商談フローへ移行
+      migrateSalesMeetingFromProduction(p);
+    }
+
+    function migrateSalesMeetingFromProduction(p) {
+      if (!p || !p.checklists) return;
+      const salesIds = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59];
+      if (!p.checklists.salesMeeting) p.checklists.salesMeeting = {};
+      const sales = p.checklists.salesMeeting;
+      ['explainer', 'brandingRecord', 'shoot'].forEach(key => {
+        const src = p.checklists[key];
+        if (!src) return;
+        salesIds.forEach(id => {
+          const k = String(id);
+          if ((src[id] || src[k]) && !sales[id] && !sales[k]) sales[id] = true;
+          if (src[id] !== undefined) delete src[id];
+          if (src[k] !== undefined) delete src[k];
+        });
+      });
+      if (p.checklistSkips) {
+        if (!p.checklistSkips.salesMeeting) p.checklistSkips.salesMeeting = {};
+        const salesSkips = p.checklistSkips.salesMeeting;
+        ['explainer', 'brandingRecord', 'shoot'].forEach(key => {
+          const src = p.checklistSkips[key];
+          if (!src) return;
+          salesIds.forEach(id => {
+            const k = String(id);
+            if ((src[id] || src[k]) && !salesSkips[id] && !salesSkips[k]) salesSkips[id] = true;
+            if (src[id] !== undefined) delete src[id];
+            if (src[k] !== undefined) delete src[k];
+          });
+        });
+      }
     }
 
     function getProjectChecklist(p, wfKey) {
