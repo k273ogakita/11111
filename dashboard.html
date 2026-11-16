@@ -3376,7 +3376,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v210</div>
+        <div class="logo-sub">Business Dashboard · v211</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -11519,6 +11519,7 @@ ${MAIL_FOOTER}`,
             label: 'プラン表の作成',
             steps: [
               { id: 56, text: 'プラン表を用意（大まかで可／まだヒアリング段階・後出し用）', tag: '商談' },
+              { id: 60, text: 'Zoomリンクとミーティング日のアジェンダの送付', tag: '商談' },
             ],
           },
         ],
@@ -11831,7 +11832,7 @@ ${MAIL_FOOTER}`,
 
     function migrateSalesMeetingFromProduction(p) {
       if (!p || !p.checklists) return;
-      const salesIds = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59];
+      const salesIds = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60];
       if (!p.checklists.salesMeeting) p.checklists.salesMeeting = {};
       const sales = p.checklists.salesMeeting;
       ['explainer', 'brandingRecord', 'shoot'].forEach(key => {
