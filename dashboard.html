@@ -2706,8 +2706,36 @@
     }
     .monthly-goals-card .horizon-step { color: #3a5f8a; }
     .monthly-goals-card .horizon-title { color: #2a4568; margin-bottom: 4px; }
+    .monthly-goals-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .monthly-goals-header.collapsible-header { cursor: pointer; user-select: none; }
+    .monthly-goals-header .collapse-chevron {
+      display: inline-block; margin-left: 6px; font-size: .85em; color: #5a7394;
+    }
+    .monthly-goals-header .collapse-summary {
+      font-size: .78rem; color: #5a7394; margin-top: 4px; line-height: 1.45;
+    }
+    .mg-fold-right {
+      min-width: 120px; text-align: right;
+    }
+    .mg-fold-right-count {
+      font-size: 1.05rem; font-weight: 800; color: #2a4568; line-height: 1.15;
+    }
+    .mg-fold-right-count.is-done { color: #1f7a4d; }
+    .mg-fold-right-label { font-size: .68rem; color: #5a7394; margin-top: 2px; }
+    .mg-fold-right-bar {
+      height: 4px; background: rgba(58,95,138,.14); border-radius: 99px;
+      margin-top: 8px; overflow: hidden;
+    }
+    .mg-fold-right-bar > span {
+      display: block; height: 100%; border-radius: 99px;
+      background: linear-gradient(90deg, #4d8fd6, #2f9e6f);
+    }
+    .monthly-goals-card .collapse-body { margin-top: 12px; }
     .monthly-goals-sub {
-      font-size: .78rem; color: #5a7394; margin: 0 0 12px; line-height: 1.45;
+      font-size: .78rem; color: #5a7394; margin: 0; line-height: 1.45;
     }
     .monthly-goals-nav {
       display: flex; align-items: center; gap: 8px; margin: 0 0 12px; flex-wrap: wrap;
@@ -3512,7 +3540,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v214</div>
+        <div class="logo-sub">Business Dashboard · v215</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -5162,6 +5190,7 @@ nark.visual.media@gmail.com
     let compassDetailsExpanded = false;
     let milestonesExpanded = true; // 常時開いておく
     let snsIdeasExpanded = false; // 普段は折りたたみ
+    let monthlyGoalsExpanded = true; // 月間目標は開いておく
     let compassStrengthsExpanded = false; // 互換のため残置（詳細は一括折りたたみへ統合）
     let compassReviewExpanded = false;
     let compassVisionExpanded = false;
@@ -8376,30 +8405,55 @@ ${MAIL_FOOTER}`,
         </div>`;
       }).join('');
 
+      const deliveryDone = goal.delivery.reduce((s, item) => s + item.checks.filter(Boolean).length, 0);
+      const deliveryTarget = goal.delivery.reduce((s, item) => s + item.target, 0);
+      const approachSum = monthlyGoalEntrySum(goal.funnel.approach && goal.funnel.approach.entries);
+      const approachTarget = (goal.funnel.approach && goal.funnel.approach.target) || 40;
+      const foldSummary = `${formatMonthLabelJa(monthKey)} · 売上 ${formatYen(salesTotal)} / ${formatYen(salesTarget)}（${salesPct}%） · 受注 ${deliveryDone}/${deliveryTarget} · アプローチ ${approachSum}/${approachTarget}社`;
+
       el.innerHTML = `
         <div class="monthly-goals-card">
-          <div class="horizon-step">Monthly</div>
-          <div class="horizon-title">月間目標</div>
-          <div class="monthly-goals-sub">月の売上50万を取るために、受注とアプローチを毎月積み上げる</div>
-          <div class="monthly-goals-nav">
-            <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(-1)">‹ 前月</button>
-            <span class="month-label">${esc(formatMonthLabelJa(monthKey))}</span>
-            <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(1)">翌月 ›</button>
-            <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(0)">今月</button>
+          <div class="monthly-goals-header collapsible-header" onclick="toggleMonthlyGoals()" title="クリックで開閉">
+            <div>
+              <div class="horizon-step">Monthly</div>
+              <div class="horizon-title">月間目標<span class="collapse-chevron">${monthlyGoalsExpanded ? '▾' : '▸'}</span></div>
+              ${monthlyGoalsExpanded
+                ? '<div class="monthly-goals-sub">月の売上50万を取るために、受注とアプローチを毎月積み上げる</div>'
+                : `<div class="collapse-summary">${esc(foldSummary)}</div>`}
+            </div>
+            <div class="mg-fold-right">
+              <div class="mg-fold-right-count${salesDone ? ' is-done' : ''}">${formatYen(salesTotal)}</div>
+              <div class="mg-fold-right-label">/ ${formatYen(salesTarget)} · ${salesPct}%</div>
+              <div class="mg-fold-right-bar"><span style="width:${salesPct}%"></span></div>
+            </div>
           </div>
-          <div class="mg-section-title">受注・制作（チェック＋売上）</div>
-          ${deliveryHtml}
-          <div class="mg-add-row">
-            <input type="text" id="mgAddLabel" placeholder="追加項目（例: 編集のみ）">
-            <input type="number" id="mgAddTarget" min="1" max="20" value="1" title="チェック数">
-            <button type="button" class="btn" onclick="addMonthlyDeliveryItem('${monthKey}')">＋追加</button>
+          <div class="collapse-body${monthlyGoalsExpanded ? ' open' : ''}" id="monthlyGoalsCollapse" onclick="event.stopPropagation()">
+            <div class="monthly-goals-nav">
+              <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(-1)">‹ 前月</button>
+              <span class="month-label">${esc(formatMonthLabelJa(monthKey))}</span>
+              <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(1)">翌月 ›</button>
+              <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(0)">今月</button>
+            </div>
+            <div class="mg-section-title">受注・制作（チェック＋売上）</div>
+            ${deliveryHtml}
+            <div class="mg-add-row">
+              <input type="text" id="mgAddLabel" placeholder="追加項目（例: 編集のみ）">
+              <input type="number" id="mgAddTarget" min="1" max="20" value="1" title="チェック数">
+              <button type="button" class="btn" onclick="addMonthlyDeliveryItem('${monthKey}')">＋追加</button>
+            </div>
+            ${salesHtml}
+            <div class="mg-section-title">アプローチ（日付と社数を記録）</div>
+            ${funnelHtml}
           </div>
-          ${salesHtml}
-          <div class="mg-section-title">アプローチ（日付と社数を記録）</div>
-          ${funnelHtml}
         </div>
       `;
     }
+
+    function toggleMonthlyGoals() {
+      monthlyGoalsExpanded = !monthlyGoalsExpanded;
+      renderMonthlyGoals();
+    }
+    window.toggleMonthlyGoals = toggleMonthlyGoals;
 
     function shiftMonthlyGoalsMonth(delta) {
       if (delta === 0) {
@@ -8678,7 +8732,6 @@ ${MAIL_FOOTER}`,
                     oninput="onVisionInput('humanGoals', this)">${esc(v.humanGoals || '')}</textarea>
         </div>
 
-        <div class="compass-block-title">月間目標<span class="compass-block-note">月商50万のための受注とアプローチ</span></div>
         <div id="monthlyGoalsPanel"></div>
 
         <div class="compass-block-title">時間の軸<span class="compass-block-note">健康・家族・お金・仕事・趣味</span></div>
