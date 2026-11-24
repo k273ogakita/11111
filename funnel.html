@@ -334,7 +334,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">営業ファネル · v15</div>
+        <div class="logo-sub">営業ファネル · v16</div>
       </div>
       <div class="header-links">
         <a class="btn" href="dashboard.html">Dashboard</a>
@@ -352,7 +352,7 @@
     <div id="detail"></div>
   </div>
 
-  <script src="funnel-data.js?v=8"></script>
+  <script src="funnel-data.js?v=9"></script>
   <script>
     const DATA = window.FUNNEL_DATA;
     let currentId = DATA.products[0].id;
@@ -411,21 +411,29 @@
         if (!raw) return [];
         const data = JSON.parse(raw);
         const ads = (data && data.adExpenses) || [];
-        return ads.filter((a) => a.funnelProduct).map((a) => ({
-          id: "ad-" + a.id,
-          date: a.month ? a.month + "-01" : "",
-          productId: a.funnelProduct,
-          channelId: "ads",
-          title: (a.platform || "広告") + (a.month ? " " + a.month : ""),
-          reach: 0,
-          clicks: 0,
-          inquiries: 0,
-          meetings: 0,
-          wins: 0,
-          revenue: 0,
-          cost: Number(a.amount) || 0,
-          source: "ads",
-        }));
+        // ファネル正本にすでに検索広告の費用があるサービスは、ダッシュボード広告費を足さない（二重計上防止）
+        const fileAdProducts = new Set(
+          (DATA.campaigns || [])
+            .filter((c) => c.channelId === "ads" && (Number(c.cost) || 0) > 0)
+            .map((c) => c.productId)
+        );
+        return ads
+          .filter((a) => a.funnelProduct && !fileAdProducts.has(a.funnelProduct))
+          .map((a) => ({
+            id: "ad-" + a.id,
+            date: a.month ? a.month + "-01" : "",
+            productId: a.funnelProduct,
+            channelId: "ads",
+            title: (a.platform || "広告") + (a.month ? " " + a.month : ""),
+            reach: 0,
+            clicks: 0,
+            inquiries: 0,
+            meetings: 0,
+            wins: 0,
+            revenue: 0,
+            cost: Number(a.amount) || 0,
+            source: "ads",
+          }));
       } catch (_) {
         return [];
       }

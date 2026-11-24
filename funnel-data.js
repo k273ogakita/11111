@@ -1,7 +1,7 @@
 /* nARK 営業ファネル正本。数字が増えたらここを直して GitHub に上げる。 */
 window.FUNNEL_DATA = {
   updated: "2026-11-24",
-  version: 8,
+  version: 9,
 
   productGroups: [
     { id: "patient", title: "患者説明動画" },
@@ -210,7 +210,7 @@ window.FUNNEL_DATA = {
       wins: 0,
       revenue: 0,
       cost: 21909,
-      notes: "検索広告の累計費用¥21,909（税抜）。問い合わせ2件のまま。",
+      notes: "検索広告の合計費用¥21,909（税抜）。問い合わせ2件のまま。ダッシュボードの広告費と二重に足さない。",
       kind: "outreach",
     },
     {
