@@ -2697,6 +2697,98 @@
     .human-goals-card textarea::placeholder {
       color: #a89478;
     }
+    .monthly-goals-card {
+      border-radius: 12px;
+      padding: 14px 14px 12px;
+      margin: 0 0 12px;
+      border: 1px solid #c5d4e8;
+      background: linear-gradient(165deg, #f7faff 0%, #e8f0fa 100%);
+    }
+    .monthly-goals-card .horizon-step { color: #3a5f8a; }
+    .monthly-goals-card .horizon-title { color: #2a4568; margin-bottom: 4px; }
+    .monthly-goals-sub {
+      font-size: .78rem; color: #5a7394; margin: 0 0 12px; line-height: 1.45;
+    }
+    .monthly-goals-nav {
+      display: flex; align-items: center; gap: 8px; margin: 0 0 12px; flex-wrap: wrap;
+    }
+    .monthly-goals-nav .month-label {
+      font-weight: 800; font-size: .92rem; color: #2a4568; min-width: 7em;
+    }
+    .mg-section-title {
+      font-size: .75rem; font-weight: 800; letter-spacing: .04em;
+      color: #5a7394; margin: 12px 0 8px;
+    }
+    .mg-delivery-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 8px 10px; margin-bottom: 6px;
+      background: rgba(255,255,255,.75); border-radius: 8px;
+      border: 1px solid rgba(58,95,138,.12);
+    }
+    .mg-delivery-label { font-weight: 700; font-size: .85rem; color: #2a4568; min-width: 7em; }
+    .mg-delivery-progress {
+      font-size: .75rem; font-weight: 700; color: #5a7394; min-width: 3.2em;
+    }
+    .mg-delivery-progress.is-done { color: #1f7a4d; }
+    .mg-checks { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+    .mg-check {
+      width: 26px; height: 26px; border-radius: 7px;
+      border: 1.5px solid rgba(58,95,138,.35);
+      background: #fff; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: .85rem; font-weight: 800; color: transparent;
+      padding: 0; line-height: 1;
+    }
+    .mg-check.on {
+      background: #2f9e6f; border-color: #2f9e6f; color: #fff;
+    }
+    .mg-check:hover { border-color: #2f9e6f; }
+    .mg-row-actions { margin-left: auto; display: flex; gap: 4px; }
+    .mg-row-actions .btn { padding: 3px 8px; font-size: .7rem; }
+    .mg-add-row {
+      display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 8px;
+    }
+    .mg-add-row input[type="text"],
+    .mg-add-row input[type="number"],
+    .mg-funnel-add input[type="date"],
+    .mg-funnel-add input[type="number"] {
+      font: inherit; font-size: .82rem; padding: 6px 8px;
+      border: 1px solid rgba(58,95,138,.25); border-radius: 7px;
+      background: #fff; color: var(--text); min-width: 0;
+    }
+    .mg-add-row input[type="text"] { flex: 1; min-width: 120px; }
+    .mg-add-row input[type="number"] { width: 64px; }
+    .mg-funnel-block {
+      padding: 10px; margin-bottom: 8px;
+      background: rgba(255,255,255,.75); border-radius: 8px;
+      border: 1px solid rgba(58,95,138,.12);
+    }
+    .mg-funnel-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: 8px; margin-bottom: 6px; flex-wrap: wrap;
+    }
+    .mg-funnel-name { font-weight: 800; font-size: .85rem; color: #2a4568; }
+    .mg-funnel-count { font-size: .8rem; font-weight: 700; color: #5a7394; }
+    .mg-funnel-count.is-done { color: #1f7a4d; }
+    .mg-funnel-bar {
+      height: 6px; border-radius: 999px; background: rgba(58,95,138,.12);
+      overflow: hidden; margin-bottom: 8px;
+    }
+    .mg-funnel-bar > span {
+      display: block; height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, #4d8fd6, #2f9e6f);
+      transition: width .2s;
+    }
+    .mg-funnel-entries { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+    .mg-funnel-entry {
+      display: flex; align-items: center; gap: 8px; font-size: .8rem; color: #2a4568;
+    }
+    .mg-funnel-entry .btn { padding: 2px 7px; font-size: .68rem; }
+    .mg-funnel-add {
+      display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    }
+    .mg-funnel-add input[type="date"] { width: auto; }
+    .mg-funnel-add input[type="number"] { width: 72px; }
     .compass-block-title {
       font-size: .78rem;
       font-weight: 800;
@@ -3376,7 +3468,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v211</div>
+        <div class="logo-sub">Business Dashboard · v212</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -5057,6 +5149,7 @@ nark.visual.media@gmail.com
         vision: emptyVision(),
         reviews: {},
         reviewTextSaved: {},
+        monthlyGoals: {},
         morningStart: {},
       };
     }
@@ -5685,6 +5778,7 @@ ${MAIL_FOOTER}`,
       }
       ensureMilestones(data);
       ensureVisionAndReviews(data);
+      ensureMonthlyGoals(data);
       seedKnownDaySchedules(data);
       data.projects.forEach(p => {
         if (!p.category) p.category = p.type === 'sns' ? 'sns' : 'client';
@@ -8050,6 +8144,246 @@ ${MAIL_FOOTER}`,
     }
     window.onVisionInput = onVisionInput;
 
+    /* ── 月間目標（月商50万） ── */
+    let monthlyGoalsViewMonth = '';
+
+    function defaultMonthlyDeliveryItems() {
+      return [
+        { id: 'video', label: '企業動画', target: 3, checks: [false, false, false], custom: false },
+        { id: 'drone', label: 'ドローン撮影', target: 1, checks: [false], custom: false },
+        { id: 'web', label: '簡易ウェブ制作', target: 2, checks: [false, false], custom: false },
+      ];
+    }
+
+    function defaultMonthlyFunnel() {
+      return {
+        approach: { label: '新規アプローチ', target: 40, entries: [] },
+        inquiry: { label: '反応・問い合わせ', target: 8, entries: [] },
+        meeting: { label: '商談・打ち合わせ', target: 5, entries: [] },
+        contract: { label: '成約', target: 3, note: '2〜3社', entries: [] },
+      };
+    }
+
+    function emptyMonthlyGoalMonth() {
+      return {
+        delivery: defaultMonthlyDeliveryItems(),
+        funnel: defaultMonthlyFunnel(),
+      };
+    }
+
+    function ensureMonthlyGoals(data) {
+      if (!data.monthlyGoals || typeof data.monthlyGoals !== 'object') data.monthlyGoals = {};
+    }
+
+    function getMonthlyGoalsMonthKey() {
+      if (!monthlyGoalsViewMonth) monthlyGoalsViewMonth = todayStr().slice(0, 7);
+      return monthlyGoalsViewMonth;
+    }
+
+    function getMonthlyGoalMonth(monthKey) {
+      ensureMonthlyGoals(state);
+      const key = monthKey || getMonthlyGoalsMonthKey();
+      if (!state.monthlyGoals[key] || typeof state.monthlyGoals[key] !== 'object') {
+        state.monthlyGoals[key] = emptyMonthlyGoalMonth();
+      } else {
+        const m = state.monthlyGoals[key];
+        if (!Array.isArray(m.delivery) || !m.delivery.length) m.delivery = defaultMonthlyDeliveryItems();
+        m.delivery = m.delivery.map(item => {
+          const target = Math.max(1, Number(item.target) || 1);
+          let checks = Array.isArray(item.checks) ? item.checks.slice(0, target) : [];
+          while (checks.length < target) checks.push(false);
+          return {
+            id: item.id || uid(),
+            label: item.label || '項目',
+            target,
+            checks,
+            custom: !!item.custom,
+          };
+        });
+        const baseFunnel = defaultMonthlyFunnel();
+        if (!m.funnel || typeof m.funnel !== 'object') m.funnel = baseFunnel;
+        Object.keys(baseFunnel).forEach(k => {
+          if (!m.funnel[k]) m.funnel[k] = baseFunnel[k];
+          else {
+            m.funnel[k].label = m.funnel[k].label || baseFunnel[k].label;
+            m.funnel[k].target = Number(m.funnel[k].target) || baseFunnel[k].target;
+            if (baseFunnel[k].note) m.funnel[k].note = m.funnel[k].note || baseFunnel[k].note;
+            if (!Array.isArray(m.funnel[k].entries)) m.funnel[k].entries = [];
+          }
+        });
+      }
+      return state.monthlyGoals[key];
+    }
+
+    function monthlyGoalEntrySum(entries) {
+      return (entries || []).reduce((s, e) => s + (Number(e.count) || 0), 0);
+    }
+
+    function formatMonthLabelJa(monthKey) {
+      const [y, m] = String(monthKey).split('-');
+      return `${y}年${Number(m)}月`;
+    }
+
+    function renderMonthlyGoals() {
+      const el = document.getElementById('monthlyGoalsPanel');
+      if (!el) return;
+      const monthKey = getMonthlyGoalsMonthKey();
+      const goal = getMonthlyGoalMonth(monthKey);
+      const deliveryHtml = goal.delivery.map((item, idx) => {
+        const done = item.checks.filter(Boolean).length;
+        const allDone = done >= item.target;
+        const checks = item.checks.map((on, ci) =>
+          `<button type="button" class="mg-check${on ? ' on' : ''}" title="${on ? '達成済' : '未達'}"
+            onclick="toggleMonthlyDeliveryCheck('${monthKey}',${idx},${ci})">${on ? '✓' : ''}</button>`
+        ).join('');
+        const removeBtn = item.custom
+          ? `<button type="button" class="btn btn-ghost" onclick="removeMonthlyDeliveryItem('${monthKey}',${idx})">削除</button>`
+          : '';
+        return `<div class="mg-delivery-row">
+          <span class="mg-delivery-label">${esc(item.label)}</span>
+          <span class="mg-delivery-progress${allDone ? ' is-done' : ''}">${done}/${item.target}</span>
+          <span class="mg-checks">${checks}</span>
+          <span class="mg-row-actions">${removeBtn}</span>
+        </div>`;
+      }).join('');
+
+      const funnelHtml = Object.keys(goal.funnel).map(fkey => {
+        const f = goal.funnel[fkey];
+        const sum = monthlyGoalEntrySum(f.entries);
+        const pct = Math.min(100, Math.round((sum / Math.max(1, f.target)) * 100));
+        const done = sum >= f.target;
+        const note = f.note ? `（${esc(f.note)}）` : '';
+        const entries = (f.entries || []).map((e, ei) =>
+          `<div class="mg-funnel-entry">
+            <span>${esc(e.date || '—')}</span>
+            <span><strong>${Number(e.count) || 0}</strong>社</span>
+            <button type="button" class="btn btn-ghost" onclick="removeMonthlyFunnelEntry('${monthKey}','${fkey}',${ei})">×</button>
+          </div>`
+        ).join('') || '<div class="mg-funnel-entry" style="color:#8a9bb0">まだ記録なし</div>';
+        return `<div class="mg-funnel-block">
+          <div class="mg-funnel-head">
+            <span class="mg-funnel-name">${esc(f.label)}${note}</span>
+            <span class="mg-funnel-count${done ? ' is-done' : ''}">${sum}/${f.target}社</span>
+          </div>
+          <div class="mg-funnel-bar"><span style="width:${pct}%"></span></div>
+          <div class="mg-funnel-entries">${entries}</div>
+          <div class="mg-funnel-add">
+            <input type="date" id="mgFunnelDate_${fkey}" value="${todayStr()}">
+            <input type="number" id="mgFunnelCount_${fkey}" min="1" step="1" value="1" title="社数">
+            <span style="font-size:.78rem;color:#5a7394">社</span>
+            <button type="button" class="btn btn-primary" onclick="addMonthlyFunnelEntry('${monthKey}','${fkey}')">追加</button>
+          </div>
+        </div>`;
+      }).join('');
+
+      el.innerHTML = `
+        <div class="monthly-goals-card">
+          <div class="horizon-step">Monthly</div>
+          <div class="horizon-title">月間目標</div>
+          <div class="monthly-goals-sub">月の売上50万を取るために、受注とアプローチを毎月積み上げる</div>
+          <div class="monthly-goals-nav">
+            <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(-1)">‹ 前月</button>
+            <span class="month-label">${esc(formatMonthLabelJa(monthKey))}</span>
+            <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(1)">翌月 ›</button>
+            <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(0)">今月</button>
+          </div>
+          <div class="mg-section-title">受注・制作（チェックで達成）</div>
+          ${deliveryHtml}
+          <div class="mg-add-row">
+            <input type="text" id="mgAddLabel" placeholder="追加項目（例: 編集のみ）">
+            <input type="number" id="mgAddTarget" min="1" max="20" value="1" title="チェック数">
+            <button type="button" class="btn" onclick="addMonthlyDeliveryItem('${monthKey}')">＋追加</button>
+          </div>
+          <div class="mg-section-title">アプローチ（日付と社数を記録）</div>
+          ${funnelHtml}
+        </div>
+      `;
+    }
+
+    function shiftMonthlyGoalsMonth(delta) {
+      if (delta === 0) {
+        monthlyGoalsViewMonth = todayStr().slice(0, 7);
+      } else {
+        const key = getMonthlyGoalsMonthKey();
+        const [y, m] = key.split('-').map(Number);
+        const d = new Date(y, m - 1 + delta, 1);
+        monthlyGoalsViewMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      }
+      renderMonthlyGoals();
+    }
+    window.shiftMonthlyGoalsMonth = shiftMonthlyGoalsMonth;
+
+    function toggleMonthlyDeliveryCheck(monthKey, itemIdx, checkIdx) {
+      const goal = getMonthlyGoalMonth(monthKey);
+      const item = goal.delivery[itemIdx];
+      if (!item || checkIdx < 0 || checkIdx >= item.checks.length) return;
+      item.checks[checkIdx] = !item.checks[checkIdx];
+      persistStateQuiet();
+      renderMonthlyGoals();
+    }
+    window.toggleMonthlyDeliveryCheck = toggleMonthlyDeliveryCheck;
+
+    function addMonthlyDeliveryItem(monthKey) {
+      const labelEl = document.getElementById('mgAddLabel');
+      const targetEl = document.getElementById('mgAddTarget');
+      const label = (labelEl && labelEl.value.trim()) || '';
+      const target = Math.max(1, Math.min(20, Number(targetEl && targetEl.value) || 1));
+      if (!label) {
+        toast('項目名を入力してください');
+        labelEl && labelEl.focus();
+        return;
+      }
+      const goal = getMonthlyGoalMonth(monthKey);
+      goal.delivery.push({
+        id: uid(),
+        label,
+        target,
+        checks: Array.from({ length: target }, () => false),
+        custom: true,
+      });
+      persistStateQuiet();
+      renderMonthlyGoals();
+      toast(`「${label}」を追加しました`);
+    }
+    window.addMonthlyDeliveryItem = addMonthlyDeliveryItem;
+
+    function removeMonthlyDeliveryItem(monthKey, itemIdx) {
+      const goal = getMonthlyGoalMonth(monthKey);
+      const item = goal.delivery[itemIdx];
+      if (!item || !item.custom) return;
+      if (!confirm(`「${item.label}」を削除しますか？`)) return;
+      goal.delivery.splice(itemIdx, 1);
+      persistStateQuiet();
+      renderMonthlyGoals();
+    }
+    window.removeMonthlyDeliveryItem = removeMonthlyDeliveryItem;
+
+    function addMonthlyFunnelEntry(monthKey, fkey) {
+      const goal = getMonthlyGoalMonth(monthKey);
+      const f = goal.funnel[fkey];
+      if (!f) return;
+      const dateEl = document.getElementById(`mgFunnelDate_${fkey}`);
+      const countEl = document.getElementById(`mgFunnelCount_${fkey}`);
+      const date = (dateEl && dateEl.value) || todayStr();
+      const count = Math.max(1, Number(countEl && countEl.value) || 1);
+      f.entries.push({ date, count });
+      f.entries.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      persistStateQuiet();
+      renderMonthlyGoals();
+      toast(`${f.label}に ${count}社を追加`);
+    }
+    window.addMonthlyFunnelEntry = addMonthlyFunnelEntry;
+
+    function removeMonthlyFunnelEntry(monthKey, fkey, entryIdx) {
+      const goal = getMonthlyGoalMonth(monthKey);
+      const f = goal.funnel[fkey];
+      if (!f || !f.entries[entryIdx]) return;
+      f.entries.splice(entryIdx, 1);
+      persistStateQuiet();
+      renderMonthlyGoals();
+    }
+    window.removeMonthlyFunnelEntry = removeMonthlyFunnelEntry;
+
     function onReviewInput(key, el) {
       const r = ensureCurrentReview();
       r[key] = el.value;
@@ -8189,6 +8523,7 @@ ${MAIL_FOOTER}`,
       if (!el) return;
       if (isCompassFocused()) return;
       ensureVisionAndReviews(state);
+      ensureMonthlyGoals(state);
       const r = ensureCurrentReview();
       const monthKey = currentReviewMonthKey();
 
@@ -8204,6 +8539,9 @@ ${MAIL_FOOTER}`,
           <textarea placeholder="例：誠実で地道であること／家族を第一にすること／人の役に立つ仕事を続けること…"
                     oninput="onVisionInput('humanGoals', this)">${esc(v.humanGoals || '')}</textarea>
         </div>
+
+        <div class="compass-block-title">月間目標<span class="compass-block-note">月商50万のための受注とアプローチ</span></div>
+        <div id="monthlyGoalsPanel"></div>
 
         <div class="compass-block-title">時間の軸<span class="compass-block-note">健康・家族・お金・仕事・趣味</span></div>
         <div class="vision-faces">
@@ -8344,6 +8682,7 @@ ${MAIL_FOOTER}`,
         </div>
       `;
       applyCompassFolds();
+      renderMonthlyGoals();
     }
 
     /* ── Weekly Goals（1週間の目標＋到達目標） ── */
