@@ -1,7 +1,7 @@
 /* nARK 営業ファネル正本。数字が増えたらここを直して GitHub に上げる。 */
 window.FUNNEL_DATA = {
   updated: "2026-11-24",
-  version: 7,
+  version: 8,
 
   productGroups: [
     { id: "patient", title: "患者説明動画" },
@@ -197,6 +197,23 @@ window.FUNNEL_DATA = {
       kind: "outreach",
     },
     {
+      id: "2026-11-ads-patient-nark",
+      date: "2026-11-24",
+      productId: "patient-nark",
+      channelId: "ads",
+      title: "検索広告（患者説明・全般）",
+      target: "患者説明動画 全般",
+      reach: 0,
+      clicks: 0,
+      inquiries: 2,
+      meetings: 0,
+      wins: 0,
+      revenue: 0,
+      cost: 21909,
+      notes: "検索広告の累計費用¥21,909（税抜）。問い合わせ2件のまま。",
+      kind: "outreach",
+    },
+    {
       id: "2026-10-23-form-patient-nark-eye",
       date: "2026-10-23",
       productId: "patient-nark-eye",
@@ -320,6 +337,14 @@ window.FUNNEL_DATA = {
       change: "患者説明全般のフォーム営業2回目を記録。",
       result: "送信2981・クリック63（2.1%）・問い合わせ0。費用0。",
       verdict: "1回目と同程度のクリック。問い合わせ化が課題。",
+    },
+    {
+      date: "2026-11-24",
+      productId: "patient-nark",
+      channelId: "ads",
+      change: "検索広告の費用と問い合わせを記録。",
+      result: "費用¥21,909・問い合わせ2件。",
+      verdict: "フォームは問い合わせ0。問い合わせは検索広告から来ている。",
     },
     {
       date: "2026-11-24",
