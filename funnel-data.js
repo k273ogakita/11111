@@ -1,7 +1,7 @@
 /* nARK 営業ファネル正本。数字が増えたらここを直して GitHub に上げる。 */
 window.FUNNEL_DATA = {
   updated: "2026-11-24",
-  version: 9,
+  version: 10,
 
   productGroups: [
     { id: "patient", title: "患者説明動画" },
@@ -210,8 +210,25 @@ window.FUNNEL_DATA = {
       wins: 0,
       revenue: 0,
       cost: 21909,
-      notes: "検索広告の合計費用¥21,909（税抜）。問い合わせ2件のまま。ダッシュボードの広告費と二重に足さない。",
+      notes: "検索広告の合計費用¥21,909（税抜）。問い合わせ2件。",
       kind: "outreach",
+    },
+    {
+      id: "2026-10-04-deal-video-shoot",
+      date: "2026-10-04",
+      productId: "video-shoot",
+      channelId: "referral",
+      title: "中学吹奏楽演奏会 撮影",
+      target: "知り合い",
+      reach: 1,
+      clicks: 0,
+      inquiries: 1,
+      meetings: 1,
+      wins: 1,
+      revenue: 20909,
+      cost: 0,
+      notes: "税込¥23,000 → 税抜¥20,909。知り合い紹介。チャットで記録。",
+      kind: "deal",
     },
     {
       id: "2026-10-23-form-patient-nark-eye",

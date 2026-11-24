@@ -334,7 +334,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">営業ファネル · v16</div>
+        <div class="logo-sub">営業ファネル · v17</div>
       </div>
       <div class="header-links">
         <a class="btn" href="dashboard.html">Dashboard</a>
@@ -345,14 +345,14 @@
       </div>
     </header>
 
-    <p class="sync-note">成約と金額は、<b>同じアドレスのダッシュボード</b>の案件から読みます。<b>フォーム営業</b>の6000などは「送信した件数」で、いまはお金がかからないので費用は常に¥0。Google広告など実費があるものだけ、ダッシュボードの広告費から費用に載ります。</p>
+    <p class="sync-note">このファネルの数字は、<b>チャットで伝えた内容だけ</b>を正本にしています。ダッシュボードとはつなげません。数字を直す・足すときは、ここで伝えてください。</p>
 
     <section class="section" id="productGrid"></section>
 
     <div id="detail"></div>
   </div>
 
-  <script src="funnel-data.js?v=9"></script>
+  <script src="funnel-data.js?v=10"></script>
   <script>
     const DATA = window.FUNNEL_DATA;
     let currentId = DATA.products[0].id;
@@ -375,99 +375,8 @@
       return `<span class="grade grade-${g.key}">${g.label}</span>`;
     }
 
-    const DASH_STORAGE_KEY = "nark_dashboard_v4";
-
-    function dashboardDealCampaigns() {
-      try {
-        const raw = localStorage.getItem(DASH_STORAGE_KEY);
-        if (!raw) return [];
-        const data = JSON.parse(raw);
-        const projects = (data && data.projects) || [];
-        return projects.filter((p) => p.category === "client" && p.funnelProduct).map((p) => ({
-          id: "dash-" + p.id,
-          date: p.created || p.invoiceDate || p.finalDueDate || "",
-          productId: p.funnelProduct,
-          channelId: p.funnelChannel || "referral",
-          title: p.name,
-          target: p.client || "",
-          reach: 1,
-          clicks: 0,
-          inquiries: 1,
-          meetings: 1,
-          wins: 1,
-          revenue: Number(p.revenue) || 0,
-          cost: 0,
-          source: "dashboard",
-          funnelSeedId: p.funnelSeedId || "",
-        }));
-      } catch (_) {
-        return [];
-      }
-    }
-
-    function dashboardAdCampaigns() {
-      try {
-        const raw = localStorage.getItem(DASH_STORAGE_KEY);
-        if (!raw) return [];
-        const data = JSON.parse(raw);
-        const ads = (data && data.adExpenses) || [];
-        // ファネル正本にすでに検索広告の費用があるサービスは、ダッシュボード広告費を足さない（二重計上防止）
-        const fileAdProducts = new Set(
-          (DATA.campaigns || [])
-            .filter((c) => c.channelId === "ads" && (Number(c.cost) || 0) > 0)
-            .map((c) => c.productId)
-        );
-        return ads
-          .filter((a) => a.funnelProduct && !fileAdProducts.has(a.funnelProduct))
-          .map((a) => ({
-            id: "ad-" + a.id,
-            date: a.month ? a.month + "-01" : "",
-            productId: a.funnelProduct,
-            channelId: "ads",
-            title: (a.platform || "広告") + (a.month ? " " + a.month : ""),
-            reach: 0,
-            clicks: 0,
-            inquiries: 0,
-            meetings: 0,
-            wins: 0,
-            revenue: 0,
-            cost: Number(a.amount) || 0,
-            source: "ads",
-          }));
-      } catch (_) {
-        return [];
-      }
-    }
-
-    function unassignedAdCost() {
-      try {
-        const raw = localStorage.getItem(DASH_STORAGE_KEY);
-        if (!raw) return 0;
-        const data = JSON.parse(raw);
-        const ads = (data && data.adExpenses) || [];
-        return ads.filter((a) => !a.funnelProduct).reduce((s, a) => s + (Number(a.amount) || 0), 0);
-      } catch (_) {
-        return 0;
-      }
-    }
-
-    function mergedCampaigns() {
-      const dash = dashboardDealCampaigns();
-      const ads = dashboardAdCampaigns();
-      const seedIds = new Set(dash.map((c) => c.funnelSeedId).filter(Boolean));
-      const dashKeys = new Set(dash.map((c) => [c.productId, c.date, c.title].join("|")));
-      const fromFile = (DATA.campaigns || []).filter((c) => {
-        if (c.kind === "deal" || (c.wins > 0 && c.kind !== "outreach")) {
-          if (c.funnelSeedId && seedIds.has(c.funnelSeedId)) return false;
-          if (dashKeys.has([c.productId, c.date, c.title].join("|"))) return false;
-        }
-        return true;
-      });
-      return fromFile.concat(dash, ads);
-    }
-
     function campaignsOf(productId, channelId) {
-      return mergedCampaigns().filter((c) => {
+      return (DATA.campaigns || []).filter((c) => {
         if (c.productId !== productId) return false;
         if (channelId && c.channelId !== channelId) return false;
         return true;
@@ -599,8 +508,9 @@
     }
 
     function sourceLabel(c) {
-      if (c.source === "dashboard") return "案件";
-      if (c.source === "ads") return "広告費";
+      if (c.kind === "deal") return "成約";
+      if (c.channelId === "ads") return "検索広告";
+      if (c.channelId === "flyer") return "チラシ";
       return "営業";
     }
 
@@ -760,7 +670,7 @@
             const inqR = pct(c.inquiries, c.reach);
             return `<tr>
               <td>${c.date}</td>
-              <td>${c.source === "dashboard" ? "案件" : sourceLabel(c)}</td>
+              <td>${sourceLabel(c)}</td>
               <td>${ch ? ch.name : c.channelId}</td>
               <td>${c.title}</td>
               <td>${fmt(c.reach)}</td>
@@ -819,7 +729,7 @@
             <div class="kpi"><div class="kpi-label">利益</div><div class="kpi-value yen">${fmtYen(t.profit)}</div><div class="kpi-sub">${gradeHtml(moneyGrade(t))}</div></div>
             <div class="kpi"><div class="kpi-label">回収</div><div class="kpi-value yen">${recoverLabel(t)}</div><div class="kpi-sub">売上 ÷ 費用</div></div>
           </div>
-          <p class="note">フォーム営業の数字は「何件送ったか」。費用には入れません。Google広告はダッシュボードの「広告費」でサービスを選ぶと、ここに足されます。${unassignedAdCost() ? "サービス未選択の広告費が " + fmtYen(unassignedAdCost()) + " あります。" : ""}</p>
+          <p class="note">数字はチャットで伝えた内容だけです。フォーム営業の送信件数は費用に入れません。検索広告・チラシなど実費は、伝えた金額を費用に載せます。</p>
         </section>
 
         <section class="section">
