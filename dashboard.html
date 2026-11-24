@@ -2720,10 +2720,13 @@
       color: #5a7394; margin: 12px 0 8px;
     }
     .mg-delivery-row {
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      padding: 8px 10px; margin-bottom: 6px;
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 10px 10px 9px; margin-bottom: 6px;
       background: rgba(255,255,255,.75); border-radius: 8px;
       border: 1px solid rgba(58,95,138,.12);
+    }
+    .mg-delivery-top {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     }
     .mg-delivery-label { font-weight: 700; font-size: .85rem; color: #2a4568; min-width: 7em; }
     .mg-delivery-progress {
@@ -2745,6 +2748,47 @@
     .mg-check:hover { border-color: #2f9e6f; }
     .mg-row-actions { margin-left: auto; display: flex; gap: 4px; }
     .mg-row-actions .btn { padding: 3px 8px; font-size: .7rem; }
+    .mg-amounts {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      padding-left: 2px;
+    }
+    .mg-amount-slot {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: .72rem; color: #5a7394; font-weight: 700;
+    }
+    .mg-amount-slot input[type="number"] {
+      width: 96px; font: inherit; font-size: .8rem; font-weight: 700;
+      padding: 5px 7px; border: 1px solid rgba(58,95,138,.25);
+      border-radius: 7px; background: #fff; color: var(--text);
+    }
+    .mg-amount-slot input[type="number"]:focus {
+      outline: none; border-color: rgba(47,158,111,.55);
+    }
+    .mg-sales-block {
+      margin: 12px 0 4px; padding: 12px 12px 10px;
+      background: rgba(255,255,255,.88); border-radius: 10px;
+      border: 1px solid rgba(47,158,111,.28);
+    }
+    .mg-sales-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: 8px; flex-wrap: wrap; margin-bottom: 6px;
+    }
+    .mg-sales-title { font-weight: 800; font-size: .88rem; color: #1f5c3d; }
+    .mg-sales-nums { font-size: .82rem; font-weight: 800; color: #2a4568; }
+    .mg-sales-nums.is-done { color: #1f7a4d; }
+    .mg-sales-bar {
+      height: 10px; border-radius: 999px; background: rgba(47,158,111,.14);
+      overflow: hidden; margin-bottom: 6px;
+    }
+    .mg-sales-bar > span {
+      display: block; height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, #4d8fd6, #2f9e6f);
+      transition: width .25s;
+    }
+    .mg-sales-remain {
+      font-size: .75rem; font-weight: 700; color: #5a7394;
+    }
+    .mg-sales-remain.is-done { color: #1f7a4d; }
     .mg-add-row {
       display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 8px;
     }
@@ -3468,7 +3512,7 @@
     <header>
       <div>
         <div class="logo">n<span>ARK</span></div>
-        <div class="logo-sub">Business Dashboard · v213</div>
+        <div class="logo-sub">Business Dashboard · v214</div>
         <div class="header-page-links">
           <a class="btn" href="list.html">リスト管理</a>
           <a class="btn" href="funnel.html">営業ファネル</a>
@@ -8153,12 +8197,13 @@ ${MAIL_FOOTER}`,
 
     /* ── 月間目標（月商50万） ── */
     let monthlyGoalsViewMonth = '';
+    const MONTHLY_SALES_TARGET = 500000;
 
     function defaultMonthlyDeliveryItems() {
       return [
-        { id: 'video', label: '企業動画', target: 3, checks: [false, false, false], custom: false },
-        { id: 'drone', label: 'ドローン撮影', target: 1, checks: [false], custom: false },
-        { id: 'web', label: '簡易ウェブ制作', target: 2, checks: [false, false], custom: false },
+        { id: 'video', label: '企業動画', target: 3, checks: [false, false, false], amounts: [0, 0, 0], custom: false },
+        { id: 'drone', label: 'ドローン撮影', target: 1, checks: [false], amounts: [0], custom: false },
+        { id: 'web', label: '簡易ウェブ制作', target: 2, checks: [false, false], amounts: [0, 0], custom: false },
       ];
     }
 
@@ -8175,11 +8220,29 @@ ${MAIL_FOOTER}`,
       return {
         delivery: defaultMonthlyDeliveryItems(),
         funnel: defaultMonthlyFunnel(),
+        salesTarget: MONTHLY_SALES_TARGET,
       };
     }
 
     function ensureMonthlyGoals(data) {
       if (!data.monthlyGoals || typeof data.monthlyGoals !== 'object') data.monthlyGoals = {};
+    }
+
+    function normalizeMonthlyDeliveryItem(item) {
+      const target = Math.max(1, Number(item.target) || 1);
+      let checks = Array.isArray(item.checks) ? item.checks.slice(0, target) : [];
+      while (checks.length < target) checks.push(false);
+      let amounts = Array.isArray(item.amounts) ? item.amounts.slice(0, target) : [];
+      while (amounts.length < target) amounts.push(0);
+      amounts = amounts.map(v => Math.max(0, Number(v) || 0));
+      return {
+        id: item.id || uid(),
+        label: item.label || '項目',
+        target,
+        checks,
+        amounts,
+        custom: !!item.custom,
+      };
     }
 
     function getMonthlyGoalsMonthKey() {
@@ -8195,18 +8258,8 @@ ${MAIL_FOOTER}`,
       } else {
         const m = state.monthlyGoals[key];
         if (!Array.isArray(m.delivery) || !m.delivery.length) m.delivery = defaultMonthlyDeliveryItems();
-        m.delivery = m.delivery.map(item => {
-          const target = Math.max(1, Number(item.target) || 1);
-          let checks = Array.isArray(item.checks) ? item.checks.slice(0, target) : [];
-          while (checks.length < target) checks.push(false);
-          return {
-            id: item.id || uid(),
-            label: item.label || '項目',
-            target,
-            checks,
-            custom: !!item.custom,
-          };
-        });
+        m.delivery = m.delivery.map(normalizeMonthlyDeliveryItem);
+        if (!Number(m.salesTarget)) m.salesTarget = MONTHLY_SALES_TARGET;
         const baseFunnel = defaultMonthlyFunnel();
         if (!m.funnel || typeof m.funnel !== 'object') m.funnel = baseFunnel;
         Object.keys(baseFunnel).forEach(k => {
@@ -8226,6 +8279,17 @@ ${MAIL_FOOTER}`,
       return (entries || []).reduce((s, e) => s + (Number(e.count) || 0), 0);
     }
 
+    function monthlySalesTotal(goal) {
+      return (goal.delivery || []).reduce((sum, item) => {
+        const amounts = item.amounts || [];
+        return sum + amounts.reduce((s, v) => s + (Number(v) || 0), 0);
+      }, 0);
+    }
+
+    function formatYen(n) {
+      return `¥${Math.round(Number(n) || 0).toLocaleString('ja-JP')}`;
+    }
+
     function formatMonthLabelJa(monthKey) {
       const [y, m] = String(monthKey).split('-');
       return `${y}年${Number(m)}月`;
@@ -8236,6 +8300,12 @@ ${MAIL_FOOTER}`,
       if (!el) return;
       const monthKey = getMonthlyGoalsMonthKey();
       const goal = getMonthlyGoalMonth(monthKey);
+      const salesTarget = Number(goal.salesTarget) || MONTHLY_SALES_TARGET;
+      const salesTotal = monthlySalesTotal(goal);
+      const salesPct = Math.min(100, Math.round((salesTotal / Math.max(1, salesTarget)) * 100));
+      const salesDone = salesTotal >= salesTarget;
+      const salesRemain = Math.max(0, salesTarget - salesTotal);
+
       const deliveryHtml = goal.delivery.map((item, idx) => {
         const done = item.checks.filter(Boolean).length;
         const allDone = done >= item.target;
@@ -8243,16 +8313,39 @@ ${MAIL_FOOTER}`,
           `<button type="button" class="mg-check${on ? ' on' : ''}" title="${on ? '達成済' : '未達'}"
             onclick="toggleMonthlyDeliveryCheck('${monthKey}',${idx},${ci})">${on ? '✓' : ''}</button>`
         ).join('');
+        const amounts = item.amounts.map((amt, ai) =>
+          `<label class="mg-amount-slot">
+            <span>¥</span>
+            <input type="number" min="0" step="1000" value="${amt || ''}" placeholder="0"
+              title="${esc(item.label)} ${ai + 1}本目の売上"
+              oninput="setMonthlyDeliveryAmount('${monthKey}',${idx},${ai},this.value)">
+          </label>`
+        ).join('');
         const removeBtn = item.custom
           ? `<button type="button" class="btn btn-ghost" onclick="removeMonthlyDeliveryItem('${monthKey}',${idx})">削除</button>`
           : '';
         return `<div class="mg-delivery-row">
-          <span class="mg-delivery-label">${esc(item.label)}</span>
-          <span class="mg-delivery-progress${allDone ? ' is-done' : ''}">${done}/${item.target}</span>
-          <span class="mg-checks">${checks}</span>
-          <span class="mg-row-actions">${removeBtn}</span>
+          <div class="mg-delivery-top">
+            <span class="mg-delivery-label">${esc(item.label)}</span>
+            <span class="mg-delivery-progress${allDone ? ' is-done' : ''}">${done}/${item.target}</span>
+            <span class="mg-checks">${checks}</span>
+            <span class="mg-row-actions">${removeBtn}</span>
+          </div>
+          <div class="mg-amounts">${amounts}</div>
         </div>`;
       }).join('');
+
+      const salesHtml = `
+        <div class="mg-sales-block">
+          <div class="mg-sales-head">
+            <span class="mg-sales-title">売上進捗（月間目標 ${formatYen(salesTarget)}）</span>
+            <span class="mg-sales-nums${salesDone ? ' is-done' : ''}">${formatYen(salesTotal)} / ${formatYen(salesTarget)}（${salesPct}%）</span>
+          </div>
+          <div class="mg-sales-bar"><span style="width:${salesPct}%"></span></div>
+          <div class="mg-sales-remain${salesDone ? ' is-done' : ''}">${
+            salesDone ? '目標達成！' : `あと ${formatYen(salesRemain)}`
+          }</div>
+        </div>`;
 
       const funnelHtml = Object.keys(goal.funnel).map(fkey => {
         const f = goal.funnel[fkey];
@@ -8294,13 +8387,14 @@ ${MAIL_FOOTER}`,
             <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(1)">翌月 ›</button>
             <button type="button" class="btn btn-ghost" onclick="shiftMonthlyGoalsMonth(0)">今月</button>
           </div>
-          <div class="mg-section-title">受注・制作（チェックで達成）</div>
+          <div class="mg-section-title">受注・制作（チェック＋売上）</div>
           ${deliveryHtml}
           <div class="mg-add-row">
             <input type="text" id="mgAddLabel" placeholder="追加項目（例: 編集のみ）">
             <input type="number" id="mgAddTarget" min="1" max="20" value="1" title="チェック数">
             <button type="button" class="btn" onclick="addMonthlyDeliveryItem('${monthKey}')">＋追加</button>
           </div>
+          ${salesHtml}
           <div class="mg-section-title">アプローチ（日付と社数を記録）</div>
           ${funnelHtml}
         </div>
@@ -8330,6 +8424,42 @@ ${MAIL_FOOTER}`,
     }
     window.toggleMonthlyDeliveryCheck = toggleMonthlyDeliveryCheck;
 
+    function refreshMonthlySalesProgress(monthKey) {
+      const goal = getMonthlyGoalMonth(monthKey);
+      const salesTarget = Number(goal.salesTarget) || MONTHLY_SALES_TARGET;
+      const salesTotal = monthlySalesTotal(goal);
+      const salesPct = Math.min(100, Math.round((salesTotal / Math.max(1, salesTarget)) * 100));
+      const salesDone = salesTotal >= salesTarget;
+      const salesRemain = Math.max(0, salesTarget - salesTotal);
+      const nums = document.querySelector('.mg-sales-nums');
+      const bar = document.querySelector('.mg-sales-bar > span');
+      const remain = document.querySelector('.mg-sales-remain');
+      if (nums) {
+        nums.classList.toggle('is-done', salesDone);
+        nums.textContent = `${formatYen(salesTotal)} / ${formatYen(salesTarget)}（${salesPct}%）`;
+      }
+      if (bar) bar.style.width = `${salesPct}%`;
+      if (remain) {
+        remain.classList.toggle('is-done', salesDone);
+        remain.textContent = salesDone ? '目標達成！' : `あと ${formatYen(salesRemain)}`;
+      }
+    }
+
+    function setMonthlyDeliveryAmount(monthKey, itemIdx, amountIdx, raw) {
+      const goal = getMonthlyGoalMonth(monthKey);
+      const item = goal.delivery[itemIdx];
+      if (!item) return;
+      if (!Array.isArray(item.amounts)) item.amounts = [];
+      while (item.amounts.length < item.target) item.amounts.push(0);
+      if (amountIdx < 0 || amountIdx >= item.amounts.length) return;
+      const next = Math.max(0, Math.round(Number(String(raw).replace(/[^\d.-]/g, '')) || 0));
+      if (item.amounts[amountIdx] === next) return;
+      item.amounts[amountIdx] = next;
+      persistStateQuiet();
+      refreshMonthlySalesProgress(monthKey);
+    }
+    window.setMonthlyDeliveryAmount = setMonthlyDeliveryAmount;
+
     function addMonthlyDeliveryItem(monthKey) {
       const labelEl = document.getElementById('mgAddLabel');
       const targetEl = document.getElementById('mgAddTarget');
@@ -8346,6 +8476,7 @@ ${MAIL_FOOTER}`,
         label,
         target,
         checks: Array.from({ length: target }, () => false),
+        amounts: Array.from({ length: target }, () => 0),
         custom: true,
       });
       persistStateQuiet();
